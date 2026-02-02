@@ -1,0 +1,19 @@
+{
+  "name": "capstone-final",
+  "version": "1.0.0",
+  "description": "Full-stack capstone project with React and Node.js",
+  "scripts": {
+    "start": "concurrently \"npm run frontend\" \"npm run backend\"",
+    "frontend": "cd frontend && npm start",
+    "backend": "cd backend && npm run dev",
+    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "install-frontend": "cd frontend && npm install",
+    "install-backend": "cd backend && npm install"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

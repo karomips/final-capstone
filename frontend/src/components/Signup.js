@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import './Auth.css';
 
 function Signup() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,7 +21,7 @@ function Signup() {
     setLoading(true);
 
     // Basic validation
-    if (!email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
       setLoading(false);
       return;
@@ -37,8 +40,22 @@ function Signup() {
     }
 
     try {
-      await signup(email, password);
-      navigate('/dashboard');
+      const userCredential = await signup(email, password);
+      
+      // Save user name to Firestore
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        name: name,
+        email: email,
+        createdAt: new Date(),
+        role: email === 'admin@gmail.com' ? 'admin' : 'user'
+      });
+      
+      // Check if user is admin
+      if (email === 'admin@gmail.com') {
+        navigate('/admin');
+      } else {
+        navigate('/user-dashboard');
+      }
     } catch (error) {
       console.error('Signup error:', error);
       switch (error.code) {
@@ -64,8 +81,13 @@ function Signup() {
     setLoading(true);
 
     try {
-      await signInWithGoogle();
-      navigate('/dashboard');
+      const result = await signInWithGoogle();
+      // Check if user is admin
+      if (result.user.email === 'admin@gmail.com') {
+        navigate('/admin');
+      } else {
+        navigate('/user-dashboard');
+      }
     } catch (error) {
       console.error('Google sign-in error:', error);
       switch (error.code) {
@@ -94,6 +116,18 @@ function Signup() {
         <form onSubmit={handleSubmit} className="auth-form">
           {error && <div className="error-message">{error}</div>}
           
+          <div className="form-group">
+            <label htmlFor="name">Name</label>
+            <input
+              type="text"
+              id="name"
+              placeholder="Enter your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input

@@ -25,7 +25,12 @@ function Login() {
 
     try {
       await login(email, password);
-      navigate('/dashboard');
+      // Check if user is admin
+      if (email === 'admin@gmail.com') {
+        navigate('/admin');
+      } else {
+        navigate('/user-dashboard');
+      }
     } catch (error) {
       console.error('Login error:', error);
       switch (error.code) {
@@ -54,8 +59,13 @@ function Login() {
     setLoading(true);
 
     try {
-      await signInWithGoogle();
-      navigate('/dashboard');
+      const result = await signInWithGoogle();
+      // Check if user is admin
+      if (result.user.email === 'admin@gmail.com') {
+        navigate('/admin');
+      } else {
+        navigate('/user-dashboard');
+      }
     } catch (error) {
       console.error('Google sign-in error:', error);
       switch (error.code) {

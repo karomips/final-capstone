@@ -14,8 +14,45 @@ function UserDashboard() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userName, setUserName] = useState('');
   const [showProfile, setShowProfile] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [activeNav, setActiveNav] = useState('dashboard');
   const navigate = useNavigate();
+
+  // Sample clinic photos - replace with actual photos from database
+  const clinicPhotos = [
+    'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=800&h=500&fit=crop',
+    'https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=800&h=500&fit=crop'
+  ];
+
+  // Sample clinic updates - replace with actual data from database
+  const clinicUpdates = [
+    {
+      id: 1,
+      date: '2026-02-05',
+      title: 'New Operating Hours',
+      message: 'Starting next week, we will be open on Saturdays from 9 AM to 2 PM for your convenience.'
+    },
+    {
+      id: 2,
+      date: '2026-02-03',
+      title: 'Flu Vaccination Available',
+      message: 'Flu vaccination is now available. Please schedule an appointment to get vaccinated.'
+    },
+    {
+      id: 3,
+      date: '2026-02-01',
+      title: 'New Equipment Installed',
+      message: 'We have installed state-of-the-art diagnostic equipment to provide better healthcare services.'
+    },
+    {
+      id: 4,
+      date: '2026-01-28',
+      title: 'Health Tips',
+      message: 'Remember to stay hydrated and maintain a balanced diet for optimal health.'
+    }
+  ];
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -40,6 +77,41 @@ function UserDashboard() {
     
     fetchUserName();
   }, [currentUser]);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showProfile && !event.target.closest('.profile-dropdown') && !event.target.closest('.nav-profile-btn')) {
+        setShowProfile(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfile]);
+
+  // Slideshow auto-play
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % clinicPhotos.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [clinicPhotos.length]);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % clinicPhotos.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + clinicPhotos.length) % clinicPhotos.length);
+  };
+
+  const goToSlide = (index) => {
+    setCurrentSlide(index);
+  };
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
@@ -70,113 +142,114 @@ function UserDashboard() {
 
   return (
     <div className="dashboard-container">
-      <div className="dashboard-wrapper">
-        <aside className={`dashboard-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
-          <button 
-            className="sidebar-toggle"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            title={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-          >
-            {isSidebarOpen ? '◀' : '▶'}
-          </button>
+      {/* Top Navigation Bar */}
+      <nav className="top-navbar">
+        <div className="navbar-container">
+          <div className="navbar-brand">
+            <h2>CLINICWAY</h2>
+          </div>
           
-          {isSidebarOpen && (
-            <div className="sidebar-content">
-              <div className="sidebar-header">
-                <h3>Menu</h3>
-              </div>
-              
-              <nav className="sidebar-nav">
-                <button 
-                  className="sidebar-btn primary"
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  <span className="btn-icon">➕</span>
-                  <span>Add Appointment</span>
-                </button>
-                
-                <button className="sidebar-btn">
-                  <span className="btn-icon">📅</span>
-                  <span>My Appointments</span>
-                </button>
-                
-                <button className="sidebar-btn">
-                  <span className="btn-icon">📊</span>
-                  <span>Analytics</span>
-                </button>
-                
-                <button className="sidebar-btn">
-                  <span className="btn-icon">👤</span>
-                  <span>Profile</span>
-                </button>
-                
-                <button className="sidebar-btn">
-                  <span className="btn-icon">⚙️</span>
-                  <span>Settings</span>
-                </button>
-              </nav>
-              
-              <div className="sidebar-footer">
-                <button 
-                  onClick={toggleTheme} 
-                  className="sidebar-btn theme-btn" 
-                  title="Toggle Theme"
-                >
-                  <span className="btn-icon">{isDarkMode ? '☀️' : '🌙'}</span>
-                  <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
-                </button>
-                
-                <button 
-                  onClick={() => setShowProfile(!showProfile)} 
-                  className="sidebar-btn profile-btn"
-                  title="Profile"
-                >
-                  <span className="btn-icon">👤</span>
-                  <span>{userName || 'User'}</span>
-                </button>
-                
-                {showProfile && (
-                  <div className="sidebar-profile-dropdown">
-                    <div className="profile-dropdown-header">
-                      <h3>User Profile</h3>
-                      <button 
-                        onClick={() => setShowProfile(false)} 
-                        className="btn-close-profile"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div className="profile-dropdown-content">
-                      <div className="detail-row">
-                        <span className="detail-label">Name:</span>
-                        <span className="detail-value">{userName || 'User'}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Email:</span>
-                        <span className="detail-value">{currentUser?.email}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">User ID:</span>
-                        <span className="detail-value" style={{fontSize: '12px'}}>{currentUser?.uid}</span>
-                      </div>
-                      <div className="detail-row">
-                        <span className="detail-label">Status:</span>
-                        <span className="status-badge">Active</span>
-                      </div>
-                    </div>
-                    <div className="profile-dropdown-footer">
-                      <button onClick={handleLogout} className="btn-logout-profile">
-                        Logout
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </aside>
+          <div className="navbar-center">
+            <button 
+              className="btn-add-appointment"
+              onClick={() => setIsModalOpen(true)}
+            >
+              + NEW
+            </button>
 
-        <div className={`dashboard-content ${isSidebarOpen ? 'with-sidebar' : 'full-width'}`}>
+            <div className="navbar-menu">
+              <button 
+                className={`nav-link ${activeNav === 'dashboard' ? 'active' : ''}`}
+                onClick={() => setActiveNav('dashboard')}
+              >
+                DASHBOARD
+              </button>
+              <button 
+                className={`nav-link ${activeNav === 'appointments' ? 'active' : ''}`}
+                onClick={() => setActiveNav('appointments')}
+              >
+                APPOINTMENTS
+              </button>
+              <button 
+                className={`nav-link ${activeNav === 'analytics' ? 'active' : ''}`}
+                onClick={() => setActiveNav('analytics')}
+              >
+                ANALYTICS
+              </button>
+              <button 
+                className={`nav-link ${activeNav === 'profile' ? 'active' : ''}`}
+                onClick={() => setActiveNav('profile')}
+              >
+                PROFILE
+              </button>
+              <button 
+                className={`nav-link ${activeNav === 'settings' ? 'active' : ''}`}
+                onClick={() => setActiveNav('settings')}
+              >
+                SETTINGS
+              </button>
+            </div>
+          </div>
+
+          <div className="navbar-actions">
+            <button 
+              onClick={toggleTheme}
+              className="btn-theme-toggle"
+              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
+            
+            <button 
+              className="nav-profile-btn"
+              onClick={() => setShowProfile(!showProfile)}
+            >
+              {userName || 'USER'}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Profile Dropdown */}
+      {showProfile && (
+        <div className="profile-dropdown">
+          <div className="profile-dropdown-header">
+            <h3>User Profile</h3>
+            <button 
+              onClick={() => setShowProfile(false)} 
+              className="btn-close-profile"
+            >
+              &times;
+            </button>
+          </div>
+          <div className="profile-dropdown-content">
+            <div className="detail-row">
+              <span className="detail-label">Name:</span>
+              <span className="detail-value">{userName || 'User'}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Email:</span>
+              <span className="detail-value">{currentUser?.email}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">User ID:</span>
+              <span className="detail-value" style={{fontSize: '12px'}}>{currentUser?.uid}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Status:</span>
+              <span className="status-badge">Active</span>
+            </div>
+          </div>
+          <div className="profile-dropdown-footer">
+            <button onClick={handleLogout} className="btn-logout-profile">
+              LOGOUT
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="main-content">
         {error && <div className="error-banner">{error}</div>}
         {success && <div className="success-banner">{success}</div>}
         
@@ -185,31 +258,63 @@ function UserDashboard() {
           <p>You're successfully logged in!</p>
         </div>
 
-        <div className="cards-grid">
-          <div className="info-card">
-            <div className="card-icon">📊</div>
-            <h3>Analytics</h3>
-            <p>View your data and insights</p>
+        <div className="dashboard-main-content">
+          {/* Photo Slideshow */}
+          <div className="slideshow-container">
+            <div className="slideshow-header">
+              <h2>Clinic Gallery</h2>
+              <p>Explore our facilities</p>
+            </div>
+            <div className="slideshow-wrapper">
+              <button className="slide-btn prev" onClick={prevSlide}>&lt;</button>
+              <div className="slides">
+                {clinicPhotos.map((photo, index) => (
+                  <div
+                    key={index}
+                    className={`slide ${index === currentSlide ? 'active' : ''}`}
+                    style={{ backgroundImage: `url(${photo})` }}
+                  />
+                ))}
+              </div>
+              <button className="slide-btn next" onClick={nextSlide}>&gt;</button>
+            </div>
+            <div className="slide-dots">
+              {clinicPhotos.map((_, index) => (
+                <span
+                  key={index}
+                  className={`dot ${index === currentSlide ? 'active' : ''}`}
+                  onClick={() => goToSlide(index)}
+                />
+              ))}
+            </div>
           </div>
 
-          <div className="info-card">
-            <div className="card-icon">👤</div>
-            <h3>Profile</h3>
-            <p>Manage your account settings</p>
-          </div>
-
-          <div className="info-card">
-            <div className="card-icon">⚙️</div>
-            <h3>Settings</h3>
-            <p>Configure your preferences</p>
-          </div>
-
-          <div className="info-card">
-            <div className="card-icon">📝</div>
-            <h3>Documents</h3>
-            <p>Access your files and documents</p>
+          {/* Clinic Updates */}
+          <div className="updates-container">
+            <div className="updates-header">
+              <h2>Clinic Updates</h2>
+              <p>Stay informed with our latest news</p>
+            </div>
+            <div className="updates-list">
+              {clinicUpdates.map((update) => (
+                <div key={update.id} className="update-item">
+                  <div className="update-date">
+                    {new Date(update.date).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </div>
+                  <div className="update-content">
+                    <h3>{update.title}</h3>
+                    <p>{update.message}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+      </div>
 
       <AppointmentModal
         isOpen={isModalOpen}
@@ -217,8 +322,6 @@ function UserDashboard() {
         userId={currentUser?.uid}
         onSuccess={handleAppointmentSuccess}
       />
-        </div>
-      </div>
     </div>
   );
 }

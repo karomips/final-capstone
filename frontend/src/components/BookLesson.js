@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { databases, databaseId, bookingsCollectionId, usersCollectionId } from '../appwrite/config';
-import { ID } from 'appwrite';
+import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId, instructorsCollectionId } from '../appwrite/config';
+import { ID, Query } from 'appwrite';
 import './UserPages.css';
 
 function BookLesson() {
@@ -18,10 +18,71 @@ function BookLesson() {
   const [loading, setLoading] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [checkingApproval, setCheckingApproval] = useState(true);
+  const [instructors, setInstructors] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
 
   useEffect(() => {
-    checkUserApproval();
+    if (currentUser) {
+      checkUserApproval();
+      fetchInstructors();
+      fetchVehicles();
+    }
   }, [currentUser]);
+
+  // Re-fetch instructors when lesson type changes
+  useEffect(() => {
+    if (currentUser) {
+      fetchInstructors();
+    }
+  }, [selectedLesson, currentUser]);
+
+  // Re-check approval when component gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (currentUser) {
+        checkUserApproval();
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [currentUser]);
+
+  const fetchInstructors = async () => {
+    try {
+      // Fetch all available instructors
+      const response = await databases.listDocuments(
+        databaseId,
+        instructorsCollectionId,
+        [Query.equal('availability', 'available')]
+      );
+      
+      // Filter by lesson type: either specific type or "both"
+      const filteredInstructors = response.documents.filter(instructor => {
+        if (!instructor.lessonType) return true; // Backwards compatibility for old records
+        return instructor.lessonType === selectedLesson || instructor.lessonType === 'both';
+      });
+      
+      setInstructors(filteredInstructors);
+    } catch (error) {
+      console.error('Error fetching instructors:', error);
+      setInstructors([]);
+    }
+  };
+
+  const fetchVehicles = async () => {
+    try {
+      const response = await databases.listDocuments(
+        databaseId,
+        vehiclesCollectionId,
+        [Query.equal('status', 'available')]
+      );
+      setVehicles(response.documents);
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+      setVehicles([]);
+    }
+  };
 
   const checkUserApproval = async () => {
     try {
@@ -31,6 +92,10 @@ function BookLesson() {
         currentUser.$id
       );
       setIsApproved(userDoc.approved || false);
+      // Clear any previous approval-related errors
+      if (userDoc.approved) {
+        setError('');
+      }
     } catch (error) {
       console.error('Error checking approval:', error);
       setIsApproved(false);
@@ -59,8 +124,14 @@ function BookLesson() {
     }
     
     // Validation
-    if (!instructor || !vehicle || !date || !time) {
+    if (!instructor || !date || !time) {
       setError('Please fill in all fields');
+      return;
+    }
+    
+    // Only require vehicle for practical lessons
+    if (selectedLesson === 'practical' && !vehicle) {
+      setError('Please select a vehicle for practical lesson');
       return;
     }
     
@@ -78,13 +149,62 @@ function BookLesson() {
           userEmail: currentUser.email,
           lessonType: selectedLesson,
           instructor: instructor,
-          vehicle: vehicle,
+          vehicle: selectedLesson === 'theory' ? 'N/A' : vehicle,
           date: date,
           time: time,
           status: 'pending',
           createdAt: new Date().toISOString()
         }
       );
+
+      // Update instructor availability to "booked"
+      try {
+        // Find the instructor by name
+        const instructorQuery = await databases.listDocuments(
+          databaseId,
+          instructorsCollectionId,
+          [Query.equal('name', instructor)]
+        );
+        
+        if (instructorQuery.documents.length > 0) {
+          const instructorDoc = instructorQuery.documents[0];
+          await databases.updateDocument(
+            databaseId,
+            instructorsCollectionId,
+            instructorDoc.$id,
+            { availability: 'booked' }
+          );
+        }
+      } catch (error) {
+        console.error('Error updating instructor availability:', error);
+        // Don't fail the booking if instructor update fails
+      }
+
+      // Update vehicle status to "booked" only for practical lessons
+      if (selectedLesson === 'practical' && vehicle) {
+        try {
+          // Extract vehicle model from the vehicle string (format: "Model (MT/AT) - PlateNumber")
+          const vehicleModel = vehicle.split(' (')[0];
+          const vehicleQuery = await databases.listDocuments(
+            databaseId,
+            vehiclesCollectionId,
+            [Query.equal('model', vehicleModel)]
+          );
+          
+          if (vehicleQuery.documents.length > 0) {
+            const vehicleDoc = vehicleQuery.documents[0];
+            await databases.updateDocument(
+              databaseId,
+              vehiclesCollectionId,
+              vehicleDoc.$id,
+              { status: 'booked' }
+            );
+          }
+        } catch (error) {
+          console.error('Error updating vehicle status:', error);
+          // Don't fail the booking if vehicle update fails
+        }
+      }
       
       setSuccess('Booking confirmed successfully!');
       // Reset form
@@ -138,6 +258,27 @@ function BookLesson() {
       <div className="user-main-content">
         <h1 className="page-title">Book a Lesson - User Side</h1>
 
+        {!isApproved && !checkingApproval && (
+          <div style={{background: '#fee2e2', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#991b1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            <span>Your account is pending approval. Please wait for admin confirmation before booking lessons.</span>
+            <button 
+              onClick={() => checkUserApproval()} 
+              style={{
+                background: '#dc2626', 
+                color: 'white', 
+                border: 'none', 
+                padding: '8px 16px', 
+                borderRadius: '6px', 
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+            >
+              ↻ Refresh Status
+            </button>
+          </div>
+        )}
+
         {error && <div style={{background: '#fee', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#c00'}}>{error}</div>}
         {success && <div style={{background: '#efe', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#060'}}>{success}</div>}
 
@@ -148,7 +289,10 @@ function BookLesson() {
             <div className="lesson-type-cards">
               <div 
                 className={`lesson-card ${selectedLesson === 'practical' ? 'active' : ''}`}
-                onClick={() => setSelectedLesson('practical')}
+                onClick={() => {
+                  setSelectedLesson('practical');
+                  setInstructor(''); // Clear instructor selection when changing lesson type
+                }}
               >
                 <div className="lesson-icon">🚗</div>
                 <h3>Practical Lesson</h3>
@@ -156,7 +300,11 @@ function BookLesson() {
               </div>
               <div 
                 className={`lesson-card ${selectedLesson === 'theory' ? 'active' : ''}`}
-                onClick={() => setSelectedLesson('theory')}
+                onClick={() => {
+                  setSelectedLesson('theory');
+                  setInstructor(''); // Clear instructor selection when changing lesson type
+                  setVehicle(''); // Clear vehicle selection for theory class
+                }}
               >
                 <div className="lesson-icon">📖</div>
                 <h3>Theory Class</h3>
@@ -167,7 +315,7 @@ function BookLesson() {
 
           {/* Instructor & Vehicle Section */}
           <div className="booking-section">
-            <h2 className="section-title">Instructor & Vehicle</h2>
+            <h2 className="section-title">{selectedLesson === 'theory' ? 'Instructor' : 'Instructor & Vehicle'}</h2>
             <div className="form-group">
               <label>Instructor Name*</label>
               <select 
@@ -176,24 +324,38 @@ function BookLesson() {
                 className="booking-select"
               >
                 <option value="">Select Instructor</option>
-                <option value="John Martinez">John Martinez</option>
-                <option value="Sarah Chen">Sarah Chen</option>
-                <option value="Mike Johnson">Mike Johnson</option>
+                {instructors.length === 0 ? (
+                  <option disabled>No available instructors</option>
+                ) : (
+                  instructors.map((inst) => (
+                    <option key={inst.$id} value={inst.name}>
+                      {inst.name} - {inst.certifications}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
-            <div className="form-group">
-              <label>Vehicle Model*</label>
-              <select 
-                value={vehicle} 
-                onChange={(e) => setVehicle(e.target.value)}
-                className="booking-select"
-              >
-                <option value="">Select Vehicle</option>
-                <option value="Toyota Corolla (MT)">Toyota Corolla (MT)</option>
-                <option value="Honda Civic (AT)">Honda Civic (AT)</option>
-                <option value="Mazda 3 (AT)">Mazda 3 (AT)</option>
-              </select>
-            </div>
+            {selectedLesson === 'practical' && (
+              <div className="form-group">
+                <label>Vehicle Model*</label>
+                <select 
+                  value={vehicle} 
+                  onChange={(e) => setVehicle(e.target.value)}
+                  className="booking-select"
+                >
+                  <option value="">Select Vehicle</option>
+                  {vehicles.length === 0 ? (
+                    <option disabled>No available vehicles</option>
+                  ) : (
+                    vehicles.map((veh) => (
+                      <option key={veh.$id} value={`${veh.model} (${veh.transmission})`}>
+                        {veh.model} ({veh.transmission}) - {veh.plateNumber}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Date & Time Section */}

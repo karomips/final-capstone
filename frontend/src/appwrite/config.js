@@ -7,7 +7,9 @@ const appwriteConfig = {
   databaseId: 'main-database', // Your Database ID (create this in Appwrite Console)
   usersCollectionId: 'users', // Users collection ID (create this in Appwrite Console)
   appointmentsCollectionId: 'appointments', // Appointments collection ID (create this in Appwrite Console)
-  bookingsCollectionId: 'bookings' // Bookings collection ID (create this in Appwrite Console)
+  bookingsCollectionId: 'bookings', // Bookings collection ID (create this in Appwrite Console)
+  vehiclesCollectionId: 'vehicles', // Vehicles collection ID (create this in Appwrite Console)
+  instructorsCollectionId: 'instructors' // Instructors collection ID (create this in Appwrite Console)
 };
 
 // Initialize Appwrite Client
@@ -22,6 +24,6 @@ export const account = new Account(client);
 export const databases = new Databases(client);
 
 // Export config for use in other files
-export const { databaseId, usersCollectionId, appointmentsCollectionId, bookingsCollectionId } = appwriteConfig;
+export const { databaseId, usersCollectionId, appointmentsCollectionId, bookingsCollectionId, vehiclesCollectionId, instructorsCollectionId } = appwriteConfig;
 
 export default client;

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { databases, databaseId, bookingsCollectionId } from '../appwrite/config';
+import { databases, databaseId, bookingsCollectionId, instructorsCollectionId, vehiclesCollectionId } from '../appwrite/config';
+import { Query } from 'appwrite';
 import './AdminPages.css';
 
 function AdminDashboard() {
@@ -41,6 +42,68 @@ function AdminDashboard() {
   };
 
   const todayBookings = getTodayBookings();
+
+  const handleMarkBooking = async (booking, newStatus) => {
+    try {
+      // Update booking status
+      await databases.updateDocument(
+        databaseId,
+        bookingsCollectionId,
+        booking.$id,
+        { status: newStatus }
+      );
+
+      // Free up the instructor (set availability back to 'available')
+      try {
+        const instructorQuery = await databases.listDocuments(
+          databaseId,
+          instructorsCollectionId,
+          [Query.equal('name', booking.instructor)]
+        );
+        
+        if (instructorQuery.documents.length > 0) {
+          const instructorDoc = instructorQuery.documents[0];
+          await databases.updateDocument(
+            databaseId,
+            instructorsCollectionId,
+            instructorDoc.$id,
+            { availability: 'available' }
+          );
+        }
+      } catch (error) {
+        console.error('Error updating instructor:', error);
+      }
+
+      // Free up the vehicle (set status back to 'available') - only for practical lessons
+      if (booking.vehicle && booking.vehicle !== 'N/A') {
+        try {
+          const vehicleModel = booking.vehicle.split(' (')[0];
+          const vehicleQuery = await databases.listDocuments(
+            databaseId,
+            vehiclesCollectionId,
+            [Query.equal('model', vehicleModel)]
+          );
+          
+          if (vehicleQuery.documents.length > 0) {
+            const vehicleDoc = vehicleQuery.documents[0];
+            await databases.updateDocument(
+              databaseId,
+              vehiclesCollectionId,
+              vehicleDoc.$id,
+              { status: 'available' }
+            );
+          }
+        } catch (error) {
+          console.error('Error updating vehicle:', error);
+        }
+      }
+
+      // Refresh bookings list
+      fetchBookings();
+    } catch (error) {
+      console.error('Error marking booking:', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -135,18 +198,19 @@ function AdminDashboard() {
                     <th>Instructor</th>
                     <th>Vehicle</th>
                     <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="table-empty">
+                    <td colSpan="6" className="table-empty">
                       Loading bookings...
                     </td>
                   </tr>
                 ) : todayBookings.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="table-empty">
+                    <td colSpan="6" className="table-empty">
                       No bookings for today
                     </td>
                   </tr>
@@ -161,6 +225,35 @@ function AdminDashboard() {
                         <span className={`status-badge-table ${booking.status.toLowerCase()}`}>
                           {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                         </span>
+                      </td>
+                      <td>
+                        {booking.status === 'pending' ? (
+                          <div className="action-buttons">
+                            <button 
+                              className="action-btn done-btn"
+                              onClick={() => handleMarkBooking(booking, 'completed')}
+                              title="Mark as Done"
+                            >
+                              ✓ Done
+                            </button>
+                            <button 
+                              className="action-btn no-show-btn"
+                              onClick={() => handleMarkBooking(booking, 'no-show')}
+                              title="Mark as No Show"
+                            >
+                              ✗ No Show
+                            </button>
+                            <button 
+                              className="action-btn failed-btn"
+                              onClick={() => handleMarkBooking(booking, 'failed')}
+                              title="Mark as Failed"
+                            >
+                              ⚠ Failed
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{fontSize: '12px', color: '#6b7280'}}>Completed</span>
+                        )}
                       </td>
                     </tr>
                   ))

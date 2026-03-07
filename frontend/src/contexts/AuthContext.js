@@ -15,6 +15,13 @@ export function AuthProvider({ children }) {
   // Sign up function
   async function signup(email, password, name = 'User') {
     try {
+      // Try to clear any existing session first
+      try {
+        await account.deleteSession('current');
+      } catch (e) {
+        // No existing session, continue
+      }
+      
       // Create account with Appwrite
       const response = await account.create(
         ID.unique(), // Auto-generate unique ID

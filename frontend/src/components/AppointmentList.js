@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs, updateDoc, doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { databases, databaseId, appointmentsCollectionId, usersCollectionId } from '../appwrite/config';
+import { Query } from 'appwrite';
 import './AppointmentList.css';
 
 function AppointmentList() {
@@ -14,30 +14,34 @@ function AppointmentList() {
 
   const fetchAppointments = async () => {
     try {
-      const appointmentsRef = collection(db, 'appointments');
-      const q = query(appointmentsRef, orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
+      const response = await databases.listDocuments(
+        databaseId,
+        appointmentsCollectionId,
+        [
+          Query.orderDesc('createdAt')
+        ]
+      );
       
       const appointmentsList = await Promise.all(
-        snapshot.docs.map(async (docSnap) => {
-          const appointmentData = docSnap.data();
-          
+        response.documents.map(async (doc) => {
           // Fetch user name
           let userName = 'Unknown User';
-          if (appointmentData.userId) {
+          if (doc.userId) {
             try {
-              const userDoc = await getDoc(doc(db, 'users', appointmentData.userId));
-              if (userDoc.exists()) {
-                userName = userDoc.data().name || 'Unknown User';
-              }
+              const userDoc = await databases.getDocument(
+                databaseId,
+                usersCollectionId,
+                doc.userId
+              );
+              userName = userDoc.name || 'Unknown User';
             } catch (error) {
               console.error('Error fetching user name:', error);
             }
           }
           
           return {
-            id: docSnap.id,
-            ...appointmentData,
+            id: doc.$id,
+            ...doc,
             userName: userName
           };
         })
@@ -54,17 +58,21 @@ function AppointmentList() {
 
   const handleStatusChange = async (appointmentId, newStatus) => {
     try {
-      const appointmentRef = doc(db, 'appointments', appointmentId);
       const updateData = {
         status: newStatus,
-        updatedAt: new Date()
+        updatedAt: new Date().toISOString()
       };
 
       if (newStatus === 'completed') {
-        updateData.completedDate = new Date();
+        updateData.completedDate = new Date().toISOString();
       }
 
-      await updateDoc(appointmentRef, updateData);
+      await databases.updateDocument(
+        databaseId,
+        appointmentsCollectionId,
+        appointmentId,
+        updateData
+      );
       
       // Update local state
       setAppointments(appointments.map(apt => 
@@ -80,7 +88,7 @@ function AppointmentList() {
 
   const formatDate = (timestamp) => {
     if (!timestamp) return 'N/A';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = new Date(timestamp);
     return date.toLocaleDateString('en-US', { 
       year: 'numeric', 
       month: 'short', 
@@ -92,7 +100,7 @@ function AppointmentList() {
 
   const getTimeAgo = (timestamp) => {
     if (!timestamp) return 'Unknown';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = new Date(timestamp);
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
     

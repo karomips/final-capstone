@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { createAppointment } from '../utils/appointmentHelpers';
-import { Timestamp } from 'firebase/firestore';
 import './AppointmentModal.css';
 
 function AppointmentModal({ isOpen, onClose, userId, onSuccess }) {
@@ -48,12 +47,11 @@ function AppointmentModal({ isOpen, onClose, userId, onSuccess }) {
 
     try {
       const appointmentDateTime = new Date(`${formData.date}T${formData.time}`);
-      const appointmentTimestamp = Timestamp.fromDate(appointmentDateTime);
 
       await createAppointment(userId, {
         title: formData.title,
         description: formData.description,
-        date: appointmentTimestamp
+        date: appointmentDateTime.toISOString()
       });
 
       setFormData({ title: '', description: '', date: '', time: '' });

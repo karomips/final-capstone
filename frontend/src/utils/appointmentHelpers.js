@@ -1,22 +1,27 @@
-import { collection, addDoc, updateDoc, doc, Timestamp } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { databases, databaseId, appointmentsCollectionId } from '../appwrite/config';
+import { ID } from 'appwrite';
 
 // Create a new appointment
 export const createAppointment = async (userId, appointmentData) => {
   try {
-    const appointmentsRef = collection(db, 'appointments');
     const appointment = {
       userId,
       title: appointmentData.title || 'Appointment',
       description: appointmentData.description || '',
-      date: appointmentData.date || Timestamp.now(),
+      date: appointmentData.date || new Date().toISOString(),
       status: 'pending',
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     
-    const docRef = await addDoc(appointmentsRef, appointment);
-    return { id: docRef.id, ...appointment };
+    const response = await databases.createDocument(
+      databaseId,
+      appointmentsCollectionId,
+      ID.unique(),
+      appointment
+    );
+    
+    return response;
   } catch (error) {
     console.error('Error creating appointment:', error);
     throw error;
@@ -26,18 +31,23 @@ export const createAppointment = async (userId, appointmentData) => {
 // Update appointment status
 export const updateAppointmentStatus = async (appointmentId, status) => {
   try {
-    const appointmentRef = doc(db, 'appointments', appointmentId);
     const updateData = {
       status,
-      updatedAt: Timestamp.now()
+      updatedAt: new Date().toISOString()
     };
     
     // If marking as completed, add completedDate
     if (status === 'completed') {
-      updateData.completedDate = Timestamp.now();
+      updateData.completedDate = new Date().toISOString();
     }
     
-    await updateDoc(appointmentRef, updateData);
+    await databases.updateDocument(
+      databaseId,
+      appointmentsCollectionId,
+      appointmentId,
+      updateData
+    );
+    
     return true;
   } catch (error) {
     console.error('Error updating appointment:', error);

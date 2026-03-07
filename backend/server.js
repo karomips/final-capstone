@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const admin = require('firebase-admin');
+const { databases, users, databaseId, usersCollectionId, appointmentsCollectionId } = require('./config/appwrite');
 
 // Load environment variables
 dotenv.config();
@@ -14,33 +14,22 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Initialize Firebase Admin
-const serviceAccount = require('./config/serviceAccountKey.json');
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
-});
-
-const db = admin.firestore();
-
 // Test route
 app.get('/api', (req, res) => {
-  res.json({ message: 'Backend API is running!' });
+  res.json({ message: 'Backend API is running with Appwrite!' });
 });
 
 // Example: Get user data
 app.get('/api/users/:uid', async (req, res) => {
   try {
     const { uid } = req.params;
-    const userDoc = await db.collection('users').doc(uid).get();
+    const userDoc = await databases.getDocument(databaseId, usersCollectionId, uid);
     
-    if (!userDoc.exists) {
+    res.json(userDoc);
+  } catch (error) {
+    if (error.code === 404) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
-    res.json({ id: userDoc.id, ...userDoc.data() });
-  } catch (error) {
     console.error('Error fetching user:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -52,9 +41,29 @@ app.post('/api/users/:uid', async (req, res) => {
     const { uid } = req.params;
     const userData = req.body;
     
-    await db.collection('users').doc(uid).set(userData, { merge: true });
-    
-    res.json({ message: 'User profile updated successfully', uid });
+    // Try to update existing document, if not exists, create new one
+    try {
+      const updatedUser = await databases.updateDocument(
+        databaseId,
+        usersCollectionId,
+        uid,
+        userData
+      );
+      res.json({ message: 'User profile updated successfully', user: updatedUser });
+    } catch (error) {
+      if (error.code === 404) {
+        // Document doesn't exist, create it
+        const newUser = await databases.createDocument(
+          databaseId,
+          usersCollectionId,
+          uid,
+          userData
+        );
+        res.json({ message: 'User profile created successfully', user: newUser });
+      } else {
+        throw error;
+      }
+    }
   } catch (error) {
     console.error('Error updating user:', error);
     res.status(500).json({ error: 'Internal server error' });

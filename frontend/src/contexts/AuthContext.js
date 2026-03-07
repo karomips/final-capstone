@@ -1,13 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { 
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup
-} from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { account, databases, databaseId, usersCollectionId } from '../appwrite/config';
+import { ID, OAuthProvider } from 'appwrite';
 
 const AuthContext = createContext();
 
@@ -20,34 +13,113 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   // Sign up function
-  function signup(email, password) {
-    return createUserWithEmailAndPassword(auth, email, password);
+  async function signup(email, password, name = 'User') {
+    try {
+      // Create account with Appwrite
+      const response = await account.create(
+        ID.unique(), // Auto-generate unique ID
+        email,
+        password,
+        name
+      );
+      
+      // Auto-login after signup
+      await account.createEmailPasswordSession(email, password);
+      
+      // Create user document in database with the same ID as auth user
+      try {
+        const userDoc = await databases.createDocument(
+          databaseId,
+          usersCollectionId,
+          response.$id, // Use auth user ID as document ID for consistency
+          {
+            name: name,
+            email: email,
+            role: email === 'admin@gmail.com' ? 'admin' : 'user',
+            approved: email === 'admin@gmail.com' ? true : false,
+            createdAt: new Date().toISOString()
+          }
+        );
+      } catch (dbError) {
+        console.error('Error creating user document:', dbError);
+        // Continue anyway - auth account is created
+      }
+      
+      // Fetch and set current user
+      const user = await account.get();
+      setCurrentUser(user);
+      
+      return response;
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    }
   }
 
   // Login function
-  function login(email, password) {
-    return signInWithEmailAndPassword(auth, email, password);
+  async function login(email, password) {
+    try {
+      // Try to clear any existing session first
+      try {
+        await account.deleteSession('current');
+      } catch (e) {
+        // No existing session, continue
+      }
+      
+      const session = await account.createEmailPasswordSession(email, password);
+      // Fetch user after login
+      const user = await account.get();
+      setCurrentUser(user);
+      return session;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   }
 
   // Logout function
-  function logout() {
-    return signOut(auth);
+  async function logout() {
+    try {
+      await account.deleteSession('current');
+      setCurrentUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
   }
 
   // Google Sign-In function
-  function signInWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    return signInWithPopup(auth, provider);
+  async function signInWithGoogle() {
+    try {
+      // Note: This will redirect to Google OAuth and back
+      // Make sure to configure OAuth provider in Appwrite Console
+      const redirectUrl = `${window.location.origin}/oauth-callback`;
+      account.createOAuth2Session(
+        OAuthProvider.Google,
+        redirectUrl, // Success URL
+        redirectUrl  // Failure URL
+      );
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      throw error;
+    }
   }
 
-  // Listen for auth state changes
+  // Check for existing session on mount
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-    });
+    const checkSession = async () => {
+      try {
+        const user = await account.get();
+        setCurrentUser(user);
+      } catch (error) {
+        // No active session
+        setCurrentUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return unsubscribe;
+    checkSession();
   }, []);
 
   const value = {

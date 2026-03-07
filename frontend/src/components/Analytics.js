@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { databases, databaseId, appointmentsCollectionId } from '../appwrite/config';
+import { Query } from 'appwrite';
 import './Analytics.css';
 
 function Analytics({ userId, isAdmin = false }) {
@@ -18,26 +18,20 @@ function Analytics({ userId, isAdmin = false }) {
 
   const fetchAnalytics = async () => {
     try {
-      const appointmentsRef = collection(db, 'appointments');
-      
       // Query based on user role
-      let q;
-      if (isAdmin) {
-        q = query(appointmentsRef);
-      } else {
-        q = query(appointmentsRef, where('userId', '==', userId));
-      }
+      const queries = isAdmin ? [] : [Query.equal('userId', userId)];
 
-      const snapshot = await getDocs(q);
-      const appointments = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const response = await databases.listDocuments(
+        databaseId,
+        appointmentsCollectionId,
+        queries
+      );
+      
+      const appointments = response.documents;
 
       // Calculate today's date range
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayTimestamp = Timestamp.fromDate(today);
 
       // Calculate analytics
       const total = appointments.length;
@@ -46,7 +40,7 @@ function Analytics({ userId, isAdmin = false }) {
       const todayCompleted = appointments.filter(apt => 
         apt.status === 'completed' && 
         apt.completedDate && 
-        apt.completedDate.toDate() >= today
+        new Date(apt.completedDate) >= today
       ).length;
 
       setAnalytics({

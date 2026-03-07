@@ -1,168 +1,180 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
-import Analytics from './Analytics';
-import AppointmentList from './AppointmentList';
-import './Dashboard.css';
+import { databases, databaseId, bookingsCollectionId } from '../appwrite/config';
+import './AdminPages.css';
 
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
-  const [error, setError] = useState('');
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [userName, setUserName] = useState('');
-  const [showProfile, setShowProfile] = useState(false);
   const navigate = useNavigate();
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setIsDarkMode(true);
-      document.body.classList.add('dark-mode');
-    }
-    
-    // Fetch user name
-    const fetchUserName = async () => {
-      if (currentUser) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-          if (userDoc.exists()) {
-            setUserName(userDoc.data().name);
-          }
-        } catch (error) {
-          console.error('Error fetching user name:', error);
-        }
-      }
-    };
-    
-    fetchUserName();
-  }, [currentUser]);
+    fetchBookings();
+  }, []);
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
-      document.body.classList.add('dark-mode');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.body.classList.remove('dark-mode');
-      localStorage.setItem('theme', 'light');
+  const fetchBookings = async () => {
+    try {
+      const response = await databases.listDocuments(
+        databaseId,
+        bookingsCollectionId
+      );
+      setBookings(response.documents);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Get today's bookings count
+  const getTodayBookings = () => {
+    // Get local date in YYYY-MM-DD format
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const localToday = `${year}-${month}-${day}`;
+    
+    return bookings.filter(booking => booking.date === localToday);
+  };
+
+  const todayBookings = getTodayBookings();
+
   const handleLogout = async () => {
-    setError('');
     try {
       await logout();
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
-      setError('Failed to log out');
     }
   };
 
   return (
-    <div className="dashboard-container">
-      <nav className="dashboard-nav">
-        <div className="nav-brand">
-          <h2>CareConnect Admin Panel</h2>
-          <button onClick={toggleTheme} className="btn-theme-toggle" title="Toggle Theme">
-            {isDarkMode ? '☀️' : '🌙'}
-          </button>
+    <div className="admin-page-container">
+      {/* Sidebar */}
+      <div className="admin-sidebar">
+        <div className="admin-logo-section">
+          <div className="admin-logo">
+            <img src="/api/placeholder/80/80" alt="Logo" />
+          </div>
         </div>
-        <div className="nav-user">
+
+        <div className="admin-nav-buttons">
           <button 
-            onClick={() => setShowProfile(!showProfile)} 
-            className="btn-profile"
-            title="Profile"
+            className="admin-nav-btn active"
+            onClick={() => navigate('/admin')}
           >
-            👑 {userName || 'Admin'}
+            Dashboard
           </button>
-          {showProfile && (
-            <div className="profile-dropdown">
-              <div className="profile-dropdown-header">
-                <h3>Administrator Profile</h3>
-                <button 
-                  onClick={() => setShowProfile(false)} 
-                  className="btn-close-profile"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="profile-dropdown-content">
-                <div className="detail-row">
-                  <span className="detail-label">Name:</span>
-                  <span className="detail-value">{userName || 'Administrator'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Email:</span>
-                  <span className="detail-value">{currentUser?.email}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">User ID:</span>
-                  <span className="detail-value" style={{fontSize: '12px'}}>{currentUser?.uid}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Role:</span>
-                  <span className="status-badge" style={{backgroundColor: '#dc3545'}}>Administrator</span>
-                </div>
-              </div>
-              <div className="profile-dropdown-footer">
-                <button onClick={handleLogout} className="btn-logout-profile">
-                  Logout
-                </button>
-              </div>
+          <button 
+            className="admin-nav-btn"
+            onClick={() => navigate('/admin/students')}
+          >
+            Student Management
+          </button>
+          <button 
+            className="admin-nav-btn"
+            onClick={() => navigate('/admin/instructors')}
+          >
+            Instructors' Profile
+          </button>
+          <button 
+            className="admin-nav-btn"
+            onClick={() => navigate('/admin/vehicles')}
+          >
+            Vehicle Inventory
+          </button>
+        </div>
+
+        <button className="admin-signout-btn" onClick={handleLogout}>
+          Sign out
+        </button>
+      </div>
+
+      {/* Main Content */}
+      <div className="admin-main-content">
+        <h1 className="admin-page-title">Dashboard - Admin Side</h1>
+
+        {/* Stats Cards */}
+        <div className="dashboard-stats">
+          <div className="stat-card">
+            <div className="stat-icon">📅</div>
+            <div className="stat-content">
+              <h3>Today's Lessons</h3>
+              <div className="stat-number">{todayBookings.length} Scheduled</div>
             </div>
-          )}
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">🔍</div>
+            <div className="stat-content">
+              <h3>Available Instructors</h3>
+              <div className="stat-number">7 Active</div>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">👥</div>
+            <div className="stat-content">
+              <h3>New Enrollees (Week)</h3>
+              <div className="stat-number">8</div>
+            </div>
+          </div>
         </div>
-      </nav>
 
-      <div className="dashboard-content">
-        {error && <div className="error-banner">{error}</div>}
-        <div className="welcome-section">
-          <h1>Welcome, {userName || 'Administrator'}!</h1>
-          <p>You have full access to manage the system.</p>
-        </div>
-
-        <Analytics userId={currentUser?.uid} isAdmin={true} />
-
-        <AppointmentList />
-
-        <div className="cards-grid">
-          <div className="info-card">
-            <div className="card-icon">👥</div>
-            <h3>User Management</h3>
-            <p>Manage user accounts and permissions</p>
+        {/* Schedule and SMS Activity */}
+        <div className="dashboard-bottom">
+          <div className="schedule-section">
+            <h2 className="section-title">TODAY'S SCHEDULE ({new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '/')})</h2>
+            <div className="table-wrapper">
+              <table className="schedule-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Student Name</th>
+                    <th>Instructor</th>
+                    <th>Vehicle</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="5" className="table-empty">
+                      Loading bookings...
+                    </td>
+                  </tr>
+                ) : todayBookings.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="table-empty">
+                      No bookings for today
+                    </td>
+                  </tr>
+                ) : (
+                  todayBookings.map((booking) => (
+                    <tr key={booking.$id}>
+                      <td className="time-cell">{booking.time}</td>
+                      <td className="name-cell">{booking.userName}</td>
+                      <td>{booking.instructor}</td>
+                      <td>{booking.vehicle}</td>
+                      <td>
+                        <span className={`status-badge-table ${booking.status.toLowerCase()}`}>
+                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+            </div>
           </div>
 
-          <div className="info-card">
-            <div className="card-icon">📊</div>
-            <h3>Analytics</h3>
-            <p>View system analytics and reports</p>
-          </div>
-
-          <div className="info-card">
-            <div className="card-icon">⚙️</div>
-            <h3>System Settings</h3>
-            <p>Configure system preferences</p>
-          </div>
-
-          <div className="info-card">
-            <div className="card-icon">🔒</div>
-            <h3>Security</h3>
-            <p>Manage security settings and logs</p>
-          </div>
-
-          <div className="info-card">
-            <div className="card-icon">📝</div>
-            <h3>Content Management</h3>
-            <p>Manage content and resources</p>
-          </div>
-
-          <div className="info-card">
-            <div className="card-icon">💬</div>
-            <h3>Messages</h3>
-            <p>View and respond to user messages</p>
+          <div className="sms-section">
+            <h2 className="section-title">RECENT SMS ACTIVITY</h2>
+            <div className="sms-content">
+              {/* SMS activity will be displayed here */}
+            </div>
           </div>
         </div>
       </div>

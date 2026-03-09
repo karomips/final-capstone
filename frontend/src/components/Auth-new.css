@@ -13,11 +13,11 @@
   width: 100%;
   font-family: 'Poppins', -apple-system, sans-serif;
   overflow: hidden;
+  background-color: #f8f9fa; 
 }
 
-/* Left Section: Logo & Tagline */
 .auth-split-left {
-  flex: 1.3;
+  flex: 1.2;
   background-color: #1a2b4b; 
   display: flex;
   flex-direction: column;
@@ -25,27 +25,23 @@
   align-items: center;
   color: white;
   position: relative;
-  padding: 40px;
-  z-index: 1;
+  padding: 13px;
+  z-index: 5;
 
-  /* Add these lines to round the right corners */
-  border-top-right-radius: 300px; 
-  border-bottom-right-radius: 300px;
+  
+  border-top-right-radius: 450px; 
+  border-bottom-right-radius: 450px;
 }
 
-/* If you are using the angled divider (pseudo-element), 
-   you need to round it as well to match */
 .auth-split-left::after {
   content: '';
   position: absolute;
   top: 0;
-  right: -80px;
+  right: -8px;
   height: 100%;
   width: 150px;
   transform: skewX(-10deg);
   z-index: -1;
-  
-  /* Matches the parent rounding */
   border-top-right-radius: 50px;
   border-bottom-right-radius: 50px;
 }
@@ -55,7 +51,7 @@
 }
 
 .auth-logo img {
-  background: white; /* Matches the white box behind the logo in the image */
+  background: white;
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 20px;
@@ -68,15 +64,15 @@
   letter-spacing: 0.5px;
 }
 
-/* Right Section: Form */
-.auth-split-right {
-  flex: 1;
-  background-color: #f8f9fa; /* Light gray from image */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px;
-}
+
+  .auth-split-right {
+    flex: 1;
+    background-color: #f8f9fa; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+  }
 
 .auth-card {
   width: 100%;
@@ -90,7 +86,6 @@
   text-align: center;
 }
 
-/* Form Styles */
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -122,13 +117,19 @@
 }
 
 .auth-form input[type="email"],
-.auth-form input[type="password"] {
+.auth-form input[type="password"],
+.auth-form input[type="text"] {
   width: 100%;
-  padding: 12px 40px;
+  padding: 12px 50px; 
   border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.2s;
+}
+
+.password-hidden {
+  -webkit-text-security: disc;
+  text-security: disc;
 }
 
 .auth-form input:focus {
@@ -144,9 +145,16 @@
   cursor: pointer;
   font-size: 1.2rem;
   color: #333;
+  width: 1.8rem;
+  text-align: center;
+  line-height: 1; 
+  outline: none;
 }
 
-/* Remember Me & Buttons */
+.password-toggle:focus {
+  outline: none;
+}
+
 .remember-me {
   display: flex;
   align-items: center;
@@ -198,12 +206,43 @@
 
 .auth-footer {
   text-align: center;
-  margin-top: 20px;
 }
 
+.auth-form a,
+.auth-footer a {
+  color: var(--primary-blue) !important;
+  text-decoration: none;
+}
+.auth-form a:visited,
+.auth-footer a:visited {
+  color: var(--primary-blue) !important;
+}
+
+.auth-form a:hover,
+.auth-footer a:hover {
+  text-decoration: underline;
+}
+
+.auth-card {
+  position: relative;
+}
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -125px;
+  transform: translateY(-50%);
+  width: 250px;
+  height: 250px;
+  background-color: var(--dark-bg);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+/* footer link should also be primary blue */
 .auth-footer a {
   text-decoration: none;
-  color: var(--text-gray);
+  color: var(--primary-blue);
   font-size: 0.9rem;
   font-weight: 500;
 }

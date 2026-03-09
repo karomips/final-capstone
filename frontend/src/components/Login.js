@@ -113,7 +113,8 @@ function Login() {
               <div className="input-with-icon">
                 <span className="input-icon">🔒</span>
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type="text" /* remain text for stable layout */
+                  className={showPassword ? '' : 'password-hidden'}
                   id="password"
                   placeholder=""
                   value={password}
@@ -123,7 +124,36 @@ function Login() {
                 <button
                   type="button"
                   className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => {
+                    const input = document.getElementById('password');
+                    let saved = null;
+                    if (input) {
+                      saved = {
+                        scroll: input.scrollLeft,
+                        selStart: input.selectionStart,
+                        selEnd: input.selectionEnd,
+                      };
+                    }
+
+                    const newShow = !showPassword;
+                    setShowPassword(newShow);
+
+                    // fallback to type change if text-security isn't supported
+                    if (input && input.style.webkitTextSecurity === undefined) {
+                      input.type = newShow ? 'text' : 'password';
+                    }
+
+                    // restore position after DOM updates
+                    setTimeout(() => {
+                      if (input && saved) {
+                        input.scrollLeft = saved.scroll;
+                        try {
+                          input.setSelectionRange(saved.selStart, saved.selEnd);
+                        } catch {}
+                      }
+                    }, 0);
+                  }}
+                  onMouseDown={(e) => e.preventDefault()}
                 >
                   {showPassword ? '👁' : '👁‍🗨'}
                 </button>

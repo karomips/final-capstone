@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './Auth-new.css';
+import EasyDriveLogo from '../assets/EasyDriveLogo.png';
 
 function Signup() {
   const [name, setName] = useState('');
@@ -78,21 +79,21 @@ function Signup() {
 
   return (
     <div className="auth-container">
-      <div className="auth-split-left">
-        <div className="auth-logo-section">
-          <div className="auth-logo">
-            <div className="auth-logo-text">
-              <span className="easy">EASY DRIVE</span>
-              <span className="drive">DRIVING</span>
-              <span style={{color: '#1e3a5f'}}>SCHOOL</span>
-            </div>
-          </div>
-          <div className="auth-tagline">
-            Drive Smart. Drive Safe.<br />
-            <span style={{fontWeight: '600'}}>Professional Driving Education</span>
-          </div>
+          <div className="auth-split-left">
+      <div className="auth-logo-section">
+        <div className="auth-logo">
+          <img 
+            src={EasyDriveLogo} alt="Easy Drive Driving School Logo" 
+            style={{ width: '500%', height: 'auto', maxWidth: '250px' }} 
+          />
+        </div>
+    
+        <div className="auth-tagline">
+          Drive Smart. Drive Safe.<br />
+          <span style={{ fontWeight: '600' }}>Professional Driving Education</span>
         </div>
       </div>
+    </div>
 
       <div className="auth-split-right">
         <div className="auth-card">

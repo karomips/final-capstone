@@ -18,7 +18,9 @@ Go to: https://cloud.appwrite.io/console/project-69ac803a001c47a4f8c3
 - [ ] Created `users` collection with attributes:
   - [ ] name (String, 255)
   - [ ] email (String, 255, required)
+  - [ ] phoneNumber (String, 20, required)
   - [ ] role (String, 50, default: "user")
+  - [ ] approved (Boolean, required, default: false)
   - [ ] createdAt (String, 50)
 - [ ] Set permissions on `users` collection:
   - [ ] Read: Role "Any"

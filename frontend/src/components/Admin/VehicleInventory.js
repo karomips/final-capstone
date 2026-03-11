@@ -1,41 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { databases, databaseId, instructorsCollectionId } from '../appwrite/config';
+import { useAuth } from '../../contexts/AuthContext';
+import { databases, databaseId, vehiclesCollectionId } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import './AdminPages.css';
 
-function InstructorsProfile() {
+function VehicleInventory() {
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const [instructors, setInstructors] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    certifications: '',
-    availability: 'available',
-    lessonType: 'practical'
+    plateNumber: '',
+    model: '',
+    transmission: 'MT',
+    status: 'available',
+    imageUrl: ''
   });
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchInstructors();
+    fetchVehicles();
   }, []);
 
-  const fetchInstructors = async () => {
+  const fetchVehicles = async () => {
     try {
       setLoading(true);
       const response = await databases.listDocuments(
         databaseId,
-        instructorsCollectionId,
+        vehiclesCollectionId,
         [Query.orderDesc('$createdAt')]
       );
-      setInstructors(response.documents);
+      setVehicles(response.documents);
     } catch (error) {
-      console.error('Error fetching instructors:', error);
+      console.error('Error fetching vehicles:', error);
       // If collection doesn't exist, show empty state
-      setInstructors([]);
+      setVehicles([]);
     } finally {
       setLoading(false);
     }
@@ -53,7 +54,7 @@ function InstructorsProfile() {
     e.preventDefault();
     setError('');
 
-    if (!formData.name.trim() || !formData.certifications.trim()) {
+    if (!formData.plateNumber.trim() || !formData.model.trim()) {
       setError('Please fill in all required fields');
       return;
     }
@@ -61,48 +62,50 @@ function InstructorsProfile() {
     try {
       await databases.createDocument(
         databaseId,
-        instructorsCollectionId,
+        vehiclesCollectionId,
         ID.unique(),
         {
-          name: formData.name.trim(),
-          certifications: formData.certifications.trim(),
-          availability: formData.availability,
-          lessonType: formData.lessonType,
+          plateNumber: formData.plateNumber.trim(),
+          model: formData.model.trim(),
+          transmission: formData.transmission,
+          status: formData.status,
+          imageUrl: formData.imageUrl.trim() || 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop',
           createdAt: new Date().toISOString()
         }
       );
 
       // Reset form and close modal
       setFormData({
-        name: '',
-        certifications: '',
-        availability: 'available',
-        lessonType: 'practical'
+        plateNumber: '',
+        model: '',
+        transmission: 'MT',
+        status: 'available',
+        imageUrl: ''
       });
       setShowModal(false);
       
-      // Refresh instructors list
-      fetchInstructors();
+      // Refresh vehicles list
+      fetchVehicles();
     } catch (error) {
-      console.error('Error adding instructor:', error);
-      setError(error.message || 'Failed to add instructor. Please try again.');
+      console.error('Error adding vehicle:', error);
+      setError(error.message || 'Failed to add vehicle. Please try again.');
     }
   };
 
-  const handleAvailabilityChange = async (instructorId, newAvailability) => {
+  const handleStatusChange = async (vehicleId, newStatus) => {
     try {
       await databases.updateDocument(
         databaseId,
-        instructorsCollectionId,
-        instructorId,
-        { availability: newAvailability }
+        vehiclesCollectionId,
+        vehicleId,
+        { status: newStatus }
       );
       // Update local state
-      setInstructors(prev => prev.map(i => 
-        i.$id === instructorId ? { ...i, availability: newAvailability } : i
+      setVehicles(prev => prev.map(v => 
+        v.$id === vehicleId ? { ...v, status: newStatus } : v
       ));
     } catch (error) {
-      console.error('Error updating availability:', error);
+      console.error('Error updating status:', error);
     }
   };
 
@@ -139,16 +142,22 @@ function InstructorsProfile() {
             Student Management
           </button>
           <button 
-            className="admin-nav-btn active"
+            className="admin-nav-btn"
             onClick={() => navigate('/admin/instructors')}
           >
             Instructors' Profile
           </button>
           <button 
-            className="admin-nav-btn"
+            className="admin-nav-btn active"
             onClick={() => navigate('/admin/vehicles')}
           >
             Vehicle Inventory
+          </button>
+          <button 
+            className="admin-nav-btn"
+            onClick={() => navigate('/admin/sms-monitoring')}
+          >
+            SMS Monitoring
           </button>
         </div>
 
@@ -160,46 +169,50 @@ function InstructorsProfile() {
       {/* Main Content */}
       <div className="admin-main-content">
         <div className="page-header">
-          <h1 className="admin-page-title">Instructors' Profile - Admin Side</h1>
+          <h1 className="admin-page-title">Vehicle Inventory</h1>
           <button className="add-btn" onClick={() => setShowModal(true)}>
-            + Add Instructor
+            + Add Vehicle
           </button>
         </div>
 
         {loading ? (
-          <div className="loading">Loading instructors...</div>
-        ) : instructors.length === 0 ? (
+          <div className="loading">Loading vehicles...</div>
+        ) : vehicles.length === 0 ? (
           <div className="empty-state">
-            <p>No instructors added yet. Click "Add Instructor" to get started.</p>
+            <p>No vehicles added yet. Click "Add Vehicle" to get started.</p>
           </div>
         ) : (
           <>
-            <div className="instructors-grid">
-              {instructors.map((instructor) => (
-                <div key={instructor.$id} className="instructor-card">
-                  <div className="instructor-avatar">👤</div>
-                  <div className="instructor-info">
-                    <h3>{instructor.name}</h3>
-                    <div className="instructor-cert">
-                      <strong>Teaches:</strong> {instructor.lessonType === 'both' ? 'Theory & Practical' : instructor.lessonType === 'theory' ? 'Theory Class' : 'Practical Lesson'}<br />
-                      <strong>Certifications:</strong><br />
-                      {instructor.certifications}
+            <div className="vehicles-grid">
+              {vehicles.map((vehicle) => (
+                <div key={vehicle.$id} className="vehicle-card">
+                  <div className="vehicle-image">
+                    <img src={vehicle.imageUrl} alt="Vehicle" />
+                  </div>
+                  <div className="vehicle-info">
+                    <h3>Model: {vehicle.model}</h3>
+                    <div className="vehicle-details">Plate Number: {vehicle.plateNumber}</div>
+                    <div className="vehicle-badges">
+                      <span className={`transmission-badge ${vehicle.transmission.toLowerCase()}`}>
+                        {vehicle.transmission}
+                      </span>
                     </div>
-                    <div className="availability-dropdown-container">
-                      <label>Availability:</label>
+                    <div className="status-dropdown-container">
+                      <label>Status:</label>
                       <select 
-                        value={instructor.availability || 'available'}
-                        onChange={(e) => handleAvailabilityChange(instructor.$id, e.target.value)}
-                        className="inline-availability-select"
-                        disabled={instructor.availability === 'booked'}
+                        value={vehicle.status || 'available'}
+                        onChange={(e) => handleStatusChange(vehicle.$id, e.target.value)}
+                        className="inline-status-select"
+                        disabled={vehicle.status === 'booked'}
                       >
                         <option value="available">Available</option>
-                        <option value="on-leave">On Leave</option>
+                        <option value="due-service">Due for Service</option>
+                        <option value="maintenance">Maintenance</option>
                       </select>
-                      {instructor.availability === 'booked' && (
+                      {vehicle.status === 'booked' && (
                         <span style={{color: '#166534', fontSize: '11px', marginLeft: '8px', fontWeight: '600'}}>Booked</span>
                       )}
-                      {instructor.availability === 'booked' && (
+                      {vehicle.status === 'booked' && (
                         <small style={{color: '#dc2626', fontSize: '11px', marginTop: '4px', display: 'block'}}>Locked until lesson completed</small>
                       )}
                     </div>
@@ -216,12 +229,12 @@ function InstructorsProfile() {
           </>
         )}
 
-        {/* Add Instructor Modal */}
+        {/* Add Vehicle Modal */}
         {showModal && (
           <div className="modal-overlay" onClick={() => setShowModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>Add New Instructor</h2>
+                <h2>Add New Vehicle</h2>
                 <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
               </div>
               
@@ -229,55 +242,67 @@ function InstructorsProfile() {
                 {error && <div className="error-message">{error}</div>}
                 
                 <div className="form-group">
-                  <label>Instructor Name *</label>
+                  <label>Plate Number *</label>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name}
+                    name="plateNumber"
+                    value={formData.plateNumber}
                     onChange={handleInputChange}
-                    placeholder="e.g., John Doe"
+                    placeholder="e.g., ABC-1234"
                     required
                   />
                 </div>
 
                 <div className="form-group">
-                  <label>Certifications *</label>
-                  <textarea
-                    name="certifications"
-                    value={formData.certifications}
+                  <label>Car Model *</label>
+                  <input
+                    type="text"
+                    name="model"
+                    value={formData.model}
                     onChange={handleInputChange}
-                    placeholder="e.g., Manual Transmission, Automatic Transmission, Defensive Driving"
-                    rows="4"
+                    placeholder="e.g., Toyota Corolla 2024"
                     required
                   />
                 </div>
 
                 <div className="form-group">
-                  <label>Teaches *</label>
+                  <label>Transmission Type *</label>
                   <select
-                    name="lessonType"
-                    value={formData.lessonType}
+                    name="transmission"
+                    value={formData.transmission}
                     onChange={handleInputChange}
                     required
                   >
-                    <option value="practical">Practical Lesson</option>
-                    <option value="theory">Theory Class</option>
-                    <option value="both">Both Theory & Practical</option>
+                    <option value="MT">MT (Manual Transmission)</option>
+                    <option value="AT">AT (Automatic Transmission)</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Availability *</label>
+                  <label>Status *</label>
                   <select
-                    name="availability"
-                    value={formData.availability}
+                    name="status"
+                    value={formData.status}
                     onChange={handleInputChange}
                     required
                   >
                     <option value="available">Available</option>
-                    <option value="on-leave">On Leave</option>
+                    <option value="due-service">Due for Service</option>
+                    <option value="maintenance">Maintenance</option>
                   </select>
-                  <small>Note: Instructors are automatically set to "Booked" when a user books them</small>
+                  <small>Note: Vehicles are automatically set to "Booked" when a user books them</small>
+                </div>
+
+                <div className="form-group">
+                  <label>Image URL (Optional)</label>
+                  <input
+                    type="url"
+                    name="imageUrl"
+                    value={formData.imageUrl}
+                    onChange={handleInputChange}
+                    placeholder="https://example.com/car-image.jpg"
+                  />
+                  <small>Leave empty to use default image</small>
                 </div>
 
                 <div className="modal-actions">
@@ -285,7 +310,7 @@ function InstructorsProfile() {
                     Cancel
                   </button>
                   <button type="submit" className="btn-submit">
-                    Add Instructor
+                    Add Vehicle
                   </button>
                 </div>
               </form>
@@ -297,4 +322,4 @@ function InstructorsProfile() {
   );
 }
 
-export default InstructorsProfile;
+export default VehicleInventory;

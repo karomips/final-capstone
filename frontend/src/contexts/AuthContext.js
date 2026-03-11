@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   // Sign up function
-  async function signup(email, password, name = 'User') {
+  async function signup(email, password, name = 'User', phoneNumber = '') {
     try {
       // Try to clear any existing session first
       try {
@@ -35,21 +35,34 @@ export function AuthProvider({ children }) {
       
       // Create user document in database with the same ID as auth user
       try {
+        console.log('Creating user document in database...');
+        console.log('User data:', { name, email, phoneNumber, role: email === 'admin@gmail.com' ? 'admin' : 'user' });
+        
+        const userData = {
+          name: name,
+          email: email,
+          role: email === 'admin@gmail.com' ? 'admin' : 'user',
+          approved: email === 'admin@gmail.com' ? true : false,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Only add phoneNumber if provided and attribute exists
+        if (phoneNumber) {
+          userData.phoneNumber = phoneNumber;
+        }
+        
         const userDoc = await databases.createDocument(
           databaseId,
           usersCollectionId,
           response.$id, // Use auth user ID as document ID for consistency
-          {
-            name: name,
-            email: email,
-            role: email === 'admin@gmail.com' ? 'admin' : 'user',
-            approved: email === 'admin@gmail.com' ? true : false,
-            createdAt: new Date().toISOString()
-          }
+          userData
         );
+        console.log('User document created successfully:', userDoc);
       } catch (dbError) {
         console.error('Error creating user document:', dbError);
-        // Continue anyway - auth account is created
+        console.error('Error details:', dbError.message, dbError.code, dbError.type);
+        // This is critical - throw error so user knows
+        throw new Error('Account created but failed to save user details: ' + dbError.message);
       }
       
       // Fetch and set current user

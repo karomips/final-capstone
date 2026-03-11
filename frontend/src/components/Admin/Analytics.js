@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { databases, databaseId, appointmentsCollectionId } from '../appwrite/config';
+import { databases, databaseId, appointmentsCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import './Analytics.css';
 

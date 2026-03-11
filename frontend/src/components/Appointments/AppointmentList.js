@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { databases, databaseId, appointmentsCollectionId, usersCollectionId } from '../appwrite/config';
+import { databases, databaseId, appointmentsCollectionId, usersCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import './AppointmentList.css';
 
@@ -90,6 +90,7 @@ function AppointmentList() {
     if (!timestamp) return 'N/A';
     const date = new Date(timestamp);
     return date.toLocaleDateString('en-US', { 
+      timeZone: 'Asia/Manila',
       year: 'numeric', 
       month: 'short', 
       day: 'numeric',

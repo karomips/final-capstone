@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createAppointment } from '../utils/appointmentHelpers';
+import { createAppointment } from '../../utils/appointmentHelpers';
 import './AppointmentModal.css';
 
 function AppointmentModal({ isOpen, onClose, userId, onSuccess }) {

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId, instructorsCollectionId } from '../appwrite/config';
+import { useAuth } from '../../contexts/AuthContext';
+import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId, instructorsCollectionId } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import './UserPages.css';
 
@@ -21,34 +21,27 @@ function BookLesson() {
   const [instructors, setInstructors] = useState([]);
   const [vehicles, setVehicles] = useState([]);
 
-  useEffect(() => {
-    if (currentUser) {
-      checkUserApproval();
-      fetchInstructors();
-      fetchVehicles();
-    }
-  }, [currentUser]);
-
-  // Re-fetch instructors when lesson type changes
-  useEffect(() => {
-    if (currentUser) {
-      fetchInstructors();
-    }
-  }, [selectedLesson, currentUser]);
-
-  // Re-check approval when component gains focus
-  useEffect(() => {
-    const handleFocus = () => {
-      if (currentUser) {
-        checkUserApproval();
+  const checkUserApproval = useCallback(async () => {
+    try {
+      const userDoc = await databases.getDocument(
+        databaseId,
+        usersCollectionId,
+        currentUser.$id
+      );
+      setIsApproved(userDoc.approved || false);
+      // Clear any previous approval-related errors
+      if (userDoc.approved) {
+        setError('');
       }
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    } catch (error) {
+      console.error('Error checking approval:', error);
+      setIsApproved(false);
+    } finally {
+      setCheckingApproval(false);
+    }
   }, [currentUser]);
 
-  const fetchInstructors = async () => {
+  const fetchInstructors = useCallback(async () => {
     try {
       // Fetch all available instructors
       const response = await databases.listDocuments(
@@ -68,9 +61,9 @@ function BookLesson() {
       console.error('Error fetching instructors:', error);
       setInstructors([]);
     }
-  };
+  }, [selectedLesson]);
 
-  const fetchVehicles = async () => {
+  const fetchVehicles = useCallback(async () => {
     try {
       const response = await databases.listDocuments(
         databaseId,
@@ -82,27 +75,34 @@ function BookLesson() {
       console.error('Error fetching vehicles:', error);
       setVehicles([]);
     }
-  };
+  }, []);
 
-  const checkUserApproval = async () => {
-    try {
-      const userDoc = await databases.getDocument(
-        databaseId,
-        usersCollectionId,
-        currentUser.$id
-      );
-      setIsApproved(userDoc.approved || false);
-      // Clear any previous approval-related errors
-      if (userDoc.approved) {
-        setError('');
-      }
-    } catch (error) {
-      console.error('Error checking approval:', error);
-      setIsApproved(false);
-    } finally {
-      setCheckingApproval(false);
+  useEffect(() => {
+    if (currentUser) {
+      checkUserApproval();
+      fetchInstructors();
+      fetchVehicles();
     }
-  };
+  }, [currentUser, checkUserApproval, fetchInstructors, fetchVehicles]);
+
+  // Re-fetch instructors when lesson type changes
+  useEffect(() => {
+    if (currentUser) {
+      fetchInstructors();
+    }
+  }, [selectedLesson, currentUser, fetchInstructors]);
+
+  // Re-check approval when component gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (currentUser) {
+        checkUserApproval();
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [currentUser, checkUserApproval]);
 
   const handleLogout = async () => {
     try {
@@ -139,6 +139,7 @@ function BookLesson() {
     
     try {
       // Create booking in database
+      console.log('Creating booking with date:', date);
       await databases.createDocument(
         databaseId,
         bookingsCollectionId,
@@ -156,6 +157,7 @@ function BookLesson() {
           createdAt: new Date().toISOString()
         }
       );
+      console.log('Booking created successfully with date:', date);
 
       // Update instructor availability to "booked"
       try {
@@ -246,6 +248,12 @@ function BookLesson() {
             onClick={() => navigate('/book-lesson')}
           >
             Book a Lesson
+          </button>
+          <button 
+            className="user-nav-btn"
+            onClick={() => navigate('/profile')}
+          >
+            My Profile
           </button>
         </div>
 

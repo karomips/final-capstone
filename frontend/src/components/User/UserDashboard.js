@@ -1,23 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { databases, databaseId, bookingsCollectionId } from '../appwrite/config';
+import { useAuth } from '../../contexts/AuthContext';
+import { databases, databaseId, bookingsCollectionId, usersCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import './UserPages.css';
 
 function UserDashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [userName, setUserName] = useState('');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('User');
 
   useEffect(() => {
     const fetchUserData = async () => {
       if (currentUser) {
         try {
-          // Set user name from currentUser
-          setUserName(currentUser.name || currentUser.email);
+          // Fetch user name from database
+          const usersResponse = await databases.listDocuments(
+            databaseId,
+            usersCollectionId
+          );
+          const user = usersResponse.documents.find(doc => doc.email === currentUser.email);
+          if (user?.name) {
+            setUserName(user.name);
+          }
 
           // Fetch user's bookings
           console.log('Fetching bookings for user:', currentUser.$id);
@@ -74,6 +81,12 @@ function UserDashboard() {
           >
             Book a Lesson
           </button>
+          <button 
+            className="user-nav-btn"
+            onClick={() => navigate('/profile')}
+          >
+            My Profile
+          </button>
         </div>
 
         <button className="user-signout-btn" onClick={handleLogout}>
@@ -83,7 +96,7 @@ function UserDashboard() {
 
       {/* Main Content */}
       <div className="user-main-content">
-        <h1 className="page-title">Dashboard - User Side</h1>
+        <h1 className="page-title">Welcome, {userName}</h1>
 
         <div className="dashboard-grid">
           {/* Next Lesson Card */}
@@ -98,7 +111,7 @@ function UserDashboard() {
               ) : bookings.length > 0 ? (
                 <>
                   <div className="lesson-date">
-                    {new Date(bookings[0].date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} | {bookings[0].time}
+                    {new Date(bookings[0].date).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric' }).toUpperCase()} | {bookings[0].time}
                   </div>
                   <div className="lesson-instructor">Instructor: {bookings[0].instructor}</div>
                   <div className="lesson-vehicle">Vehicle: {bookings[0].vehicle}</div>
@@ -136,7 +149,7 @@ function UserDashboard() {
                   <div key={booking.$id} className="schedule-item">
                     <div className="schedule-info">
                       <span className="schedule-date">
-                        [{new Date(booking.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} | {booking.time}]
+                        [{new Date(booking.date).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric' }).toUpperCase()} | {booking.time}]
                       </span>
                       <span className="schedule-type">{booking.lessonType === 'practical' ? 'Practical Lesson' : 'Theory Class'}</span>
                     </div>

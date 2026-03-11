@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import './Auth-new.css';
-import EasyDriveLogo from '../assets/EasyDriveLogo.png';
+import { useAuth } from '../../contexts/AuthContext';
+import './Auth.css';
+import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function Login() {
   const [email, setEmail] = useState('');

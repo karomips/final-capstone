@@ -1,16 +1,18 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import Login from './components/Login';
-import Signup from './components/Signup';
-import Dashboard from './components/Dashboard';
-import AdminDashboard from './components/AdminDashboard';
-import StudentManagement from './components/StudentManagement';
-import InstructorsProfile from './components/InstructorsProfile';
-import VehicleInventory from './components/VehicleInventory';
-import UserDashboard from './components/UserDashboard';
-import BookLesson from './components/BookLesson';
-import PrivateRoute from './components/PrivateRoute';
+import Login from './components/Auth/Login';
+import Signup from './components/Auth/Signup';
+import Dashboard from './components/User/Dashboard';
+import AdminDashboard from './components/Admin/AdminDashboard';
+import StudentManagement from './components/Admin/StudentManagement';
+import InstructorsProfile from './components/Admin/InstructorsProfile';
+import VehicleInventory from './components/Admin/VehicleInventory';
+import SMSMonitoring from './components/Admin/SMSMonitoring';
+import UserDashboard from './components/User/UserDashboard';
+import BookLesson from './components/User/BookLesson';
+import Profile from './components/User/Profile';
+import PrivateRoute from './components/Shared/PrivateRoute';
 import './App.css';
 
 function App() {
@@ -54,6 +56,14 @@ function App() {
               } 
             />
             <Route 
+              path="/admin/sms-monitoring" 
+              element={
+                <PrivateRoute>
+                  <SMSMonitoring />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
               path="/user-dashboard" 
               element={
                 <PrivateRoute>
@@ -66,6 +76,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <BookLesson />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <PrivateRoute>
+                  <Profile />
                 </PrivateRoute>
               } 
             />

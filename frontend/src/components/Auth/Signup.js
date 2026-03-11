@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import './Auth-new.css';
-import EasyDriveLogo from '../assets/EasyDriveLogo.png';
+import { useAuth } from '../../contexts/AuthContext';
+import './Auth.css';
+import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signup, signInWithGoogle } = useAuth();
@@ -21,8 +21,16 @@ function Signup() {
     setLoading(true);
 
     // Basic validation
-    if (!name || !email || !password) {
+    if (!name || !email || !phoneNumber || !password) {
       setError('Please fill in all fields');
+      setLoading(false);
+      return;
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^(09|\+639|639)\d{9}$/;
+    if (!phoneRegex.test(phoneNumber.replace(/\s/g, ''))) {
+      setError('Please enter a valid Philippine phone number (e.g., 09123456789)');
       setLoading(false);
       return;
     }
@@ -35,7 +43,19 @@ function Signup() {
 
     try {
       // Create Appwrite account (this will also auto-login and create user document)
-      await signup(email, password, name);
+      console.log('Starting signup process...');
+      const result = await signup(email, password, name, phoneNumber);
+      console.log('Signup successful, user ID:', result.$id);
+      
+      // Verify the document was created by fetching it
+      const { databases, databaseId, usersCollectionId } = await import('../../appwrite/config');
+      try {
+        const userDoc = await databases.getDocument(databaseId, usersCollectionId, result.$id);
+        console.log('✓ User document verified in database:', userDoc);
+      } catch (verifyError) {
+        console.error('✗ Could not verify user document:', verifyError);
+        alert('Account created but may not appear in admin panel. Please contact administrator.');
+      }
       
       // Check if user is admin
       if (email === 'admin@gmail.com') {
@@ -132,6 +152,22 @@ function Signup() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="phoneNumber">Phone Number</label>
+              <div className="input-with-icon">
+                <span className="input-icon">📱</span>
+                <input
+                  type="tel"
+                  id="phoneNumber"
+                  placeholder="09123456789"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required
+                />
+              </div>
+              <small style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px', display: 'block' }}>Required for SMS appointment reminders</small>
             </div>
 
             <div className="form-group">

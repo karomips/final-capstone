@@ -1,10 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { databases, users, databaseId, usersCollectionId, appointmentsCollectionId } = require('./config/appwrite');
 
-// Load environment variables
+// Load environment variables FIRST before requiring other modules
 dotenv.config();
+
+const { databases, users, databaseId, usersCollectionId, appointmentsCollectionId, bookingsCollectionId } = require('./config/appwrite');
+const smsService = require('./services/smsService');
+const { startAutomaticSMSScheduler } = require('./services/smsScheduler');
 
 // Initialize Express
 const app = express();
@@ -70,7 +73,142 @@ app.post('/api/users/:uid', async (req, res) => {
   }
 });
 
+// SMS Routes
+
+// Send appointment confirmation SMS
+app.post('/api/sms/appointment-confirmation', async (req, res) => {
+  try {
+    const { phoneNumber, appointmentData } = req.body;
+    
+    if (!phoneNumber || !appointmentData) {
+      return res.status(400).json({ error: 'Phone number and appointment data are required' });
+    }
+
+    const result = await smsService.sendAppointmentConfirmation(phoneNumber, appointmentData);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    res.status(500).json({ error: 'Failed to send SMS' });
+  }
+});
+
+// Send appointment reminder SMS
+app.post('/api/sms/appointment-reminder', async (req, res) => {
+  try {
+    const { phoneNumber, appointmentData } = req.body;
+    
+    if (!phoneNumber || !appointmentData) {
+      return res.status(400).json({ error: 'Phone number and appointment data are required' });
+    }
+
+    const result = await smsService.sendAppointmentReminder(phoneNumber, appointmentData);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    res.status(500).json({ error: 'Failed to send SMS' });
+  }
+});
+
+// Send appointment cancellation SMS
+app.post('/api/sms/appointment-cancellation', async (req, res) => {
+  try {
+    const { phoneNumber, appointmentData } = req.body;
+    
+    if (!phoneNumber || !appointmentData) {
+      return res.status(400).json({ error: 'Phone number and appointment data are required' });
+    }
+
+    const result = await smsService.sendAppointmentCancellation(phoneNumber, appointmentData);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    res.status(500).json({ error: 'Failed to send SMS' });
+  }
+});
+
+// Send appointment reschedule SMS
+app.post('/api/sms/appointment-reschedule', async (req, res) => {
+  try {
+    const { phoneNumber, appointmentData } = req.body;
+    
+    if (!phoneNumber || !appointmentData) {
+      return res.status(400).json({ error: 'Phone number and appointment data are required' });
+    }
+
+    const result = await smsService.sendAppointmentReschedule(phoneNumber, appointmentData);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    res.status(500).json({ error: 'Failed to send SMS' });
+  }
+});
+
+// Send custom SMS
+app.post('/api/sms/send', async (req, res) => {
+  try {
+    const { phoneNumber, message } = req.body;
+    
+    if (!phoneNumber || !message) {
+      return res.status(400).json({ error: 'Phone number and message are required' });
+    }
+
+    const result = await smsService.sendSMS(phoneNumber, message);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    res.status(500).json({ error: 'Failed to send SMS' });
+  }
+});
+
+// Check SMS balance - DISABLED (not needed for this application)
+// app.get('/api/sms/balance', async (req, res) => {
+//   try {
+//     const result = await smsService.checkBalance();
+//     
+//     if (result.success) {
+//       res.json(result);
+//     } else {
+//       res.status(500).json(result);
+//     }
+//   } catch (error) {
+//     console.error('Error checking SMS balance:', error);
+//     res.status(500).json({ error: 'Failed to check balance' });
+//   }
+// });
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`\n🚀 SMS Features Enabled:`);
+  console.log(`   ✓ Manual SMS sending via API endpoints`);
+  console.log(`   ✓ Automatic reminders 1 hour before appointments`);
+  console.log(`   ✓ Checking for reminders every 5 minutes\n`);
+  
+  // Start automatic SMS scheduler
+  startAutomaticSMSScheduler(bookingsCollectionId, usersCollectionId);
 });

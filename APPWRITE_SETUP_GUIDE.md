@@ -30,7 +30,9 @@ Your application has been successfully migrated from Firebase to Appwrite! Follo
    - Add the following attributes:
      * `name` (String, size: 255, required)
      * `email` (String, size: 255, required)
+     * `phoneNumber` (String, size: 20, required)
      * `role` (String, size: 50, default: "user")
+     * `approved` (Boolean, required, default: false)
      * `createdAt` (String, size: 50)
    
    - **Set Permissions**:

@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, usersCollectionId } from '../../appwrite/config';
 import './AdminPages.css';
+import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function StudentManagement() {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -179,43 +181,51 @@ function StudentManagement() {
 
   return (
     <div className="admin-page-container">
-      {/* Sidebar */}
-      <div className="admin-sidebar">
-        <div className="admin-logo-section">
-          <div className="admin-logo">
-            <img src="/api/placeholder/80/80" alt="Logo" />
-          </div>
-        </div>
+      <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+        ☰
+      </button>
+          {/* Sidebar */}
+          <div className={`admin-sidebar ${sidebarOpen ? '' : 'closed'}`}>
+            <div className="admin-logo-section">
+              <div className="admin-logo">
+                <img src={EasyDriveLogo} alt="Easy Drive Logo" />
+              </div>
+            </div>
 
         <div className="admin-nav-buttons">
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin')}
           >
+            <span className="nav-icon">🏠</span>
             Dashboard
           </button>
           <button 
             className="admin-nav-btn active"
             onClick={() => navigate('/admin/students')}
           >
+            <span className="nav-icon">👥</span>
             Student Management
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/instructors')}
           >
+            <span className="nav-icon">👨‍🏫</span>
             Instructors' Profile
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/vehicles')}
           >
+            <span className="nav-icon">🚗</span>
             Vehicle Inventory
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/sms-monitoring')}
           >
+            <span className="nav-icon">💬</span>
             SMS Monitoring
           </button>
         </div>
@@ -236,8 +246,9 @@ function StudentManagement() {
               background: '#5a9cf8',
               color: 'white',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: '15px',
               cursor: 'pointer',
+              fontFamily: 'Poppins',
               fontSize: '14px',
               fontWeight: '500',
               display: 'flex',

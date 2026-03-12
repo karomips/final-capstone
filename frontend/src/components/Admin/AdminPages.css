@@ -2,7 +2,7 @@
 .admin-page-container {
   display: flex;
   min-height: 100vh;
-  background: #f5f5f5;
+  background: #dce6da;
   font-family: 'Poppins', sans-serif;
   position: fixed;
   top: 0;
@@ -14,14 +14,71 @@
 
 /* Sidebar Styles */
 .admin-sidebar {
-  width: 180px;
+  width: 230px;
   background: #1e3a5f;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 30px 15px;
+  padding: 30px 20px;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   height: 100vh;
+  transition: transform 0.3s;
+}
+
+.admin-main-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin-left: 220px;
+  transition: margin-left 0.3s;
+}
+
+.admin-sidebar.closed + .admin-main-content {
+  margin-left: 0;
+}
+
+.admin-sidebar.closed {
+  transform: translateX(-100%);
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.admin-sidebar.closed .admin-logo-section,
+.admin-sidebar.closed .admin-nav-buttons,
+.admin-sidebar.closed .admin-signout-btn {
+  display: none;
+}
+/* hamburger icon button */
+.hamburger-btn {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1500;
+}
+
+/* adjust main content when sidebar hidden */
+.admin-main-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin-left: 0px;
+  transition: margin-left 0.3s;
+}
+
+.admin-sidebar.closed + .admin-main-content {
+  margin-left: 0;
 }
 
 .admin-logo-section {
@@ -59,17 +116,24 @@
 
 .admin-nav-btn {
   width: 100%;
-  padding: 12px 20px;
+  padding: 16px 24px;
   background: transparent;
   color: white;
   border: 2px solid transparent;
   border-radius: 25px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
   font-family: inherit;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.admin-nav-btn .nav-icon {
+  font-size: 1.2rem;
 }
 
 .admin-nav-btn:hover {
@@ -900,6 +964,8 @@
   align-items: center;
   margin-bottom: 30px;
 }
+
+
 
 .add-btn {
   padding: 12px 24px;

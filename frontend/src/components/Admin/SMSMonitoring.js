@@ -6,6 +6,7 @@ import { Query } from 'appwrite';
 import smsHelper from '../../utils/smsHelper';
 import './AdminPages.css';
 import './SMSMonitoring.css';
+import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 // Utility function to format timestamps in Philippine Time (UTC+8)
 const formatPhilippineTime = (timestamp) => {
@@ -29,6 +30,7 @@ const formatPhilippineTime = (timestamp) => {
 function SMSMonitoring() {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingStatus, setSendingStatus] = useState({});
@@ -258,43 +260,51 @@ function SMSMonitoring() {
 
   return (
     <div className="admin-page-container">
-      {/* Sidebar */}
-      <div className="admin-sidebar">
-        <div className="admin-logo-section">
-          <div className="admin-logo">
-            <img src="/api/placeholder/80/80" alt="Logo" />
-          </div>
-        </div>
+      <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+        ☰
+      </button>
+                  {/* Sidebar */}
+                  <div className={`admin-sidebar ${sidebarOpen ? '' : 'closed'}`}>
+                    <div className="admin-logo-section">
+                      <div className="admin-logo">
+                        <img src={EasyDriveLogo} alt="Easy Drive Logo" />
+                      </div>
+                    </div>
 
         <div className="admin-nav-buttons">
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin')}
           >
+            <span className="nav-icon">🏠</span>
             Dashboard
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/students')}
           >
+            <span className="nav-icon">👥</span>
             Student Management
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/instructors')}
           >
+            <span className="nav-icon">👨‍🏫</span>
             Instructors' Profile
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/vehicles')}
           >
+            <span className="nav-icon">🚗</span>
             Vehicle Inventory
           </button>
           <button 
             className="admin-nav-btn active"
             onClick={() => navigate('/admin/sms-monitoring')}
           >
+            <span className="nav-icon">💬</span>
             SMS Monitoring
           </button>
         </div>

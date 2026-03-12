@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
+import { Eye, EyeOff } from "lucide-react";
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -96,7 +97,7 @@ function Login() {
             <div className="form-group">
               <label htmlFor="email">Email Address</label>
               <div className="input-with-icon">
-                <span className="input-icon">✉</span>
+                <span className="input-icon"></span>
                 <input
                   type="email"
                   id="email"
@@ -111,7 +112,7 @@ function Login() {
             <div className="form-group">
               <label htmlFor="password">Password</label>
               <div className="input-with-icon">
-                <span className="input-icon">🔒</span>
+                <span className="input-icon"></span>
                 <input
                   type="text" /* remain text for stable layout */
                   className={showPassword ? '' : 'password-hidden'}

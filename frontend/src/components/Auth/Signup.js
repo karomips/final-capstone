@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
+
 function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -127,7 +128,7 @@ function Signup() {
             <div className="form-group">
               <label htmlFor="name">Full Name</label>
               <div className="input-with-icon">
-                <span className="input-icon">👤</span>
+                <span className="input-icon"></span>
                 <input
                   type="text"
                   id="name"
@@ -142,7 +143,7 @@ function Signup() {
             <div className="form-group">
               <label htmlFor="email">Email Address</label>
               <div className="input-with-icon">
-                <span className="input-icon">✉</span>
+                <span className="input-icon"></span>
                 <input
                   type="email"
                   id="email"
@@ -157,7 +158,7 @@ function Signup() {
             <div className="form-group">
               <label htmlFor="phoneNumber">Phone Number</label>
               <div className="input-with-icon">
-                <span className="input-icon">📱</span>
+                <span className="input-icon"></span>
                 <input
                   type="tel"
                   id="phoneNumber"
@@ -173,7 +174,7 @@ function Signup() {
             <div className="form-group">
               <label htmlFor="password">Password</label>
               <div className="input-with-icon">
-                <span className="input-icon">🔒</span>
+                <span className="input-icon"></span>
                 <input
                   type={showPassword ? "text" : "password"}
                   id="password"

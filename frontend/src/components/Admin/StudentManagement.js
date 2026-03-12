@@ -246,7 +246,7 @@ function StudentManagement() {
               background: '#5a9cf8',
               color: 'white',
               border: 'none',
-              borderRadius: '15px',
+              borderRadius: '6px',
               cursor: 'pointer',
               fontFamily: 'Poppins',
               fontSize: '14px',
@@ -256,7 +256,7 @@ function StudentManagement() {
               gap: '8px'
             }}
           >
-            🔄 Refresh List
+             Refresh List
           </button>
         </div>
 

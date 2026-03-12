@@ -110,10 +110,9 @@
   align-items: center;
 }
 
+/* hide unused icons so they don't create empty space */
 .input-icon {
-  position: absolute;
-  left: 12px;
-  font-size: 1.1rem;
+  display: none;
 }
 
 .auth-form input[type="email"],
@@ -121,7 +120,8 @@
 .auth-form input[type="text"],
 .auth-form input[type="tel"] {
   width: 100%;
-  padding: 12px 50px; 
+  /* left/right padding simplified; right padding kept for password toggle */
+  padding: 12px 40px 12px 12px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 1rem;

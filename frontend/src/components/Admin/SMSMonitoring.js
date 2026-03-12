@@ -359,28 +359,28 @@ function SMSMonitoring() {
         {/* Statistics Cards */}
         <div className="sms-stats">
           <div className="stat-card">
-            <div className="stat-icon">📅</div>
+            <div className="stat-icon"></div>
             <div className="stat-content">
               <h3>{filteredBookings.length}</h3>
               <p>Total Bookings</p>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">✉️</div>
+            <div className="stat-icon"></div>
             <div className="stat-content">
               <h3>{smsHistory.filter(h => h.success).length}</h3>
               <p>SMS Sent Today</p>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">⏰</div>
+            <div className="stat-icon"></div>
             <div className="stat-content">
               <h3>{filteredBookings.filter(b => b.status === 'pending').length}</h3>
               <p>Pending</p>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">✅</div>
+            <div className="stat-icon"></div>
             <div className="stat-content">
               <h3>{filteredBookings.filter(b => b.status === 'confirmed').length}</h3>
               <p>Confirmed</p>
@@ -398,7 +398,7 @@ function SMSMonitoring() {
             </div>
           ) : filteredBookings.length === 0 ? (
             <div className="empty-state">
-              <span className="empty-icon">📭</span>
+              <span className="empty-icon"></span>
               <p>No bookings found</p>
             </div>
           ) : (
@@ -457,7 +457,7 @@ function SMSMonitoring() {
                             disabled={sendingStatus[booking.$id + 'reminder'] === 'sending' || booking.userPhone === 'N/A'}
                             title="Send Reminder SMS"
                           >
-                            ⏰ Remind
+                            Remind
                             {getSMSStatusBadge(booking, 'reminder')}
                           </button>
                           <button

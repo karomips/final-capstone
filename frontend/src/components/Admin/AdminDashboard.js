@@ -6,6 +6,7 @@ import { Query } from 'appwrite';
 import './AdminPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
+
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -314,29 +315,27 @@ function AdminDashboard() {
         {/* Stats Cards */}
         <div className="dashboard-stats">
           <div className="stat-card">
-            <div className="stat-icon">📅</div>
+            <div className="stat-icon"></div>
             <div className="stat-content">
               <h3>Today's Lessons</h3>
               <div className="stat-number">{todayBookings.length} Scheduled</div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">🔍</div>
+            <div className="stat-icon"></div>
             <div className="stat-content">
               <h3>Available Instructors</h3>
               <div className="stat-number">{availableInstructors} Active</div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">👥</div>
+            <div className="stat-icon"></div>
             <div className="stat-content">
               <h3>New Enrollees (Week)</h3>
               <div className="stat-number">{newEnrollees}</div>
             </div>
           </div>
         </div>
-
-        {/* Schedule and SMS Activity */}
         <div className="dashboard-bottom">
           <div className="schedule-section">
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
@@ -362,7 +361,7 @@ function AdminDashboard() {
                 }}
                 title="Refresh bookings"
               >
-                🔄 Refresh
+                 Refresh
               </button>
             </div>
             <div className="table-wrapper">

@@ -109,7 +109,7 @@ function StudentManagement() {
         hasChangeRequest: false
       };
       
-      // Only add fields that should be updated
+
       if (changes.name) updateData.name = changes.name;
       if (changes.email) updateData.email = changes.email;
       if (changes.phoneNumber) updateData.phoneNumber = changes.phoneNumber;

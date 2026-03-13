@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { databases, databaseId, vehiclesCollectionId } from '../../appwrite/config';
-import { ID, Query } from 'appwrite';
+import { databases, databaseId, vehiclesCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../../appwrite/config';
+import { ID, Query, Permission, Role } from 'appwrite';
 import './AdminPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
@@ -20,6 +20,8 @@ function VehicleInventory() {
     status: 'available',
     imageUrl: ''
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -52,6 +54,31 @@ function VehicleInventory() {
     }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setImageFile(null);
+      setImagePreview('');
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const resetVehicleForm = () => {
+    setFormData({
+      plateNumber: '',
+      model: '',
+      transmission: 'MT',
+      status: 'available',
+      imageUrl: ''
+    });
+    setImageFile(null);
+    setImagePreview('');
+    setError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -62,6 +89,32 @@ function VehicleInventory() {
     }
 
     try {
+      // Use uploaded image if provided (upload to Appwrite Storage), otherwise fall back to default placeholder
+      const defaultImage = 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop';
+      let imageToSave = defaultImage;
+
+      if (imageFile) {
+        if (!storageBucketId) {
+          console.warn('No storage bucket configured; default image will be used. Set REACT_APP_APPWRITE_STORAGE_BUCKET_ID to enable uploads.');
+          setError('Image upload disabled: no storage bucket configured. Vehicle saved with default image.');
+        } else {
+          try {
+            // Ensure the file is publicly readable so it can be displayed by any user.
+            const uploaded = await storage.createFile(
+              storageBucketId,
+              ID.unique(),
+              imageFile,
+              [Permission.read(Role.any())]
+            );
+            imageToSave = buildStorageFileUrl(storageBucketId, uploaded.$id);
+          } catch (uploadError) {
+            console.warn('Image upload failed (falling back to placeholder):', uploadError);
+            setError('Image upload failed – saving vehicle with default image.');
+            imageToSave = defaultImage;
+          }
+        }
+      }
+
       await databases.createDocument(
         databaseId,
         vehiclesCollectionId,
@@ -71,19 +124,13 @@ function VehicleInventory() {
           model: formData.model.trim(),
           transmission: formData.transmission,
           status: formData.status,
-          imageUrl: formData.imageUrl.trim() || 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop',
+          imageUrl: imageToSave,
           createdAt: new Date().toISOString()
         }
       );
 
       // Reset form and close modal
-      setFormData({
-        plateNumber: '',
-        model: '',
-        transmission: 'MT',
-        status: 'available',
-        imageUrl: ''
-      });
+      resetVehicleForm();
       setShowModal(false);
       
       // Refresh vehicles list
@@ -241,11 +288,11 @@ function VehicleInventory() {
 
         {/* Add Vehicle Modal */}
         {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-overlay" onClick={() => { resetVehicleForm(); setShowModal(false); }}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>Add New Vehicle</h2>
-                <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+                <button className="modal-close" onClick={() => { resetVehicleForm(); setShowModal(false); }}>×</button>
               </div>
               
               <form onSubmit={handleSubmit} className="modal-form">
@@ -304,19 +351,22 @@ function VehicleInventory() {
                 </div>
 
                 <div className="form-group">
-                  <label>Image URL (Optional)</label>
+                  <label>Upload Image (Optional)</label>
                   <input
-                    type="url"
-                    name="imageUrl"
-                    value={formData.imageUrl}
-                    onChange={handleInputChange}
-                    placeholder="https://example.com/car-image.jpg"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
                   />
-                  <small>Leave empty to use default image</small>
+                  {imagePreview && (
+                    <div className="image-preview">
+                      <img src={imagePreview} alt="Preview" />
+                    </div>
+                  )}
+                  <small>Upload a photo of the vehicle or leave empty to use the default image.</small>
                 </div>
 
                 <div className="modal-actions">
-                  <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>
+                  <button type="button" className="btn-cancel" onClick={() => { resetVehicleForm(); setShowModal(false); }}>
                     Cancel
                   </button>
                   <button type="submit" className="btn-submit">

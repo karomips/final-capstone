@@ -264,7 +264,7 @@ function BookLesson() {
 
       {/* Main Content */}
       <div className="user-main-content">
-        <h1 className="page-title">Book a Lesson - User Side</h1>
+        <h1 className="page-title">Book a Lesson</h1>
 
         {!isApproved && !checkingApproval && (
           <div style={{background: '#fee2e2', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#991b1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>

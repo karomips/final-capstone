@@ -197,35 +197,30 @@ function StudentManagement() {
             className="admin-nav-btn"
             onClick={() => navigate('/admin')}
           >
-            <span className="nav-icon">🏠</span>
             Dashboard
           </button>
           <button 
             className="admin-nav-btn active"
             onClick={() => navigate('/admin/students')}
           >
-            <span className="nav-icon">👥</span>
             Student Management
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/instructors')}
           >
-            <span className="nav-icon">👨‍🏫</span>
             Instructors' Profile
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/vehicles')}
           >
-            <span className="nav-icon">🚗</span>
             Vehicle Inventory
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/sms-monitoring')}
           >
-            <span className="nav-icon">💬</span>
             SMS Monitoring
           </button>
         </div>

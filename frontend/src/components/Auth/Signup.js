@@ -10,6 +10,8 @@ function Signup() {
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,7 +47,7 @@ function Signup() {
     try {
       // Create Appwrite account (this will also auto-login and create user document)
       console.log('Starting signup process...');
-      const result = await signup(email, password, name, phoneNumber);
+      const result = await signup(email, password, name, phoneNumber, profileImageFile);
       console.log('Signup successful, user ID:', result.$id);
       
       // Verify the document was created by fetching it
@@ -78,6 +80,29 @@ function Signup() {
     }
 
     setLoading(false);
+  };
+
+  const handleProfileImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setProfileImageFile(null);
+      setProfileImagePreview('');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Profile image must be 5MB or smaller.');
+      return;
+    }
+
+    setError('');
+    setProfileImageFile(file);
+    setProfileImagePreview(URL.createObjectURL(file));
   };
 
   const handleGoogleSignIn = async () => {
@@ -169,6 +194,21 @@ function Signup() {
                 />
               </div>
               <small style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px', display: 'block' }}>Required for SMS appointment reminders</small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="profileImage">Profile Picture (Optional)</label>
+              <input
+                type="file"
+                id="profileImage"
+                accept="image/*"
+                onChange={handleProfileImageChange}
+              />
+              {profileImagePreview && (
+                <div className="image-preview" style={{ marginTop: '8px' }}>
+                  <img src={profileImagePreview} alt="Profile preview" style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover' }} />
+                </div>
+              )}
             </div>
 
             <div className="form-group">

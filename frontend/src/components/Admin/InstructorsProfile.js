@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { databases, databaseId, instructorsCollectionId } from '../../appwrite/config';
+import { databases, databaseId, instructorsCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import './AdminPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
@@ -19,13 +19,19 @@ function InstructorsProfile() {
     availability: 'available',
     lessonType: 'practical'
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchInstructors();
+  const resolveInstructorImageUrl = useCallback((instructor) => {
+    if (instructor?.imageFileId && storageBucketId) {
+      return buildStorageFileUrl(storageBucketId, instructor.imageFileId);
+    }
+
+    return instructor?.imageUrl || '';
   }, []);
 
-  const fetchInstructors = async () => {
+  const fetchInstructors = useCallback(async () => {
     try {
       setLoading(true);
       const response = await databases.listDocuments(
@@ -33,7 +39,11 @@ function InstructorsProfile() {
         instructorsCollectionId,
         [Query.orderDesc('$createdAt')]
       );
-      setInstructors(response.documents);
+      const mappedInstructors = response.documents.map((instructor) => ({
+        ...instructor,
+        resolvedImageUrl: resolveInstructorImageUrl(instructor)
+      }));
+      setInstructors(mappedInstructors);
     } catch (error) {
       console.error('Error fetching instructors:', error);
       // If collection doesn't exist, show empty state
@@ -41,7 +51,11 @@ function InstructorsProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [resolveInstructorImageUrl]);
+
+  useEffect(() => {
+    fetchInstructors();
+  }, [fetchInstructors]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -49,6 +63,41 @@ function InstructorsProfile() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setImageFile(null);
+      setImagePreview('');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Instructor image must be 5MB or smaller.');
+      return;
+    }
+
+    setError('');
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const resetInstructorForm = () => {
+    setFormData({
+      name: '',
+      certifications: '',
+      availability: 'available',
+      lessonType: 'practical'
+    });
+    setImageFile(null);
+    setImagePreview('');
+    setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -61,6 +110,26 @@ function InstructorsProfile() {
     }
 
     try {
+      let imageUrl = '';
+      let imageFileId = '';
+
+      if (imageFile && storageBucketId) {
+        try {
+          const uploaded = await storage.createFile(
+            storageBucketId,
+            ID.unique(),
+            imageFile
+          );
+          imageFileId = uploaded.$id;
+          imageUrl = buildStorageFileUrl(storageBucketId, uploaded.$id);
+        } catch (uploadError) {
+          console.error('Error uploading instructor image:', uploadError);
+          setError('Image upload failed. The instructor will be saved without image.');
+        }
+      } else if (imageFile && !storageBucketId) {
+        setError('Image upload is disabled: storage bucket is not configured.');
+      }
+
       await databases.createDocument(
         databaseId,
         instructorsCollectionId,
@@ -70,17 +139,14 @@ function InstructorsProfile() {
           certifications: formData.certifications.trim(),
           availability: formData.availability,
           lessonType: formData.lessonType,
+          imageFileId,
+          imageUrl,
           createdAt: new Date().toISOString()
         }
       );
 
       // Reset form and close modal
-      setFormData({
-        name: '',
-        certifications: '',
-        availability: 'available',
-        lessonType: 'practical'
-      });
+      resetInstructorForm();
       setShowModal(false);
       
       // Refresh instructors list
@@ -135,35 +201,30 @@ function InstructorsProfile() {
             className="admin-nav-btn"
             onClick={() => navigate('/admin')}
           >
-            <span className="nav-icon">🏠</span>
             Dashboard
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/students')}
           >
-            <span className="nav-icon">👥</span>
             Student Management
           </button>
           <button 
             className="admin-nav-btn active"
             onClick={() => navigate('/admin/instructors')}
           >
-            <span className="nav-icon">👨‍🏫</span>
             Instructors' Profile
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/vehicles')}
           >
-            <span className="nav-icon">🚗</span>
             Vehicle Inventory
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/sms-monitoring')}
           >
-            <span className="nav-icon">💬</span>
             SMS Monitoring
           </button>
         </div>
@@ -193,7 +254,13 @@ function InstructorsProfile() {
             <div className="instructors-grid">
               {instructors.map((instructor) => (
                 <div key={instructor.$id} className="instructor-card">
-                  <div className="instructor-avatar">👤</div>
+                  <div className="instructor-avatar">
+                    {instructor.resolvedImageUrl ? (
+                      <img src={instructor.resolvedImageUrl} alt={instructor.name} />
+                    ) : (
+                      '👤'
+                    )}
+                  </div>
                   <div className="instructor-info">
                     <h3>{instructor.name}</h3>
                     <div className="instructor-cert">
@@ -234,11 +301,11 @@ function InstructorsProfile() {
 
         {/* Add Instructor Modal */}
         {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-overlay" onClick={() => { resetInstructorForm(); setShowModal(false); }}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>Add New Instructor</h2>
-                <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+                <button className="modal-close" onClick={() => { resetInstructorForm(); setShowModal(false); }}>×</button>
               </div>
               
               <form onSubmit={handleSubmit} className="modal-form">
@@ -296,8 +363,22 @@ function InstructorsProfile() {
                   <small>Note: Instructors are automatically set to "Booked" when a user books them</small>
                 </div>
 
+                <div className="form-group">
+                  <label>Upload Image (Optional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+                  {imagePreview && (
+                    <div className="image-preview">
+                      <img src={imagePreview} alt="Preview" />
+                    </div>
+                  )}
+                </div>
+
                 <div className="modal-actions">
-                  <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>
+                  <button type="button" className="btn-cancel" onClick={() => { resetInstructorForm(); setShowModal(false); }}>
                     Cancel
                   </button>
                   <button type="submit" className="btn-submit">

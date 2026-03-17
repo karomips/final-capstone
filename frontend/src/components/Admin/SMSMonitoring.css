@@ -277,12 +277,12 @@
   cursor: not-allowed;
 }
 
-.sms-btn.confirmation {
+.sms-btn.completed {
   background: #e8f5e9;
   color: #2e7d32;
 }
 
-.sms-btn.confirmation:hover:not(:disabled) {
+.sms-btn.completed:hover:not(:disabled) {
   background: #4caf50;
   color: white;
 }

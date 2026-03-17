@@ -4,10 +4,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId, instructorsCollectionId } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import './UserPages.css';
+import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function BookLesson() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState('practical');
   const [instructor, setInstructor] = useState('');
   const [vehicle, setVehicle] = useState('');
@@ -228,11 +230,15 @@ function BookLesson() {
 
   return (
     <div className="user-page-container">
+      <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+        ☰
+      </button>
+
       {/* Sidebar */}
-      <div className="user-sidebar">
-        <div className="user-profile-section">
-          <div className="user-profile-avatar">
-            <img src="/api/placeholder/80/80" alt="Profile" />
+      <div className={`user-sidebar ${sidebarOpen ? '' : 'closed'}`}>
+        <div className="user-logo-section">
+          <div className="user-logo">
+            <img src={EasyDriveLogo} alt="Easy Drive Logo" />
           </div>
         </div>
 

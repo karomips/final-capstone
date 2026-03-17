@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, vehiclesCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../../appwrite/config';
-import { ID, Query, Permission, Role } from 'appwrite';
+import { ID, Query } from 'appwrite';
 import './AdminPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
@@ -17,18 +17,21 @@ function VehicleInventory() {
     plateNumber: '',
     model: '',
     transmission: 'MT',
-    status: 'available',
-    imageUrl: ''
+    status: 'available'
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchVehicles();
+  const resolveVehicleImageUrl = useCallback((vehicle) => {
+    if (vehicle?.imageFileId && storageBucketId) {
+      return buildStorageFileUrl(storageBucketId, vehicle.imageFileId);
+    }
+
+    return vehicle?.imageUrl || 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop';
   }, []);
 
-  const fetchVehicles = async () => {
+  const fetchVehicles = useCallback(async () => {
     try {
       setLoading(true);
       const response = await databases.listDocuments(
@@ -36,7 +39,11 @@ function VehicleInventory() {
         vehiclesCollectionId,
         [Query.orderDesc('$createdAt')]
       );
-      setVehicles(response.documents);
+      const mappedVehicles = response.documents.map((vehicle) => ({
+        ...vehicle,
+        resolvedImageUrl: resolveVehicleImageUrl(vehicle)
+      }));
+      setVehicles(mappedVehicles);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
       // If collection doesn't exist, show empty state
@@ -44,7 +51,11 @@ function VehicleInventory() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [resolveVehicleImageUrl]);
+
+  useEffect(() => {
+    fetchVehicles();
+  }, [fetchVehicles]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -71,8 +82,7 @@ function VehicleInventory() {
       plateNumber: '',
       model: '',
       transmission: 'MT',
-      status: 'available',
-      imageUrl: ''
+      status: 'available'
     });
     setImageFile(null);
     setImagePreview('');
@@ -92,6 +102,7 @@ function VehicleInventory() {
       // Use uploaded image if provided (upload to Appwrite Storage), otherwise fall back to default placeholder
       const defaultImage = 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop';
       let imageToSave = defaultImage;
+      let imageFileId = '';
 
       if (imageFile) {
         if (!storageBucketId) {
@@ -103,9 +114,9 @@ function VehicleInventory() {
             const uploaded = await storage.createFile(
               storageBucketId,
               ID.unique(),
-              imageFile,
-              [Permission.read(Role.any())]
+              imageFile
             );
+            imageFileId = uploaded.$id;
             imageToSave = buildStorageFileUrl(storageBucketId, uploaded.$id);
           } catch (uploadError) {
             console.warn('Image upload failed (falling back to placeholder):', uploadError);
@@ -124,6 +135,7 @@ function VehicleInventory() {
           model: formData.model.trim(),
           transmission: formData.transmission,
           status: formData.status,
+          imageFileId,
           imageUrl: imageToSave,
           createdAt: new Date().toISOString()
         }
@@ -185,35 +197,30 @@ function VehicleInventory() {
             className="admin-nav-btn"
             onClick={() => navigate('/admin')}
           >
-            <span className="nav-icon">🏠</span>
             Dashboard
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/students')}
           >
-            <span className="nav-icon">👥</span>
             Student Management
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/instructors')}
           >
-            <span className="nav-icon">👨‍🏫</span>
             Instructors' Profile
           </button>
           <button 
             className="admin-nav-btn active"
             onClick={() => navigate('/admin/vehicles')}
           >
-            <span className="nav-icon">🚗</span>
             Vehicle Inventory
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/sms-monitoring')}
           >
-            <span className="nav-icon">💬</span>
             SMS Monitoring
           </button>
         </div>
@@ -244,7 +251,7 @@ function VehicleInventory() {
               {vehicles.map((vehicle) => (
                 <div key={vehicle.$id} className="vehicle-card">
                   <div className="vehicle-image">
-                    <img src={vehicle.imageUrl} alt="Vehicle" />
+                    <img src={vehicle.resolvedImageUrl} alt="Vehicle" />
                   </div>
                   <div className="vehicle-info">
                     <h3>Model: {vehicle.model}</h3>

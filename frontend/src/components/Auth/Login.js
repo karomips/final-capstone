@@ -156,7 +156,7 @@ function Login() {
                   }}
                   onMouseDown={(e) => e.preventDefault()}
                 >
-                  {showPassword ? '👁' : '👁‍🗨'}
+                  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </button>
               </div>
             </div>

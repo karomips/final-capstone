@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { databases, databaseId, usersCollectionId } from '../../appwrite/config';
+import { databases, databaseId, usersCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../../appwrite/config';
 import { ID } from 'appwrite';
 import './UserPages.css';
 import './Profile.css';
+import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function Profile() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
@@ -20,14 +22,24 @@ function Profile() {
   const [pendingChanges, setPendingChanges] = useState(null);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState('');
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchUserData();
+  const getResolvedProfileImageUrl = useCallback((profile) => {
+    if (profile?.profileImageFileId && storageBucketId) {
+      return buildStorageFileUrl(storageBucketId, profile.profileImageFileId);
     }
-  }, [currentUser]);
 
-  const fetchUserData = async () => {
+    return profile?.profileImageUrl || '';
+  }, []);
+
+  const getProfileInitial = (name) => {
+    return (name || currentUser?.name || 'U').trim().charAt(0).toUpperCase();
+  };
+
+  const fetchUserData = useCallback(async () => {
+    if (!currentUser) return;
+
     try {
       // Try to get user document by auth account ID first
       let userDoc;
@@ -58,16 +70,25 @@ function Profile() {
         console.log('Found user by email:', userDoc);
       }
       
-      setUserData(userDoc);
+      const resolvedUserDoc = {
+        ...userDoc,
+        resolvedProfileImageUrl: getResolvedProfileImageUrl(userDoc)
+      };
+
+      setUserData(resolvedUserDoc);
       setFormData({
         name: userDoc.name || '',
         email: userDoc.email || '',
         phoneNumber: userDoc.phoneNumber || ''
       });
+      setProfileImageFile(null);
+      setProfileImagePreview('');
       
       // Check for pending changes
       if (userDoc.pendingChanges) {
         setPendingChanges(JSON.parse(userDoc.pendingChanges));
+      } else {
+        setPendingChanges(null);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -75,7 +96,11 @@ function Profile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, getResolvedProfileImageUrl]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -83,6 +108,30 @@ function Profile() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleProfileImageChange = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) {
+      setProfileImageFile(null);
+      setProfileImagePreview('');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Profile image must be 5MB or smaller.');
+      return;
+    }
+
+    setError('');
+    setProfileImageFile(file);
+    setProfileImagePreview(URL.createObjectURL(file));
   };
 
   const handleSubmitChanges = async (e) => {
@@ -98,28 +147,66 @@ function Profile() {
     }
 
     try {
-      // Create pending changes object
-      const changes = {
-        name: formData.name,
-        email: formData.email,
-        phoneNumber: formData.phoneNumber,
-        requestedAt: new Date().toISOString(),
-        status: 'pending'
-      };
+      const hasTextChanges =
+        formData.name !== (userData?.name || '') ||
+        formData.email !== (userData?.email || '') ||
+        formData.phoneNumber !== (userData?.phoneNumber || '');
 
-      // Update user document with pending changes
-      await databases.updateDocument(
-        databaseId,
-        usersCollectionId,
-        userData.$id, // Use the actual user document ID, not auth account ID
-        {
-          pendingChanges: JSON.stringify(changes),
-          hasChangeRequest: true
+      if (!hasTextChanges && !profileImageFile) {
+        setError('No changes to save.');
+        return;
+      }
+
+      if (profileImageFile) {
+        if (!storageBucketId) {
+          setError('Profile image upload is unavailable because the storage bucket is not configured.');
+          return;
         }
-      );
 
-      setSuccess('Profile change request submitted! Waiting for admin approval.');
-      setPendingChanges(changes);
+        const uploaded = await storage.createFile(
+          storageBucketId,
+          ID.unique(),
+          profileImageFile
+        );
+
+        await databases.updateDocument(
+          databaseId,
+          usersCollectionId,
+          userData.$id,
+          {
+            profileImageFileId: uploaded.$id,
+            profileImageUrl: buildStorageFileUrl(storageBucketId, uploaded.$id)
+          }
+        );
+      }
+
+      if (hasTextChanges) {
+        const changes = {
+          name: formData.name,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
+          requestedAt: new Date().toISOString(),
+          status: 'pending'
+        };
+
+        await databases.updateDocument(
+          databaseId,
+          usersCollectionId,
+          userData.$id,
+          {
+            pendingChanges: JSON.stringify(changes),
+            hasChangeRequest: true
+          }
+        );
+
+        setPendingChanges(changes);
+        setSuccess(profileImageFile
+          ? 'Profile picture updated and profile change request submitted.'
+          : 'Profile change request submitted! Waiting for admin approval.');
+      } else {
+        setSuccess('Profile picture updated successfully.');
+      }
+
       setEditMode(false);
       fetchUserData();
     } catch (error) {
@@ -134,6 +221,8 @@ function Profile() {
       email: userData.email || '',
       phoneNumber: userData.phoneNumber || ''
     });
+    setProfileImageFile(null);
+    setProfileImagePreview('');
     setEditMode(false);
     setError('');
   };
@@ -159,11 +248,15 @@ function Profile() {
 
   return (
     <div className="user-page-container">
+      <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+        ☰
+      </button>
+
       {/* Sidebar */}
-      <div className="user-sidebar">
-        <div className="user-profile-section">
-          <div className="user-profile-avatar">
-            <img src="/api/placeholder/80/80" alt="Profile" />
+      <div className={`user-sidebar ${sidebarOpen ? '' : 'closed'}`}>
+        <div className="user-logo-section">
+          <div className="user-logo">
+            <img src={EasyDriveLogo} alt="Easy Drive Logo" />
           </div>
         </div>
 
@@ -240,7 +333,11 @@ function Profile() {
             <div className="profile-view">
               <div className="profile-header">
                 <div className="profile-avatar-large">
-                  <img src="/api/placeholder/120/120" alt="Profile" />
+                  {userData?.resolvedProfileImageUrl ? (
+                    <img src={userData.resolvedProfileImageUrl} alt="Profile" />
+                  ) : (
+                    <div className="profile-avatar-placeholder">{getProfileInitial(userData?.name)}</div>
+                  )}
                 </div>
                 <div className="profile-info">
                   <h2>{userData?.name}</h2>
@@ -248,6 +345,9 @@ function Profile() {
                   <span className={`profile-status ${userData?.approved ? 'approved' : 'pending'}`}>
                     {userData?.approved ? '✓ Approved' : '⏳ Pending Approval'}
                   </span>
+                  {!userData?.resolvedProfileImageUrl && (
+                    <p className="profile-photo-hint">No profile photo yet. Add one from Edit Profile.</p>
+                  )}
                 </div>
               </div>
 
@@ -291,6 +391,27 @@ function Profile() {
               </p>
               
               <form onSubmit={handleSubmitChanges}>
+                <div className="form-group">
+                  <label>Profile Picture</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfileImageChange}
+                    className="profile-file-input"
+                  />
+                  {(profileImagePreview || userData?.resolvedProfileImageUrl) && (
+                    <div className="profile-image-preview">
+                      <img
+                        src={profileImagePreview || userData?.resolvedProfileImageUrl}
+                        alt="Profile preview"
+                      />
+                    </div>
+                  )}
+                  <small className="profile-help-text">
+                    You can add or replace your profile picture even after creating your account.
+                  </small>
+                </div>
+
                 <div className="form-group">
                   <label>Full Name</label>
                   <input

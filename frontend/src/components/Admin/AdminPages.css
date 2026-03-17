@@ -132,10 +132,6 @@
   gap: 8px;
 }
 
-.admin-nav-btn .nav-icon {
-  font-size: 1.2rem;
-}
-
 .admin-nav-btn:hover {
   background: rgba(255, 255, 255, 0.1);
 }
@@ -599,6 +595,13 @@
   justify-content: center;
   font-size: 32px;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.instructor-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .instructor-info {

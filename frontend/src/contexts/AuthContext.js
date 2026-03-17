@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { account, databases, databaseId, usersCollectionId } from '../appwrite/config';
+import { account, databases, databaseId, usersCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../appwrite/config';
 import { ID, OAuthProvider } from 'appwrite';
 
 const AuthContext = createContext();
@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   // Sign up function
-  async function signup(email, password, name = 'User', phoneNumber = '') {
+  async function signup(email, password, name = 'User', phoneNumber = '', profileImageFile = null) {
     try {
       // Try to clear any existing session first
       try {
@@ -45,6 +45,20 @@ export function AuthProvider({ children }) {
           approved: email === 'admin@gmail.com' ? true : false,
           createdAt: new Date().toISOString()
         };
+
+        if (profileImageFile && storageBucketId) {
+          try {
+            const uploaded = await storage.createFile(
+              storageBucketId,
+              ID.unique(),
+              profileImageFile
+            );
+            userData.profileImageFileId = uploaded.$id;
+            userData.profileImageUrl = buildStorageFileUrl(storageBucketId, uploaded.$id);
+          } catch (uploadError) {
+            console.error('Error uploading profile image:', uploadError);
+          }
+        }
         
         // Only add phoneNumber if provided and attribute exists
         if (phoneNumber) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { databases, databaseId, bookingsCollectionId, usersCollectionId } from '../../appwrite/config';
+import { databases, databaseId, bookingsCollectionId, usersCollectionId, instructorsCollectionId, vehiclesCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import smsHelper from '../../utils/smsHelper';
 import './AdminPages.css';
@@ -121,16 +121,137 @@ function SMSMonitoring() {
     localStorage.setItem('smsHistory', JSON.stringify(updatedHistory));
   };
 
-  const sendSMS = async (booking, type) => {
-    if (booking.userPhone === 'N/A' || !booking.userPhone) {
-      alert('No phone number available for this student');
-      return;
+  const releaseBookingResources = async (booking) => {
+    const normalize = (value) => String(value || '').trim().toLowerCase();
+
+    if (booking.instructor) {
+      try {
+        let instructorDoc = null;
+
+        // Fast path: exact query first.
+        const instructorQuery = await databases.listDocuments(
+          databaseId,
+          instructorsCollectionId,
+          [Query.equal('name', booking.instructor)]
+        );
+
+        if (instructorQuery.documents.length > 0) {
+          instructorDoc = instructorQuery.documents[0];
+        } else {
+          // Fallback: normalize values to tolerate case/spacing differences.
+          const allInstructors = await databases.listDocuments(
+            databaseId,
+            instructorsCollectionId
+          );
+          instructorDoc = allInstructors.documents.find(
+            (doc) => normalize(doc.name) === normalize(booking.instructor)
+          );
+        }
+
+        if (instructorDoc) {
+          await databases.updateDocument(
+            databaseId,
+            instructorsCollectionId,
+            instructorDoc.$id,
+            { availability: 'available' }
+          );
+        }
+      } catch (error) {
+        console.error('Error releasing instructor availability:', error);
+      }
     }
 
-    setSendingStatus({ ...sendingStatus, [booking.$id + type]: 'sending' });
+    if (booking.vehicle && booking.vehicle !== 'N/A') {
+      try {
+        const vehicleModel = booking.vehicle.split(' (')[0];
+        let vehicleDoc = null;
+
+        // Fast path: exact model query first.
+        const vehicleQuery = await databases.listDocuments(
+          databaseId,
+          vehiclesCollectionId,
+          [Query.equal('model', vehicleModel)]
+        );
+
+        if (vehicleQuery.documents.length > 0) {
+          vehicleDoc = vehicleQuery.documents[0];
+        } else {
+          // Fallback: normalize model values to tolerate case/spacing differences.
+          const allVehicles = await databases.listDocuments(
+            databaseId,
+            vehiclesCollectionId
+          );
+          vehicleDoc = allVehicles.documents.find(
+            (doc) => normalize(doc.model) === normalize(vehicleModel)
+          );
+        }
+
+        if (vehicleDoc) {
+          await databases.updateDocument(
+            databaseId,
+            vehiclesCollectionId,
+            vehicleDoc.$id,
+            { status: 'available' }
+          );
+        }
+      } catch (error) {
+        console.error('Error releasing vehicle status:', error);
+      }
+    }
+  };
+
+  const updateBookingStatus = async (booking, nextStatus) => {
+    const updateData = { status: nextStatus };
+
+    if (nextStatus === 'completed') {
+      updateData.completedDate = new Date().toISOString();
+    }
 
     try {
-      let result;
+      await databases.updateDocument(
+        databaseId,
+        bookingsCollectionId,
+        booking.$id,
+        updateData
+      );
+    } catch (error) {
+      // Some setups don't have completedDate yet; still allow status transition.
+      const message = String(error?.message || '');
+      const missingCompletedDate =
+        nextStatus === 'completed' &&
+        (message.toLowerCase().includes('completeddate') ||
+          message.toLowerCase().includes('attribute not found') ||
+          error?.type === 'attribute_not_found');
+
+      if (!missingCompletedDate) {
+        throw error;
+      }
+
+      await databases.updateDocument(
+        databaseId,
+        bookingsCollectionId,
+        booking.$id,
+        { status: nextStatus }
+      );
+    }
+
+    if (nextStatus === 'completed' || nextStatus === 'cancelled') {
+      await releaseBookingResources(booking);
+    }
+
+    setBookings((prev) => prev.map((item) => (
+      item.$id === booking.$id
+        ? { ...item, ...updateData }
+        : item
+    )));
+  };
+
+  const handleBookingAction = async (booking, actionType) => {
+    const actionKey = booking.$id + actionType;
+    setSendingStatus((prev) => ({ ...prev, [actionKey]: 'sending' }));
+
+    try {
+      let result = { success: true };
       const appointmentData = {
         studentName: booking.userName,
         date: new Date(booking.date).toLocaleDateString('en-US', { 
@@ -144,44 +265,49 @@ function SMSMonitoring() {
         lessonType: booking.lessonType || 'practical'
       };
 
-      switch (type) {
-        case 'confirmation':
-          result = await smsHelper.sendAppointmentConfirmation(booking.userPhone, appointmentData);
+      switch (actionType) {
+        case 'completed':
+          await updateBookingStatus(booking, 'completed');
+          addToHistory(booking, 'completed', true, 'Booking marked as completed');
           break;
         case 'reminder':
+          if (booking.userPhone === 'N/A' || !booking.userPhone) {
+            throw new Error('No phone number available for this student');
+          }
           result = await smsHelper.sendAppointmentReminder(booking.userPhone, appointmentData);
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to send reminder SMS');
+          }
+          addToHistory(booking, 'reminder', true, 'Reminder SMS sent successfully');
           break;
         case 'cancellation':
-          result = await smsHelper.sendAppointmentCancellation(booking.userPhone, appointmentData);
+          if (booking.userPhone !== 'N/A' && booking.userPhone) {
+            result = await smsHelper.sendAppointmentCancellation(booking.userPhone, appointmentData);
+          }
+          await updateBookingStatus(booking, 'cancelled');
+          addToHistory(
+            booking,
+            'cancellation',
+            true,
+            result.success === false
+              ? 'Booking cancelled. Cancellation SMS could not be sent.'
+              : 'Booking cancelled successfully'
+          );
           break;
         default:
-          throw new Error('Invalid SMS type');
+          throw new Error('Invalid action type');
       }
 
-      if (result.success) {
-        setSendingStatus({ ...sendingStatus, [booking.$id + type]: 'success' });
-        addToHistory(booking, type, true, 'SMS sent successfully');
-        
-        // Note: SMS tracking fields (confirmationSmsSent, reminderSmsSent, etc.) 
-        // can be added to Appwrite bookings collection if needed for tracking
-        // For now, we only track in localStorage history
-        
-        setTimeout(() => {
-          setSendingStatus({ ...sendingStatus, [booking.$id + type]: null });
-        }, 3000);
-      } else {
-        setSendingStatus({ ...sendingStatus, [booking.$id + type]: 'error' });
-        addToHistory(booking, type, false, result.error || 'Failed to send SMS');
-        setTimeout(() => {
-          setSendingStatus({ ...sendingStatus, [booking.$id + type]: null });
-        }, 3000);
-      }
-    } catch (error) {
-      console.error('Error sending SMS:', error);
-      setSendingStatus({ ...sendingStatus, [booking.$id + type]: 'error' });
-      addToHistory(booking, type, false, error.message);
+      setSendingStatus((prev) => ({ ...prev, [actionKey]: 'success' }));
       setTimeout(() => {
-        setSendingStatus({ ...sendingStatus, [booking.$id + type]: null });
+        setSendingStatus((prev) => ({ ...prev, [actionKey]: null }));
+      }, 3000);
+    } catch (error) {
+      console.error('Error handling booking action:', error);
+      setSendingStatus((prev) => ({ ...prev, [actionKey]: 'error' }));
+      addToHistory(booking, actionType, false, error.message);
+      setTimeout(() => {
+        setSendingStatus((prev) => ({ ...prev, [actionKey]: null }));
       }, 3000);
     }
   };
@@ -276,35 +402,30 @@ function SMSMonitoring() {
             className="admin-nav-btn"
             onClick={() => navigate('/admin')}
           >
-            <span className="nav-icon">🏠</span>
             Dashboard
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/students')}
           >
-            <span className="nav-icon">👥</span>
             Student Management
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/instructors')}
           >
-            <span className="nav-icon">👨‍🏫</span>
             Instructors' Profile
           </button>
           <button 
             className="admin-nav-btn"
             onClick={() => navigate('/admin/vehicles')}
           >
-            <span className="nav-icon">🚗</span>
             Vehicle Inventory
           </button>
           <button 
             className="admin-nav-btn active"
             onClick={() => navigate('/admin/sms-monitoring')}
           >
-            <span className="nav-icon">💬</span>
             SMS Monitoring
           </button>
         </div>
@@ -340,7 +461,6 @@ function SMSMonitoring() {
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
               <option value="all">All Statuses</option>
               <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
@@ -382,8 +502,8 @@ function SMSMonitoring() {
           <div className="stat-card">
             <div className="stat-icon"></div>
             <div className="stat-content">
-              <h3>{filteredBookings.filter(b => b.status === 'confirmed').length}</h3>
-              <p>Confirmed</p>
+              <h3>{filteredBookings.filter(b => b.status === 'completed').length}</h3>
+              <p>Completed</p>
             </div>
           </div>
         </div>
@@ -412,7 +532,7 @@ function SMSMonitoring() {
                     <th>Instructor</th>
                     <th>Vehicle</th>
                     <th>Status</th>
-                    <th>SMS Actions</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -434,7 +554,7 @@ function SMSMonitoring() {
                         </div>
                       </td>
                       <td>{booking.instructor || 'TBA'}</td>
-                      <td>{booking.vehicleType || 'TBA'}</td>
+                      <td>{booking.vehicle || 'TBA'}</td>
                       <td>
                         <span className={`status-badge ${booking.status}`}>
                           {booking.status}
@@ -443,16 +563,16 @@ function SMSMonitoring() {
                       <td>
                         <div className="sms-actions">
                           <button
-                            onClick={() => sendSMS(booking, 'confirmation')}
-                            className="sms-btn confirmation"
-                            disabled={sendingStatus[booking.$id + 'confirmation'] === 'sending' || booking.userPhone === 'N/A'}
-                            title="Send Confirmation SMS"
+                            onClick={() => handleBookingAction(booking, 'completed')}
+                            className="sms-btn completed"
+                            disabled={sendingStatus[booking.$id + 'completed'] === 'sending' || booking.status === 'completed'}
+                            title="Mark booking as completed"
                           >
-                            ✓ Confirm
-                            {getSMSStatusBadge(booking, 'confirmation')}
+                            ✓ Complete
+                            {getSMSStatusBadge(booking, 'completed')}
                           </button>
                           <button
-                            onClick={() => sendSMS(booking, 'reminder')}
+                            onClick={() => handleBookingAction(booking, 'reminder')}
                             className="sms-btn reminder"
                             disabled={sendingStatus[booking.$id + 'reminder'] === 'sending' || booking.userPhone === 'N/A'}
                             title="Send Reminder SMS"
@@ -461,10 +581,10 @@ function SMSMonitoring() {
                             {getSMSStatusBadge(booking, 'reminder')}
                           </button>
                           <button
-                            onClick={() => sendSMS(booking, 'cancellation')}
+                            onClick={() => handleBookingAction(booking, 'cancellation')}
                             className="sms-btn cancellation"
-                            disabled={sendingStatus[booking.$id + 'cancellation'] === 'sending' || booking.userPhone === 'N/A'}
-                            title="Send Cancellation SMS"
+                            disabled={sendingStatus[booking.$id + 'cancellation'] === 'sending' || booking.status === 'cancelled'}
+                            title="Cancel booking"
                           >
                             ✗ Cancel
                             {getSMSStatusBadge(booking, 'cancellation')}

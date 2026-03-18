@@ -36,13 +36,19 @@ const getEmailTransporter = () => {
     return null;
   }
 
+  // Gmail app passwords are often copied with spaces; normalize before auth.
+  const smtpPass = String(process.env.SMTP_PASS || '').replace(/\s+/g, '');
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT),
     secure: Number(process.env.SMTP_PORT) === 465,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
     auth: {
       user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
+      pass: smtpPass
     }
   });
 };
@@ -73,6 +79,15 @@ const sendVerificationCodeEmail = async (email, code) => {
       </div>
     `
   });
+};
+
+const withTimeout = (promise, timeoutMs, timeoutMessage) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+    })
+  ]);
 };
 
 const cleanupExpiredVerificationCodes = () => {
@@ -111,7 +126,11 @@ app.post('/api/auth/send-verification-code', async (req, res) => {
     }
 
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    await sendVerificationCodeEmail(email, code);
+    await withTimeout(
+      sendVerificationCodeEmail(email, code),
+      15000,
+      'Email provider timeout. Please try again in a moment.'
+    );
 
     verificationCodes.set(email, {
       code,

@@ -47,9 +47,9 @@ const getEmailTransporter = (overridePort) => {
     host: smtpHost,
     port: smtpPort,
     secure: smtpPort === 465,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 60000,
     family: 4,
     tls: {
       servername: smtpHost
@@ -155,7 +155,7 @@ app.post('/api/auth/send-verification-code', async (req, res) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     await withTimeout(
       sendVerificationCodeEmail(email, code),
-      15000,
+      60000,
       'Email provider timeout. Please try again in a moment.'
     );
 

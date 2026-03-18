@@ -350,7 +350,7 @@ function InstructorsProfile() {
                         <option value="on-leave">On Leave</option>
                       </select>
                       {instructor.availability === 'booked' && (
-                        <span style={{color: '#166534', fontSize: '11px', marginLeft: '8px', fontWeight: '600'}}>Booked</span>
+                        <span style={{color: '#111f33', fontSize: '11px', marginLeft: '8px', fontWeight: '600'}}>Booked</span>
                       )}
                       {instructor.availability === 'booked' && (
                         <small style={{color: '#dc2626', fontSize: '11px', marginTop: '4px', display: 'block'}}>Locked until lesson completed</small>

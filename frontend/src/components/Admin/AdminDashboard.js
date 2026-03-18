@@ -281,7 +281,7 @@ function AdminDashboard() {
                 }} 
                 style={{
                   padding: '8px 16px',
-                  background: '#5a9cf8',
+                  background: '#111f33',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',

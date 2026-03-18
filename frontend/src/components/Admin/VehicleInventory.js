@@ -290,7 +290,7 @@ function VehicleInventory() {
                         <option value="maintenance">Maintenance</option>
                       </select>
                       {vehicle.status === 'booked' && (
-                        <span style={{color: '#166534', fontSize: '11px', marginLeft: '8px', fontWeight: '600'}}>Booked</span>
+                        <span style={{color: '#111f33', fontSize: '11px', marginLeft: '8px', fontWeight: '600'}}>Booked</span>
                       )}
                       {vehicle.status === 'booked' && (
                         <small style={{color: '#dc2626', fontSize: '11px', marginTop: '4px', display: 'block'}}>Locked until lesson completed</small>

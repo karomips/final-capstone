@@ -5,7 +5,7 @@
   display: flex;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 90% 6%, rgba(27, 42, 68, 0.08) 0%, transparent 42%),
+    radial-gradient(circle at 90% 6%, rgba(0, 86, 235, 0.08) 0%, transparent 42%),
     #eef2f7;
   font-family: 'Manrope', sans-serif;
   position: fixed;
@@ -485,7 +485,7 @@
 /* View All Button */
 .view-all-sms-btn {
   padding: 10px 16px;
-  background: #1e3a5f;
+  background: #111f33;
   color: white;
   border: none;
   border-radius: 6px;
@@ -499,7 +499,7 @@
 }
 
 .view-all-sms-btn:hover {
-  background: #2b4c73;
+  background: #0f1b2f;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -793,12 +793,12 @@
 }
 
 .transmission-badge.mt {
-  background: #60a5fa;
+  background: #111f33;
   color: white;
 }
 
 .transmission-badge.at {
-  background: #4ade80;
+  background: #111f33;
   color: white;
 }
 
@@ -853,9 +853,9 @@
 }
 
 .pagination button.active {
-  background: #60a5fa;
+  background: #111f33;
   color: white;
-  border-color: #60a5fa;
+  border-color: #111f33;
 }
 
 .pagination button:disabled {
@@ -1220,7 +1220,7 @@
 
 .add-btn {
   padding: 12px 24px;
-  background: #16a34a;
+  background: #111f33;
   color: white;
   border: none;
   border-radius: 8px;
@@ -1229,12 +1229,12 @@
   cursor: pointer;
   transition: all 0.3s ease;
   font-family: 'Poppins', sans-serif;
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+  box-shadow: 0 2px 8px rgba(17, 31, 51, 0.3);
 }
 
 .add-btn:hover {
-  background: #15803d;
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.4);
+  background: #0f1b2f;
+  box-shadow: 0 4px 12px rgba(17, 31, 51, 0.4);
   transform: translateY(-2px);
 }
 

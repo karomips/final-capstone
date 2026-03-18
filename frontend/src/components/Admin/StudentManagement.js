@@ -252,7 +252,7 @@ function StudentManagement() {
             onClick={fetchStudents} 
             style={{
               padding: '10px 20px',
-              background: '#5a9cf8',
+              background: '#111f33',
               color: 'white',
               border: 'none',
               borderRadius: '6px',

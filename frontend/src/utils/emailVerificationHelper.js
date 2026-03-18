@@ -1,69 +1,75 @@
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const REQUEST_TIMEOUT_MS = 15000;
+
+const parseJsonSafely = async (response) => {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+};
+
+const requestWithTimeout = async (path, options = {}) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      signal: controller.signal
+    });
+
+    const data = await parseJsonSafely(response);
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Request failed');
+    }
+
+    return data;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out. Please try again.');
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
 
 const emailVerificationHelper = {
   sendVerificationCode: async (email) => {
-    const response = await fetch(`${API_URL}/api/auth/send-verification-code`, {
+    return requestWithTimeout('/api/auth/send-verification-code', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ email })
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to send verification code');
-    }
-
-    return data;
   },
 
   verifyCode: async (email, code) => {
-    const response = await fetch(`${API_URL}/api/auth/verify-verification-code`, {
+    return requestWithTimeout('/api/auth/verify-verification-code', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ email, code })
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to verify code');
-    }
-
-    return data;
   },
 
   getVerificationStatus: async (email) => {
-    const response = await fetch(`${API_URL}/api/auth/verification-status?email=${encodeURIComponent(email)}`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to check verification status');
-    }
-
-    return data;
+    return requestWithTimeout(`/api/auth/verification-status?email=${encodeURIComponent(email)}`);
   },
 
   consumeVerification: async (email) => {
-    const response = await fetch(`${API_URL}/api/auth/consume-verification`, {
+    return requestWithTimeout('/api/auth/consume-verification', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ email })
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to consume verification state');
-    }
-
-    return data;
   }
 };
 

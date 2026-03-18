@@ -19,6 +19,9 @@ function Signup() {
   const [error, setError] = useState('');
   const [verificationMessage, setVerificationMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { signup, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
@@ -45,7 +48,7 @@ function Signup() {
     }
 
     try {
-      setLoading(true);
+      setIsSendingCode(true);
       await emailVerificationHelper.sendVerificationCode(trimmedEmail);
       setVerificationSent(true);
       setIsEmailVerified(false);
@@ -53,7 +56,7 @@ function Signup() {
     } catch (verificationError) {
       setError(verificationError.message || 'Failed to send verification code.');
     } finally {
-      setLoading(false);
+      setIsSendingCode(false);
     }
   };
 
@@ -67,7 +70,7 @@ function Signup() {
     }
 
     try {
-      setLoading(true);
+      setIsVerifyingCode(true);
       await emailVerificationHelper.verifyCode(email.trim(), verificationCode.trim());
       setIsEmailVerified(true);
       setVerificationMessage('Email verified. You can create your account now.');
@@ -75,7 +78,7 @@ function Signup() {
       setError(verificationError.message || 'Invalid verification code.');
       setIsEmailVerified(false);
     } finally {
-      setLoading(false);
+      setIsVerifyingCode(false);
     }
   };
 
@@ -151,7 +154,7 @@ function Signup() {
 
   const handleGoogleSignIn = async () => {
     setError('');
-    setLoading(true);
+    setIsGoogleLoading(true);
 
     try {
       await signInWithGoogle();
@@ -163,7 +166,7 @@ function Signup() {
       } else {
         setError('Failed to sign in with Google');
       }
-      setLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -228,9 +231,9 @@ function Signup() {
                   type="button"
                   className="btn-google"
                   onClick={handleSendVerificationCode}
-                  disabled={loading || !email.trim()}
+                  disabled={isSendingCode || !email.trim()}
                 >
-                  {verificationSent ? 'Resend Code' : 'Send Code'}
+                  {isSendingCode ? 'Sending...' : verificationSent ? 'Resend Code' : 'Send Code'}
                 </button>
                 {isEmailVerified && (
                   <span style={{ color: '#166534', fontSize: '0.84rem', fontWeight: 700, alignSelf: 'center' }}>
@@ -253,9 +256,9 @@ function Signup() {
                     type="button"
                     className="btn-google"
                     onClick={handleVerifyCode}
-                    disabled={loading || verificationCode.length !== 6}
+                    disabled={isVerifyingCode || verificationCode.length !== 6}
                   >
-                    Verify
+                    {isVerifyingCode ? 'Verifying...' : 'Verify'}
                   </button>
                 </div>
               )}
@@ -314,7 +317,7 @@ function Signup() {
                 type="button" 
                 className="btn-google" 
                 onClick={handleGoogleSignIn}
-                disabled={loading}
+                disabled={loading || isGoogleLoading}
               >
                 <svg className="google-icon" viewBox="0 0 24 24" width="20" height="20">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

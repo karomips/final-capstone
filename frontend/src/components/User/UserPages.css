@@ -552,7 +552,7 @@
 
 .confirm-booking-btn {
   padding: 12px 30px;
-  background: linear-gradient(180deg, #2f8f55 0%, #237041 100%);
+  background: #000058;
   color: white;
   border: none;
   border-radius: 8px;
@@ -566,7 +566,8 @@
 
 .confirm-booking-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 14px rgba(35, 112, 65, 0.24);
+  box-shadow: 0 8px 14px rgba(0, 0, 88, 0.24);
+  background: #00007a;
 }
 
 @keyframes userPageFadeIn {

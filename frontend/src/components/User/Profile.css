@@ -5,9 +5,10 @@
   border-radius: 12px;
   padding: 30px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  width: min(100%, 980px);
-  margin: 20px 0;
-  align-self: flex-start;
+  width: 100%;
+  max-width: 1200px;
+  margin: 20px auto;
+  align-self: stretch;
 }
 
 /* View Mode */
@@ -117,7 +118,7 @@
 
 .edit-profile-btn {
   padding: 14px 32px;
-  background: #5a9cf8;
+  background: #000058;
   color: white;
   border: none;
   border-radius: 8px;
@@ -130,9 +131,9 @@
 }
 
 .edit-profile-btn:hover:not(:disabled) {
-  background: #4a8ce8;
+  background: #00007a;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(90, 156, 248, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 88, 0.3);
 }
 
 .edit-profile-btn:disabled {
@@ -228,14 +229,14 @@
 }
 
 .submit-btn {
-  background: #5a9cf8;
+  background: #000058;
   color: white;
 }
 
 .submit-btn:hover {
-  background: #4a8ce8;
+  background: #00007a;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(90, 156, 248, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 88, 0.3);
 }
 
 .cancel-btn {

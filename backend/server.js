@@ -132,7 +132,6 @@ setInterval(cleanupExpiredVerificationCodes, 5 * 60 * 1000);
 app.post('/api/auth/send-verification-code', async (req, res) => {
   try {
     const email = String(req.body?.email || '').trim().toLowerCase();
-    const phoneNumber = String(req.body?.phoneNumber || '').trim();
 
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
@@ -154,31 +153,11 @@ app.post('/api/auth/send-verification-code', async (req, res) => {
     }
 
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    let deliveryChannel = 'email';
-
-    try {
-      await withTimeout(
-        sendVerificationCodeEmail(email, code),
-        15000,
-        'Email provider timeout. Please try again in a moment.'
-      );
-    } catch (emailError) {
-      if (!phoneNumber) {
-        throw emailError;
-      }
-
-      const smsResult = await smsService.sendSMS(
-        phoneNumber,
-        `Your DriveEase verification code is ${code}. It expires in 10 minutes.`
-      );
-
-      if (!smsResult?.success) {
-        throw emailError;
-      }
-
-      deliveryChannel = 'sms';
-      console.warn('Email delivery failed, SMS fallback was used for verification code.');
-    }
+    await withTimeout(
+      sendVerificationCodeEmail(email, code),
+      15000,
+      'Email provider timeout. Please try again in a moment.'
+    );
 
     verificationCodes.set(email, {
       code,
@@ -190,11 +169,8 @@ app.post('/api/auth/send-verification-code', async (req, res) => {
 
     return res.json({
       success: true,
-      message:
-        deliveryChannel === 'sms'
-          ? 'Email delivery failed, but verification code was sent to your phone via SMS.'
-          : 'Verification code sent successfully',
-      deliveryChannel,
+      message: 'Verification code sent to your email.',
+      deliveryChannel: 'email',
       expiresInSeconds: Math.floor(CODE_EXPIRY_MS / 1000)
     });
   } catch (error) {

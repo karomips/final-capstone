@@ -49,10 +49,10 @@ function Signup() {
 
     try {
       setIsSendingCode(true);
-      const result = await emailVerificationHelper.sendVerificationCode(trimmedEmail, phoneNumber.trim());
+      const result = await emailVerificationHelper.sendVerificationCode(trimmedEmail);
       setVerificationSent(true);
       setIsEmailVerified(false);
-      setVerificationMessage(result?.message || 'Code sent. Check your email or SMS.');
+      setVerificationMessage(result?.message || 'Code sent to your email.');
     } catch (verificationError) {
       setError(verificationError.message || 'Failed to send verification code.');
     } finally {

@@ -16,7 +16,12 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: ['https://driveease-beta.vercel.app', 'http://localhost:5173'], // Add your Vercel URL here
+  origin: [
+    'https://driveease-beta.vercel.app',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:5173'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
@@ -25,6 +30,13 @@ app.use(express.json());
 const verificationCodes = new Map();
 const CODE_EXPIRY_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
+
+const maskEmail = (email) => {
+  const [local = '', domain = ''] = String(email || '').split('@');
+  if (!local || !domain) return '';
+  const visible = local.length <= 2 ? local[0] : local.slice(0, 2);
+  return `${visible}${'*'.repeat(Math.max(1, local.length - visible.length))}@${domain}`;
+};
 
 const isGmailHost = (host) => /gmail\.com$/i.test(String(host || ''));
 
@@ -91,8 +103,21 @@ const sendVerificationCodeEmail = async (email, code) => {
     `
   };
 
+  const ensureAccepted = (info) => {
+    const acceptedRecipients = Array.isArray(info?.accepted)
+      ? info.accepted.map((item) => String(item).toLowerCase())
+      : [];
+    if (!acceptedRecipients.includes(String(email).toLowerCase())) {
+      const rejectedRecipients = Array.isArray(info?.rejected)
+        ? info.rejected.map((item) => String(item)).join(', ')
+        : 'unknown';
+      throw new Error(`Email was not accepted by SMTP for ${email}. Rejected: ${rejectedRecipients}`);
+    }
+  };
+
   try {
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+    ensureAccepted(info);
   } catch (error) {
     if (isGmailHost(smtpHost) && error?.code === 'ETIMEDOUT') {
       const fallbackTransporter = getEmailTransporter(fallbackPort);
@@ -100,7 +125,8 @@ const sendVerificationCodeEmail = async (email, code) => {
         throw error;
       }
 
-      await fallbackTransporter.sendMail(mailOptions);
+      const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
+      ensureAccepted(fallbackInfo);
       return;
     }
 
@@ -115,6 +141,49 @@ const withTimeout = (promise, timeoutMs, timeoutMessage) => {
       setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
     })
   ]);
+};
+
+const classifyVerificationSendError = (error) => {
+  const message = String(error?.message || 'Failed to send verification code');
+  const code = String(error?.code || '').toUpperCase();
+
+  if (message.includes('SMTP is not configured')) {
+    return {
+      status: 500,
+      error: 'Email service is not configured on the server.',
+      reason: 'smtp_not_configured'
+    };
+  }
+
+  if (message.includes('Email provider timeout') || code === 'ETIMEDOUT') {
+    return {
+      status: 504,
+      error: 'Email service timed out while sending the code. Please try again.',
+      reason: 'smtp_timeout'
+    };
+  }
+
+  if (code === 'EAUTH' || message.toLowerCase().includes('invalid login')) {
+    return {
+      status: 500,
+      error: 'Email login failed. Please verify SMTP credentials.',
+      reason: 'smtp_auth_failed'
+    };
+  }
+
+  if (message.includes('Email was not accepted by SMTP')) {
+    return {
+      status: 502,
+      error: 'Email provider rejected the recipient address.',
+      reason: 'smtp_recipient_rejected'
+    };
+  }
+
+  return {
+    status: 500,
+    error: 'Failed to send verification code.',
+    reason: 'smtp_unknown_error'
+  };
 };
 
 const cleanupExpiredVerificationCodes = () => {
@@ -169,13 +238,26 @@ app.post('/api/auth/send-verification-code', async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'Verification code sent to your email.',
+      message: `Verification code sent to ${maskEmail(email)}.`,
       deliveryChannel: 'email',
+      recipientEmail: email,
+      recipientEmailMasked: maskEmail(email),
       expiresInSeconds: Math.floor(CODE_EXPIRY_MS / 1000)
     });
   } catch (error) {
-    console.error('Error sending verification code:', error);
-    return res.status(500).json({ error: error.message || 'Failed to send verification code' });
+    const classified = classifyVerificationSendError(error);
+    console.error('Error sending verification code:', {
+      message: error?.message,
+      code: error?.code,
+      command: error?.command,
+      responseCode: error?.responseCode,
+      reason: classified.reason
+    });
+
+    return res.status(classified.status).json({
+      error: classified.error,
+      reason: classified.reason
+    });
   }
 });
 

@@ -52,7 +52,11 @@ function Signup() {
       const result = await emailVerificationHelper.sendVerificationCode(trimmedEmail);
       setVerificationSent(true);
       setIsEmailVerified(false);
-      setVerificationMessage(result?.message || 'Code sent to your email.');
+      setVerificationMessage(
+        result?.recipientEmailMasked
+          ? `Code sent to ${result.recipientEmailMasked}.`
+          : (result?.message || 'Code sent to your email.')
+      );
     } catch (verificationError) {
       setError(verificationError.message || 'Failed to send verification code.');
     } finally {

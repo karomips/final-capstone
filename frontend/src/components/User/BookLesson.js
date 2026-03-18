@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId, instructorsCollectionId } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
-import { CalendarDays, Clock3 } from 'lucide-react';
+import { CalendarDays, Clock3, ChevronLeft, ChevronRight } from 'lucide-react';
 import './UserPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
@@ -26,18 +26,106 @@ function BookLesson() {
   const [checkingApproval, setCheckingApproval] = useState(true);
   const [instructors, setInstructors] = useState([]);
   const [vehicles, setVehicles] = useState([]);
-  const dateInputRef = useRef(null);
-  const timeInputRef = useRef(null);
-  const minBookingDate = new Date().toISOString().split('T')[0];
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
 
-  const openNativePicker = (inputRef) => {
-    if (!inputRef?.current) return;
-    if (typeof inputRef.current.showPicker === 'function') {
-      inputRef.current.showPicker();
-      return;
-    }
-    inputRef.current.focus();
+  const toIsoDate = (dateObject) => {
+    const year = dateObject.getFullYear();
+    const month = String(dateObject.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObject.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
+
+  const parseIsoDate = (value) => {
+    if (!value) return null;
+    const parsed = new Date(`${value}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  const today = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }, []);
+
+  const weekLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const calendarDays = useMemo(() => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstDayOfMonth = new Date(year, month, 1);
+    const startingOffset = (firstDayOfMonth.getDay() + 6) % 7;
+    const numberOfDays = new Date(year, month + 1, 0).getDate();
+
+    const grid = [];
+    for (let i = 0; i < startingOffset; i += 1) {
+      grid.push(null);
+    }
+    for (let day = 1; day <= numberOfDays; day += 1) {
+      grid.push(new Date(year, month, day));
+    }
+    while (grid.length % 7 !== 0) {
+      grid.push(null);
+    }
+
+    return grid;
+  }, [calendarMonth]);
+
+  const timeOptions = useMemo(() => {
+    const options = [];
+    const startMinutes = 7 * 60;
+    const endMinutes = 19 * 60;
+
+    for (let totalMinutes = startMinutes; totalMinutes <= endMinutes; totalMinutes += 10) {
+      const hour = Math.floor(totalMinutes / 60);
+      const minute = totalMinutes % 60;
+      const value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      const label = new Date(2000, 0, 1, hour, minute).toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+      options.push({ value, label });
+    }
+
+    return options;
+  }, []);
+
+  const isPastDate = (dateObject) => dateObject < today;
+
+  const isSameDay = (dateA, dateB) => (
+    dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate()
+  );
+
+  const selectedDateObject = parseIsoDate(date);
+
+  const formattedDateSummary = selectedDateObject
+    ? selectedDateObject.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+    : 'Select date';
+
+  const formattedTimeSummary = time
+    ? new Date(`1970-01-01T${time}:00`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    : 'Select time';
+
+  const goToPreviousMonth = () => {
+    setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const handleDatePick = (dayDate) => {
+    if (!dayDate || isPastDate(dayDate)) return;
+    setDate(toIsoDate(dayDate));
+  };
+
+  useEffect(() => {
+    if (!selectedDateObject) return;
+    setCalendarMonth(new Date(selectedDateObject.getFullYear(), selectedDateObject.getMonth(), 1));
+  }, [date]);
 
   const getTheoryCapacity = (instructorDoc) => {
     const parsed = Number(instructorDoc?.theoryCapacity);
@@ -468,44 +556,88 @@ function BookLesson() {
           <div className="booking-section">
             <h2 className="section-title">Date & Time</h2>
             <div className="datetime-inputs">
-              <div className="datetime-picker-group">
-                <input
-                  ref={dateInputRef}
-                  type="date"
-                  value={date}
-                  min={minBookingDate}
-                  onChange={(e) => setDate(e.target.value)}
-                  onFocus={() => openNativePicker(dateInputRef)}
-                  className="booking-input datetime-picker-input"
-                />
-                <button
-                  type="button"
-                  className="picker-trigger"
-                  aria-label="Open date picker"
-                  onClick={() => openNativePicker(dateInputRef)}
-                >
-                  <CalendarDays size={16} />
-                </button>
+              <div className="calendar-shell">
+                <div className="calendar-shell-header">
+                  <div className="calendar-shell-title">
+                    <CalendarDays size={16} />
+                    <span>{calendarMonth.toLocaleDateString([], { month: 'long', year: 'numeric' })}</span>
+                  </div>
+                  <div className="calendar-nav">
+                    <button
+                      type="button"
+                      className="calendar-nav-btn"
+                      onClick={goToPreviousMonth}
+                      aria-label="Previous month"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      className="calendar-nav-btn"
+                      onClick={goToNextMonth}
+                      aria-label="Next month"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="calendar-weekdays">
+                  {weekLabels.map((weekday) => (
+                    <span key={weekday} className="calendar-weekday-label">{weekday}</span>
+                  ))}
+                </div>
+
+                <div className="calendar-grid">
+                  {calendarDays.map((dayDate, index) => {
+                    if (!dayDate) {
+                      return <div key={`empty-${index}`} className="calendar-day-empty" aria-hidden="true" />;
+                    }
+
+                    const dayIsoValue = toIsoDate(dayDate);
+                    const isDisabled = isPastDate(dayDate);
+                    const isSelected = selectedDateObject ? isSameDay(dayDate, selectedDateObject) : false;
+                    const isToday = isSameDay(dayDate, today);
+
+                    return (
+                      <button
+                        key={dayIsoValue}
+                        type="button"
+                        className={`calendar-day-btn ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
+                        disabled={isDisabled}
+                        onClick={() => handleDatePick(dayDate)}
+                        aria-label={dayDate.toLocaleDateString([], {
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      >
+                        {dayDate.getDate()}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="datetime-picker-group">
-                <input
-                  ref={timeInputRef}
-                  type="time"
-                  value={time}
-                  step="1800"
-                  onChange={(e) => setTime(e.target.value)}
-                  onFocus={() => openNativePicker(timeInputRef)}
-                  className="booking-input datetime-picker-input"
-                />
-                <button
-                  type="button"
-                  className="picker-trigger"
-                  aria-label="Open time picker"
-                  onClick={() => openNativePicker(timeInputRef)}
-                >
+              <div className="time-picker-shell">
+                <div className="time-picker-header">
                   <Clock3 size={16} />
-                </button>
+                  <span>Pick a Time Slot</span>
+                </div>
+                <select
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="booking-select time-select"
+                >
+                  <option value="">Select time</option>
+                  {timeOptions.map((slot) => (
+                    <option key={slot.value} value={slot.value}>
+                      {slot.label}
+                    </option>
+                  ))}
+                </select>
+                <small className="time-hint">10-minute interval scheduling</small>
               </div>
             </div>
           </div>
@@ -515,8 +647,8 @@ function BookLesson() {
             <h2 className="section-title">Booking Summary</h2>
             <p className="summary-text">
               You have selected a<br />
-              <strong>{selectedLesson === 'practical' ? 'Practical Lesson' : 'Theory Class'}</strong> on {date || 'MM/DD/YYYY'}<br />
-              @ {time || '00:00'} {time && (parseInt(time.split(':')[0]) >= 12 ? 'PM' : 'AM')}
+              <strong>{selectedLesson === 'practical' ? 'Practical Lesson' : 'Theory Class'}</strong> on {formattedDateSummary}<br />
+              @ {formattedTimeSummary}
             </p>
             <button 
               className="confirm-booking-btn"

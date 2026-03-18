@@ -5,8 +5,8 @@
   display: flex;
   min-height: 100vh;
   background:
-    radial-gradient(circle at 94% 6%, rgba(0, 0, 88, 0.1) 0%, transparent 36%),
-    linear-gradient(180deg, #f4f7fb 0%, #eaf0f8 100%);
+    radial-gradient(circle at 90% 6%, rgba(27, 42, 68, 0.08) 0%, transparent 42%),
+    #eef2f7;
   font-family: 'Manrope', sans-serif;
   position: fixed;
   top: 0;
@@ -19,7 +19,7 @@
 /* Sidebar Styles */
 .admin-sidebar {
   width: 280px;
-  background: linear-gradient(180deg, #000058 0%, #000078 100%);
+  background: linear-gradient(180deg, #111f33 0%, #1b2f49 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -33,7 +33,7 @@
 
 .admin-main-content {
   flex: 1;
-  padding: 28px;
+  padding: 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -184,9 +184,9 @@
 }
 
 .admin-page-title {
-  font-size: 1.5rem;
-  color: #172a42;
-  margin: 8px 0 18px;
+  font-size: 1.42rem;
+  color: #1a2b42;
+  margin: 4px 0 14px;
   font-weight: 800;
   letter-spacing: 0.2px;
 }
@@ -201,10 +201,10 @@
 
 .stat-card {
   background: white;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 10px 20px rgba(16, 41, 72, 0.08);
-  border: 1px solid #dce4ee;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 12px 24px rgba(20, 34, 51, 0.08);
+  border: 1px solid #d6deea;
   display: flex;
   align-items: center;
   gap: 15px;
@@ -241,10 +241,10 @@
 .schedule-section,
 .sms-section {
   background: white;
-  border-radius: 10px;
-  padding: 25px;
-  box-shadow: 0 10px 20px rgba(16, 41, 72, 0.08);
-  border: 1px solid #dce4ee;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 12px 24px rgba(20, 34, 51, 0.08);
+  border: 1px solid #d6deea;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -508,8 +508,8 @@
 .student-table-container {
   background: white;
   border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  box-shadow: 0 12px 24px rgba(20, 34, 51, 0.08);
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -618,8 +618,8 @@
 .instructor-card {
   background: white;
   border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 18px;
+  box-shadow: 0 12px 24px rgba(20, 34, 51, 0.08);
   display: flex;
   gap: 20px;
   align-items: center;
@@ -736,8 +736,8 @@
 .vehicle-card {
   background: white;
   border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 18px;
+  box-shadow: 0 12px 24px rgba(20, 34, 51, 0.08);
   display: flex;
   gap: 20px;
   align-items: center;
@@ -865,6 +865,10 @@
 
 /* Responsive Design */
 @media (max-width: 1200px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+
   .instructors-grid,
   .vehicles-grid {
     grid-template-columns: 1fr;
@@ -875,29 +879,81 @@
   }
 }
 
+@media (max-width: 992px) {
+  .admin-main-content {
+    padding: 14px;
+  }
+
+  .admin-page-title {
+    font-size: 1.28rem;
+  }
+}
+
 @media (max-width: 768px) {
   .admin-page-container {
-    flex-direction: column;
+    position: fixed;
+    min-height: 100dvh;
   }
   
   .admin-sidebar {
-    width: 100%;
-    flex-direction: row;
-    padding: 15px;
-    height: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(82vw, 320px);
+    height: 100dvh;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px 14px 14px;
+    z-index: 1400;
+    transform: translateX(0);
   }
   
   .admin-logo-section {
-    margin-bottom: 0;
-    margin-right: 15px;
+    margin: 0 0 16px;
+    width: 100%;
   }
   
   .admin-nav-buttons {
-    flex-direction: row;
-    margin-bottom: 0;
-    margin-right: auto;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: auto;
+    margin-right: 0;
+  }
+
+  .admin-nav-btn,
+  .admin-signout-btn {
+    width: 100%;
+    padding: 11px 10px;
+    font-size: 0.8rem;
+  }
+
+  .admin-signout-btn {
+    margin-top: 12px;
+  }
+
+  .admin-main-content {
+    height: 100dvh;
+    padding: 56px 12px 12px;
+  }
+
+  .admin-sidebar.closed {
+    transform: translateX(-100%);
+    width: min(82vw, 320px);
+    padding: 18px 14px 14px;
+    overflow: hidden;
   }
   
+
+@media (max-width: 420px) {
+  .admin-sidebar,
+  .admin-sidebar.closed {
+    width: 88vw;
+  }
+
+  .admin-main-content {
+    padding: 56px 10px 10px;
+  }
+}
   .admin-signout-btn {
     margin-top: 0;
     width: auto;

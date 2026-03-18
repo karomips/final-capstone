@@ -3,7 +3,7 @@
 .user-page-container {
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f9fafb 0%, #ede9fe 50%, #fce7f3 100%);
+  background: radial-gradient(circle at 90% 8%, rgba(27, 42, 68, 0.08), transparent 40%), #eef2f7;
   font-family: 'DM Sans', sans-serif;
   position: fixed;
   inset: 0;
@@ -12,7 +12,7 @@
 
 .user-sidebar {
   width: 280px;
-  background: linear-gradient(180deg, #000058 0%, #000078 100%);
+  background: linear-gradient(180deg, #111f33 0%, #1b2f49 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -120,7 +120,7 @@
 
 .user-main-content {
   flex: 1;
-  padding: 28px;
+  padding: 18px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -144,8 +144,8 @@
 
 .page-title {
   font-size: 1.875rem;
-  color: #111827;
-  margin: 8px 0 24px;
+  color: #1a2b42;
+  margin: 4px 0 14px;
   font-weight: 700;
   letter-spacing: -0.5px;
 }
@@ -160,10 +160,10 @@
 
 .dashboard-card {
   background: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 12px 24px rgba(20, 34, 51, 0.08);
+  border: 1px solid #d6deea;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -288,8 +288,8 @@
 
 .booking-layout {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: 1fr 1.15fr 0.9fr;
+  gap: 14px;
   flex: 1;
   align-items: start;
 }
@@ -297,10 +297,10 @@
 .booking-section,
 .booking-summary {
   background: white;
-  border-radius: 10px;
-  padding: 22px;
-  box-shadow: 0 10px 20px rgba(16, 41, 72, 0.08);
-  border: 1px solid #dce4ee;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 12px 24px rgba(20, 34, 51, 0.08);
+  border: 1px solid #d6deea;
 }
 
 .booking-section {
@@ -311,7 +311,7 @@
   font-size: 1rem;
   font-weight: 800;
   color: #1b3453;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -399,37 +399,136 @@
 .datetime-inputs {
   display: flex;
   flex-direction: column;
-  gap: 13px;
+  gap: 12px;
 }
 
-.datetime-picker-group {
-  position: relative;
+.calendar-shell,
+.time-picker-shell {
+  border: 1px solid #d7e0ea;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fbfdff;
 }
 
-.datetime-picker-input {
-  padding-right: 42px;
-  cursor: pointer;
+.calendar-shell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
-.picker-trigger {
-  position: absolute;
-  right: 11px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  color: #3b4f69;
+.calendar-shell-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #1f3c60;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.calendar-nav {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.calendar-nav-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid #d2dcec;
+  background: white;
+  color: #26466e;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 0;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.picker-trigger:hover {
-  color: #17417a;
+.calendar-nav-btn:hover {
+  background: #eef4ff;
+  border-color: #96b3de;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: 8px;
+}
+
+.calendar-weekday-label {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6a7f99;
+  letter-spacing: 0.2px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.calendar-day-empty {
+  height: 30px;
+}
+
+.calendar-day-btn {
+  height: 30px;
+  border: 1px solid #d3dceb;
+  border-radius: 8px;
+  background: white;
+  color: #1f3a5a;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.12s ease;
+}
+
+.calendar-day-btn:hover:not(:disabled) {
+  background: #eef4ff;
+  border-color: #8fb0e4;
+}
+
+.calendar-day-btn.today {
+  border-color: #4f89d8;
+  box-shadow: inset 0 0 0 1px rgba(79, 137, 216, 0.3);
+}
+
+.calendar-day-btn.selected {
+  background: #1f4c86;
+  border-color: #1f4c86;
+  color: white;
+}
+
+.calendar-day-btn:disabled {
+  color: #a8b6c7;
+  background: #f3f6fa;
+  border-color: #e2e8f1;
+  cursor: not-allowed;
+}
+
+.time-picker-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #1f3c60;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.time-select {
+  height: 40px;
+  font-weight: 700;
+}
+
+.time-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: #6a7f99;
 }
 
 .booking-summary {
@@ -506,7 +605,15 @@
   }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
+  .user-main-content {
+    padding: 14px;
+  }
+
+  .page-title {
+    font-size: 1.45rem;
+  }
+
   .booking-layout {
     grid-template-columns: 1fr 1fr;
   }
@@ -518,49 +625,62 @@
 
 @media (max-width: 768px) {
   .user-page-container {
-    position: static;
+    position: fixed;
     min-height: 100dvh;
   }
 
   .user-sidebar {
-    width: 100%;
-    height: auto;
-    flex-direction: row;
-    align-items: center;
-    padding: 10px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(82vw, 320px);
+    height: 100dvh;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px 14px 14px;
+    z-index: 1400;
+    transform: translateX(0);
   }
 
   .user-logo-section {
-    margin: 0 10px 0 0;
-    width: auto;
+    margin: 0 0 16px;
+    width: 100%;
   }
 
   .user-logo {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
   }
 
   .user-nav-buttons {
-    flex-direction: row;
-    gap: 8px;
-    margin-bottom: 0;
-    margin-right: auto;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: auto;
+    margin-right: 0;
   }
 
   .user-nav-btn,
   .user-signout-btn {
-    padding: 9px 10px;
-    font-size: 0.75rem;
+    width: 100%;
+    padding: 11px 10px;
+    font-size: 0.8rem;
   }
 
   .user-signout-btn {
-    margin-top: 0;
-    width: auto;
+    margin-top: 12px;
+    width: 100%;
+  }
+
+  .user-sidebar.closed {
+    transform: translateX(-100%);
+    width: min(82vw, 320px);
+    padding: 18px 14px 14px;
+    overflow: hidden;
   }
 
   .user-main-content {
-    height: auto;
-    padding: 16px;
+    height: 100dvh;
+    padding: 56px 12px 12px;
   }
 
   .dashboard-grid,
@@ -574,5 +694,16 @@
   .schedules-card,
   .booking-summary {
     grid-column: 1;
+  }
+}
+
+@media (max-width: 420px) {
+  .user-sidebar,
+  .user-sidebar.closed {
+    width: 88vw;
+  }
+
+  .user-main-content {
+    padding: 56px 10px 10px;
   }
 }

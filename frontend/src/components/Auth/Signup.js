@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
+import { Eye, EyeOff } from 'lucide-react';
+import emailVerificationHelper from '../../utils/emailVerificationHelper';
 
 
 function Signup() {
@@ -10,13 +12,72 @@ function Signup() {
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
-  const [profileImageFile, setProfileImageFile] = useState(null);
-  const [profileImagePreview, setProfileImagePreview] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [verificationMessage, setVerificationMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const { signup, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  const resetVerificationState = () => {
+    setVerificationCode('');
+    setVerificationSent(false);
+    setIsEmailVerified(false);
+    setVerificationMessage('');
+  };
+
+  const handleEmailChange = (value) => {
+    setEmail(value);
+    resetVerificationState();
+  };
+
+  const handleSendVerificationCode = async () => {
+    setError('');
+    setVerificationMessage('');
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Enter your email address first.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await emailVerificationHelper.sendVerificationCode(trimmedEmail);
+      setVerificationSent(true);
+      setIsEmailVerified(false);
+      setVerificationMessage('Code sent to your email.');
+    } catch (verificationError) {
+      setError(verificationError.message || 'Failed to send verification code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    setError('');
+    setVerificationMessage('');
+
+    if (!verificationCode.trim()) {
+      setError('Enter the 6-digit verification code.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await emailVerificationHelper.verifyCode(email.trim(), verificationCode.trim());
+      setIsEmailVerified(true);
+      setVerificationMessage('Email verified. You can create your account now.');
+    } catch (verificationError) {
+      setError(verificationError.message || 'Invalid verification code.');
+      setIsEmailVerified(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,10 +105,16 @@ function Signup() {
       return;
     }
 
+    if (!isEmailVerified) {
+      setError('Please verify your email with the 6-digit code before creating your account.');
+      setLoading(false);
+      return;
+    }
+
     try {
       // Create Appwrite account (this will also auto-login and create user document)
       console.log('Starting signup process...');
-      const result = await signup(email, password, name, phoneNumber, profileImageFile);
+      const result = await signup(email, password, name, phoneNumber, null);
       console.log('Signup successful, user ID:', result.$id);
       
       // Verify the document was created by fetching it
@@ -82,29 +149,6 @@ function Signup() {
     setLoading(false);
   };
 
-  const handleProfileImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      setProfileImageFile(null);
-      setProfileImagePreview('');
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file.');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Profile image must be 5MB or smaller.');
-      return;
-    }
-
-    setError('');
-    setProfileImageFile(file);
-    setProfileImagePreview(URL.createObjectURL(file));
-  };
-
   const handleGoogleSignIn = async () => {
     setError('');
     setLoading(true);
@@ -128,10 +172,7 @@ function Signup() {
           <div className="auth-split-left">
       <div className="auth-logo-section">
         <div className="auth-logo">
-          <img 
-            src={EasyDriveLogo} alt="Easy Drive Driving School Logo" 
-            style={{ width: '500%', height: 'auto', maxWidth: '250px' }} 
-          />
+          <img src={EasyDriveLogo} alt="Easy Drive Driving School Logo" />
         </div>
     
         <div className="auth-tagline">
@@ -174,10 +215,55 @@ function Signup() {
                   id="email"
                   placeholder=""
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => handleEmailChange(e.target.value)}
                   required
                 />
               </div>
+            </div>
+
+            <div className="form-group">
+              <label>Email Verification</label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn-google"
+                  onClick={handleSendVerificationCode}
+                  disabled={loading || !email.trim()}
+                >
+                  {verificationSent ? 'Resend Code' : 'Send Code'}
+                </button>
+                {isEmailVerified && (
+                  <span style={{ color: '#166534', fontSize: '0.84rem', fontWeight: 700, alignSelf: 'center' }}>
+                    Verified
+                  </span>
+                )}
+              </div>
+              {verificationSent && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="Enter 6-digit code"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn-google"
+                    onClick={handleVerifyCode}
+                    disabled={loading || verificationCode.length !== 6}
+                  >
+                    Verify
+                  </button>
+                </div>
+              )}
+              {verificationMessage && (
+                <small style={{ color: isEmailVerified ? '#166534' : '#374151', marginTop: '4px' }}>
+                  {verificationMessage}
+                </small>
+              )}
             </div>
 
             <div className="form-group">
@@ -193,22 +279,7 @@ function Signup() {
                   required
                 />
               </div>
-              <small style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px', display: 'block' }}>Required for SMS appointment reminders</small>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="profileImage">Profile Picture (Optional)</label>
-              <input
-                type="file"
-                id="profileImage"
-                accept="image/*"
-                onChange={handleProfileImageChange}
-              />
-              {profileImagePreview && (
-                <div className="image-preview" style={{ marginTop: '8px' }}>
-                  <img src={profileImagePreview} alt="Profile preview" style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover' }} />
-                </div>
-              )}
+              <small style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px', display: 'block' }}>Needed for SMS reminders</small>
             </div>
 
             <div className="form-group">
@@ -228,7 +299,7 @@ function Signup() {
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? '👁' : '👁‍🗨'}
+                  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </button>
               </div>
             </div>
@@ -238,7 +309,7 @@ function Signup() {
             </button>
 
             <div className="divider">
-              <span>Sign up with:</span>
+              <span>Continue with</span>
               <button 
                 type="button" 
                 className="btn-google" 

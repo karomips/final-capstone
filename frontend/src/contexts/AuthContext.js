@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { account, databases, databaseId, usersCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../appwrite/config';
 import { ID, OAuthProvider } from 'appwrite';
+import emailVerificationHelper from '../utils/emailVerificationHelper';
 
 const AuthContext = createContext();
 
@@ -15,6 +16,12 @@ export function AuthProvider({ children }) {
   // Sign up function
   async function signup(email, password, name = 'User', phoneNumber = '', profileImageFile = null) {
     try {
+      const normalizedEmail = String(email || '').trim().toLowerCase();
+      const verificationStatus = await emailVerificationHelper.getVerificationStatus(normalizedEmail);
+      if (!verificationStatus.verified) {
+        throw new Error('Please verify your email before creating an account.');
+      }
+
       // Try to clear any existing session first
       try {
         await account.deleteSession('current');
@@ -42,7 +49,7 @@ export function AuthProvider({ children }) {
           name: name,
           email: email,
           role: email === 'admin@gmail.com' ? 'admin' : 'user',
-          approved: email === 'admin@gmail.com' ? true : false,
+          approved: true,
           createdAt: new Date().toISOString()
         };
 
@@ -82,6 +89,8 @@ export function AuthProvider({ children }) {
       // Fetch and set current user
       const user = await account.get();
       setCurrentUser(user);
+
+      await emailVerificationHelper.consumeVerification(normalizedEmail);
       
       return response;
     } catch (error) {

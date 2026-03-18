@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId, instructorsCollectionId } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
+import { CalendarDays, Clock3 } from 'lucide-react';
 import './UserPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function BookLesson() {
+  const THEORY_MIN_CAPACITY = 15;
+  const THEORY_MAX_CAPACITY = 20;
+
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -22,6 +26,42 @@ function BookLesson() {
   const [checkingApproval, setCheckingApproval] = useState(true);
   const [instructors, setInstructors] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const dateInputRef = useRef(null);
+  const timeInputRef = useRef(null);
+  const minBookingDate = new Date().toISOString().split('T')[0];
+
+  const openNativePicker = (inputRef) => {
+    if (!inputRef?.current) return;
+    if (typeof inputRef.current.showPicker === 'function') {
+      inputRef.current.showPicker();
+      return;
+    }
+    inputRef.current.focus();
+  };
+
+  const getTheoryCapacity = (instructorDoc) => {
+    const parsed = Number(instructorDoc?.theoryCapacity);
+    if (Number.isFinite(parsed)) {
+      return Math.min(Math.max(parsed, THEORY_MIN_CAPACITY), THEORY_MAX_CAPACITY);
+    }
+    return THEORY_MAX_CAPACITY;
+  };
+
+  const countActiveTheoryBookings = async (instructorName) => {
+    const response = await databases.listDocuments(
+      databaseId,
+      bookingsCollectionId,
+      [
+        Query.equal('instructor', instructorName),
+        Query.equal('lessonType', 'theory')
+      ]
+    );
+
+    return response.documents.filter((bookingDoc) => {
+      const status = String(bookingDoc.status || '').toLowerCase();
+      return status !== 'completed' && status !== 'cancelled';
+    }).length;
+  };
 
   const checkUserApproval = useCallback(async () => {
     try {
@@ -57,8 +97,27 @@ function BookLesson() {
         if (!instructor.lessonType) return true; // Backwards compatibility for old records
         return instructor.lessonType === selectedLesson || instructor.lessonType === 'both';
       });
-      
-      setInstructors(filteredInstructors);
+
+      if (selectedLesson === 'theory') {
+        const instructorsWithSlots = await Promise.all(
+          filteredInstructors.map(async (inst) => {
+            const capacity = getTheoryCapacity(inst);
+            const activeTheoryBookings = await countActiveTheoryBookings(inst.name);
+            const remainingSlots = Math.max(0, capacity - activeTheoryBookings);
+
+            return {
+              ...inst,
+              theoryCapacity: capacity,
+              theoryActiveBookings: activeTheoryBookings,
+              theoryRemainingSlots: remainingSlots
+            };
+          })
+        );
+
+        setInstructors(instructorsWithSlots.filter((inst) => inst.theoryRemainingSlots > 0));
+      } else {
+        setInstructors(filteredInstructors);
+      }
     } catch (error) {
       console.error('Error fetching instructors:', error);
       setInstructors([]);
@@ -140,6 +199,23 @@ function BookLesson() {
     setLoading(true);
     
     try {
+      let selectedInstructorDoc = null;
+      let theoryCapacity = THEORY_MAX_CAPACITY;
+      let activeTheoryBookings = 0;
+
+      if (selectedLesson === 'theory') {
+        selectedInstructorDoc = instructors.find((inst) => inst.name === instructor) || null;
+        theoryCapacity = getTheoryCapacity(selectedInstructorDoc);
+        activeTheoryBookings = await countActiveTheoryBookings(instructor);
+
+        if (activeTheoryBookings >= theoryCapacity) {
+          setError('This instructor has reached the theory class capacity. Please select another instructor.');
+          await fetchInstructors();
+          setLoading(false);
+          return;
+        }
+      }
+
       // Create booking in database
       console.log('Creating booking with date:', date);
       await databases.createDocument(
@@ -172,12 +248,26 @@ function BookLesson() {
         
         if (instructorQuery.documents.length > 0) {
           const instructorDoc = instructorQuery.documents[0];
-          await databases.updateDocument(
-            databaseId,
-            instructorsCollectionId,
-            instructorDoc.$id,
-            { availability: 'booked' }
-          );
+          // Practical lessons lock instructor immediately.
+          // Theory lessons allow multiple active bookings until reaching capacity.
+          if (selectedLesson === 'practical') {
+            await databases.updateDocument(
+              databaseId,
+              instructorsCollectionId,
+              instructorDoc.$id,
+              { availability: 'booked' }
+            );
+          } else {
+            const shouldMarkUnavailable = activeTheoryBookings + 1 >= theoryCapacity;
+            if (shouldMarkUnavailable) {
+              await databases.updateDocument(
+                databaseId,
+                instructorsCollectionId,
+                instructorDoc.$id,
+                { availability: 'booked' }
+              );
+            }
+          }
         }
       } catch (error) {
         console.error('Error updating instructor availability:', error);
@@ -343,7 +433,9 @@ function BookLesson() {
                 ) : (
                   instructors.map((inst) => (
                     <option key={inst.$id} value={inst.name}>
-                      {inst.name} - {inst.certifications}
+                      {selectedLesson === 'theory'
+                        ? `${inst.name} - ${inst.certifications} (${inst.theoryRemainingSlots}/${inst.theoryCapacity} booking slots left)`
+                        : `${inst.name} - ${inst.certifications}`}
                     </option>
                   ))
                 )}
@@ -376,18 +468,45 @@ function BookLesson() {
           <div className="booking-section">
             <h2 className="section-title">Date & Time</h2>
             <div className="datetime-inputs">
-              <input 
-                type="date" 
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="booking-input"
-              />
-              <input 
-                type="time" 
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="booking-input"
-              />
+              <div className="datetime-picker-group">
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={date}
+                  min={minBookingDate}
+                  onChange={(e) => setDate(e.target.value)}
+                  onFocus={() => openNativePicker(dateInputRef)}
+                  className="booking-input datetime-picker-input"
+                />
+                <button
+                  type="button"
+                  className="picker-trigger"
+                  aria-label="Open date picker"
+                  onClick={() => openNativePicker(dateInputRef)}
+                >
+                  <CalendarDays size={16} />
+                </button>
+              </div>
+
+              <div className="datetime-picker-group">
+                <input
+                  ref={timeInputRef}
+                  type="time"
+                  value={time}
+                  step="1800"
+                  onChange={(e) => setTime(e.target.value)}
+                  onFocus={() => openNativePicker(timeInputRef)}
+                  className="booking-input datetime-picker-input"
+                />
+                <button
+                  type="button"
+                  className="picker-trigger"
+                  aria-label="Open time picker"
+                  onClick={() => openNativePicker(timeInputRef)}
+                >
+                  <Clock3 size={16} />
+                </button>
+              </div>
             </div>
           </div>
 

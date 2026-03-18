@@ -7,11 +7,13 @@ import './AdminPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function VehicleInventory() {
+  const VEHICLES_PER_PAGE = 8;
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     plateNumber: '',
@@ -56,6 +58,10 @@ function VehicleInventory() {
   useEffect(() => {
     fetchVehicles();
   }, [fetchVehicles]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vehicles.length]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -179,6 +185,16 @@ function VehicleInventory() {
     }
   };
 
+  const totalPages = Math.max(1, Math.ceil(vehicles.length / VEHICLES_PER_PAGE));
+  const paginatedVehicles = vehicles.slice(
+    (currentPage - 1) * VEHICLES_PER_PAGE,
+    currentPage * VEHICLES_PER_PAGE
+  );
+
+  const goToPage = (page) => {
+    setCurrentPage(Math.min(Math.max(page, 1), totalPages));
+  };
+
   return (
     <div className="admin-page-container">
       <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -248,7 +264,7 @@ function VehicleInventory() {
         ) : (
           <>
             <div className="vehicles-grid">
-              {vehicles.map((vehicle) => (
+              {paginatedVehicles.map((vehicle) => (
                 <div key={vehicle.$id} className="vehicle-card">
                   <div className="vehicle-image">
                     <img src={vehicle.resolvedImageUrl} alt="Vehicle" />
@@ -286,9 +302,17 @@ function VehicleInventory() {
             </div>
 
             <div className="pagination">
-              <button>◄</button>
-              <button className="active">1</button>
-              <button>►</button>
+              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>◄</button>
+              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
+                <button
+                  key={page}
+                  className={currentPage === page ? 'active' : ''}
+                  onClick={() => goToPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>►</button>
             </div>
           </>
         )}

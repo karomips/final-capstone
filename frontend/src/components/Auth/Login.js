@@ -72,10 +72,7 @@ function Login() {
       <div className="auth-split-left">
   <div className="auth-logo-section">
     <div className="auth-logo">
-      <img 
-        src={EasyDriveLogo} alt="Easy Drive Driving School Logo" 
-        style={{ width: '500%', height: 'auto', maxWidth: '250px' }} 
-      />
+      <img src={EasyDriveLogo} alt="Easy Drive Driving School Logo" />
     </div>
 
     <div className="auth-tagline">
@@ -88,7 +85,7 @@ function Login() {
       <div className="auth-split-right">
         <div className="auth-card">
           <div className="auth-header">
-            <h1>Sign in to Your Account</h1>
+            <h1>Log In</h1>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
@@ -176,7 +173,7 @@ function Login() {
             </button>
 
             <div className="divider">
-              <span>Login with:</span>
+              <span>Continue with</span>
               <button 
                 type="button" 
                 className="btn-google" 

@@ -6,15 +6,21 @@ import './AdminPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function StudentManagement() {
+  const STUDENTS_PER_PAGE = 10;
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchStudents();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [students.length]);
 
   const fetchStudents = async () => {
     try {
@@ -179,6 +185,14 @@ function StudentManagement() {
     }
   };
 
+  const totalPages = Math.max(1, Math.ceil(students.length / STUDENTS_PER_PAGE));
+  const startIndex = (currentPage - 1) * STUDENTS_PER_PAGE;
+  const paginatedStudents = students.slice(startIndex, startIndex + STUDENTS_PER_PAGE);
+
+  const goToPage = (page) => {
+    setCurrentPage(Math.min(Math.max(page, 1), totalPages));
+  };
+
   return (
     <div className="admin-page-container">
       <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -231,7 +245,7 @@ function StudentManagement() {
       </div>
 
       {/* Main Content */}
-      <div className="admin-main-content">
+      <div className="admin-main-content admin-main-content--fit">
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
           <h1 className="admin-page-title">Student Management</h1>
           <button 
@@ -279,9 +293,9 @@ function StudentManagement() {
                   <td colSpan="6" className="table-empty">No students registered yet</td>
                 </tr>
               ) : (
-                students.map((student, index) => (
+                paginatedStudents.map((student, index) => (
                   <tr key={student.$id}>
-                    <td style={{fontWeight: 600, color: '#1e3a5f'}}>{index + 1}</td>
+                    <td style={{fontWeight: 600, color: '#1e3a5f'}}>{startIndex + index + 1}</td>
                     <td style={{fontWeight: 500, color: '#1a1a1a'}}>{student.name}</td>
                     <td>{student.email}</td>
                     <td>
@@ -372,6 +386,22 @@ function StudentManagement() {
             </tbody>
           </table>
           </div>
+
+          {!loading && students.length > 0 && (
+            <div className="pagination">
+              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>◄</button>
+              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
+                <button
+                  key={page}
+                  className={currentPage === page ? 'active' : ''}
+                  onClick={() => goToPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>►</button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const nodemailer = require('nodemailer');
 
 // Load environment variables FIRST before requiring other modules
 dotenv.config();
@@ -16,6 +17,182 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+const verificationCodes = new Map();
+const CODE_EXPIRY_MS = 10 * 60 * 1000;
+const RESEND_COOLDOWN_MS = 60 * 1000;
+
+const getEmailTransporter = () => {
+  if (
+    !process.env.SMTP_HOST ||
+    !process.env.SMTP_PORT ||
+    !process.env.SMTP_USER ||
+    !process.env.SMTP_PASS
+  ) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    secure: Number(process.env.SMTP_PORT) === 465,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+};
+
+const sendVerificationCodeEmail = async (email, code) => {
+  const transporter = getEmailTransporter();
+  if (!transporter) {
+    throw new Error(
+      'SMTP is not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and SMTP_FROM_EMAIL in backend/.env'
+    );
+  }
+
+  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
+  const appName = process.env.APP_NAME || 'Easy Drive Driving School';
+
+  await transporter.sendMail({
+    from: `"${appName}" <${fromEmail}>`,
+    to: email,
+    subject: `${appName} Verification Code`,
+    text: `Your verification code is ${code}. This code will expire in 10 minutes.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
+        <h2 style="margin-bottom: 8px;">Email Verification</h2>
+        <p>Use this verification code to complete your registration:</p>
+        <p style="font-size: 28px; font-weight: 700; letter-spacing: 6px; margin: 16px 0; color: #17417a;">${code}</p>
+        <p>This code expires in <strong>10 minutes</strong>.</p>
+        <p>If you did not request this, you can ignore this email.</p>
+      </div>
+    `
+  });
+};
+
+const cleanupExpiredVerificationCodes = () => {
+  const now = Date.now();
+  for (const [email, data] of verificationCodes.entries()) {
+    if (data.expiresAt <= now) {
+      verificationCodes.delete(email);
+    }
+  }
+};
+
+setInterval(cleanupExpiredVerificationCodes, 5 * 60 * 1000);
+
+// Send email verification code for signup
+app.post('/api/auth/send-verification-code', async (req, res) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+
+    const now = Date.now();
+    const existing = verificationCodes.get(email);
+    if (existing && now - existing.lastSentAt < RESEND_COOLDOWN_MS) {
+      const waitMs = RESEND_COOLDOWN_MS - (now - existing.lastSentAt);
+      return res.status(429).json({
+        error: 'Please wait before requesting another code',
+        retryAfterSeconds: Math.ceil(waitMs / 1000)
+      });
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    await sendVerificationCodeEmail(email, code);
+
+    verificationCodes.set(email, {
+      code,
+      expiresAt: now + CODE_EXPIRY_MS,
+      verified: false,
+      lastSentAt: now,
+      attempts: 0
+    });
+
+    return res.json({
+      success: true,
+      message: 'Verification code sent successfully',
+      expiresInSeconds: Math.floor(CODE_EXPIRY_MS / 1000)
+    });
+  } catch (error) {
+    console.error('Error sending verification code:', error);
+    return res.status(500).json({ error: error.message || 'Failed to send verification code' });
+  }
+});
+
+// Verify email code for signup
+app.post('/api/auth/verify-verification-code', async (req, res) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const code = String(req.body?.code || '').trim();
+
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email and code are required' });
+    }
+
+    const record = verificationCodes.get(email);
+    if (!record) {
+      return res.status(400).json({ error: 'No verification code found for this email. Please request a new code.' });
+    }
+
+    if (record.expiresAt <= Date.now()) {
+      verificationCodes.delete(email);
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
+    }
+
+    record.attempts += 1;
+    if (record.attempts > 5) {
+      verificationCodes.delete(email);
+      return res.status(429).json({ error: 'Too many failed attempts. Please request a new code.' });
+    }
+
+    if (record.code !== code) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+
+    record.verified = true;
+    verificationCodes.set(email, record);
+
+    return res.json({ success: true, message: 'Email verified successfully' });
+  } catch (error) {
+    console.error('Error verifying code:', error);
+    return res.status(500).json({ error: 'Failed to verify code' });
+  }
+});
+
+// Check if email is verified before signup
+app.get('/api/auth/verification-status', (req, res) => {
+  const email = String(req.query?.email || '').trim().toLowerCase();
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  const record = verificationCodes.get(email);
+  if (!record || record.expiresAt <= Date.now()) {
+    return res.json({ verified: false });
+  }
+
+  return res.json({ verified: !!record.verified });
+});
+
+// Mark verification as consumed after account is created
+app.post('/api/auth/consume-verification', (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  verificationCodes.delete(email);
+  return res.json({ success: true });
+});
 
 // Test route
 app.get('/api', (req, res) => {

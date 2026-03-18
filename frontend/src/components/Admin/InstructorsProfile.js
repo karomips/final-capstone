@@ -1,17 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { databases, databaseId, instructorsCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../../appwrite/config';
+import { databases, databaseId, instructorsCollectionId, bookingsCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import './AdminPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function InstructorsProfile() {
+  const INSTRUCTORS_PER_PAGE = 8;
+  const THEORY_MIN_CAPACITY = 15;
+  const THEORY_MAX_CAPACITY = 20;
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -31,6 +35,30 @@ function InstructorsProfile() {
     return instructor?.imageUrl || '';
   }, []);
 
+  const getTheoryCapacity = (instructorDoc) => {
+    const parsed = Number(instructorDoc?.theoryCapacity);
+    if (Number.isFinite(parsed)) {
+      return Math.min(Math.max(parsed, THEORY_MIN_CAPACITY), THEORY_MAX_CAPACITY);
+    }
+    return THEORY_MAX_CAPACITY;
+  };
+
+  const countActiveTheoryBookings = async (instructorName) => {
+    const response = await databases.listDocuments(
+      databaseId,
+      bookingsCollectionId,
+      [
+        Query.equal('instructor', instructorName),
+        Query.equal('lessonType', 'theory')
+      ]
+    );
+
+    return response.documents.filter((bookingDoc) => {
+      const status = String(bookingDoc.status || '').toLowerCase();
+      return status !== 'completed' && status !== 'cancelled';
+    }).length;
+  };
+
   const fetchInstructors = useCallback(async () => {
     try {
       setLoading(true);
@@ -39,10 +67,33 @@ function InstructorsProfile() {
         instructorsCollectionId,
         [Query.orderDesc('$createdAt')]
       );
-      const mappedInstructors = response.documents.map((instructor) => ({
-        ...instructor,
-        resolvedImageUrl: resolveInstructorImageUrl(instructor)
-      }));
+
+      const mappedInstructors = await Promise.all(
+        response.documents.map(async (instructor) => {
+          const theoryCapacity = getTheoryCapacity(instructor);
+          const lessonType = instructor.lessonType || 'practical';
+
+          if (lessonType === 'theory' || lessonType === 'both') {
+            const theoryActiveBookings = await countActiveTheoryBookings(instructor.name);
+            return {
+              ...instructor,
+              resolvedImageUrl: resolveInstructorImageUrl(instructor),
+              theoryCapacity,
+              theoryActiveBookings,
+              theoryRemainingSlots: Math.max(0, theoryCapacity - theoryActiveBookings)
+            };
+          }
+
+          return {
+            ...instructor,
+            resolvedImageUrl: resolveInstructorImageUrl(instructor),
+            theoryCapacity,
+            theoryActiveBookings: 0,
+            theoryRemainingSlots: theoryCapacity
+          };
+        })
+      );
+
       setInstructors(mappedInstructors);
     } catch (error) {
       console.error('Error fetching instructors:', error);
@@ -56,6 +107,10 @@ function InstructorsProfile() {
   useEffect(() => {
     fetchInstructors();
   }, [fetchInstructors]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [instructors.length]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -183,6 +238,16 @@ function InstructorsProfile() {
     }
   };
 
+  const totalPages = Math.max(1, Math.ceil(instructors.length / INSTRUCTORS_PER_PAGE));
+  const paginatedInstructors = instructors.slice(
+    (currentPage - 1) * INSTRUCTORS_PER_PAGE,
+    currentPage * INSTRUCTORS_PER_PAGE
+  );
+
+  const goToPage = (page) => {
+    setCurrentPage(Math.min(Math.max(page, 1), totalPages));
+  };
+
   return (
     <div className="admin-page-container">
       <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -252,7 +317,7 @@ function InstructorsProfile() {
         ) : (
           <>
             <div className="instructors-grid">
-              {instructors.map((instructor) => (
+              {paginatedInstructors.map((instructor) => (
                 <div key={instructor.$id} className="instructor-card">
                   <div className="instructor-avatar">
                     {instructor.resolvedImageUrl ? (
@@ -265,6 +330,11 @@ function InstructorsProfile() {
                     <h3>{instructor.name}</h3>
                     <div className="instructor-cert">
                       <strong>Teaches:</strong> {instructor.lessonType === 'both' ? 'Theory & Practical' : instructor.lessonType === 'theory' ? 'Theory Class' : 'Practical Lesson'}<br />
+                      {(instructor.lessonType === 'theory' || instructor.lessonType === 'both') && (
+                        <>
+                          <strong>Booking Slots:</strong> {instructor.theoryRemainingSlots}/{instructor.theoryCapacity} available<br />
+                        </>
+                      )}
                       <strong>Certifications:</strong><br />
                       {instructor.certifications}
                     </div>
@@ -292,9 +362,17 @@ function InstructorsProfile() {
             </div>
 
             <div className="pagination">
-              <button>◄</button>
-              <button className="active">1</button>
-              <button>►</button>
+              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>◄</button>
+              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
+                <button
+                  key={page}
+                  className={currentPage === page ? 'active' : ''}
+                  onClick={() => goToPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>►</button>
             </div>
           </>
         )}
@@ -345,7 +423,6 @@ function InstructorsProfile() {
                   >
                     <option value="practical">Practical Lesson</option>
                     <option value="theory">Theory Class</option>
-                    <option value="both">Both Theory & Practical</option>
                   </select>
                 </div>
 

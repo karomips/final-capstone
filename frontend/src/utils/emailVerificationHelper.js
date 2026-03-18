@@ -38,13 +38,13 @@ const requestWithTimeout = async (path, options = {}) => {
 };
 
 const emailVerificationHelper = {
-  sendVerificationCode: async (email) => {
+  sendVerificationCode: async (email, phoneNumber = '') => {
     return requestWithTimeout('/api/auth/send-verification-code', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, phoneNumber })
     });
   },
 

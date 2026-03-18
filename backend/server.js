@@ -26,10 +26,12 @@ const verificationCodes = new Map();
 const CODE_EXPIRY_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 
-const getEmailTransporter = () => {
+const isGmailHost = (host) => /gmail\.com$/i.test(String(host || ''));
+
+const getEmailTransporter = (overridePort) => {
   if (
     !process.env.SMTP_HOST ||
-    !process.env.SMTP_PORT ||
+    (!process.env.SMTP_PORT && !overridePort) ||
     !process.env.SMTP_USER ||
     !process.env.SMTP_PASS
   ) {
@@ -38,14 +40,20 @@ const getEmailTransporter = () => {
 
   // Gmail app passwords are often copied with spaces; normalize before auth.
   const smtpPass = String(process.env.SMTP_PASS || '').replace(/\s+/g, '');
+  const smtpHost = String(process.env.SMTP_HOST || '').trim();
+  const smtpPort = Number(overridePort || process.env.SMTP_PORT);
 
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: Number(process.env.SMTP_PORT) === 465,
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
+    family: 4,
+    tls: {
+      servername: smtpHost
+    },
     auth: {
       user: process.env.SMTP_USER,
       pass: smtpPass
@@ -63,8 +71,11 @@ const sendVerificationCodeEmail = async (email, code) => {
 
   const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
   const appName = process.env.APP_NAME || 'Easy Drive Driving School';
+  const smtpHost = String(process.env.SMTP_HOST || '').trim();
+  const configuredPort = Number(process.env.SMTP_PORT);
+  const fallbackPort = configuredPort === 465 ? 587 : 465;
 
-  await transporter.sendMail({
+  const mailOptions = {
     from: `"${appName}" <${fromEmail}>`,
     to: email,
     subject: `${appName} Verification Code`,
@@ -78,7 +89,23 @@ const sendVerificationCodeEmail = async (email, code) => {
         <p>If you did not request this, you can ignore this email.</p>
       </div>
     `
-  });
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    if (isGmailHost(smtpHost) && error?.code === 'ETIMEDOUT') {
+      const fallbackTransporter = getEmailTransporter(fallbackPort);
+      if (!fallbackTransporter) {
+        throw error;
+      }
+
+      await fallbackTransporter.sendMail(mailOptions);
+      return;
+    }
+
+    throw error;
+  }
 };
 
 const withTimeout = (promise, timeoutMs, timeoutMessage) => {

@@ -268,6 +268,22 @@
   max-height: 500px;
 }
 
+.today-table-wrapper {
+  height: 260px;
+  max-height: 260px;
+}
+
+.upcoming-booked-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.upcoming-table-wrapper {
+  height: 420px;
+  max-height: 420px;
+}
+
 .schedule-table {
   width: 100%;
   border-collapse: collapse;
@@ -876,6 +892,16 @@
   
   .dashboard-bottom {
     grid-template-columns: 1fr;
+  }
+
+  .today-table-wrapper {
+    height: 220px;
+    max-height: 220px;
+  }
+
+  .upcoming-table-wrapper {
+    height: 320px;
+    max-height: 320px;
   }
 }
 

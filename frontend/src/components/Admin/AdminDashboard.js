@@ -182,6 +182,23 @@ function AdminDashboard() {
     return filtered;
   }, [bookings]);
 
+  const upcomingBookings = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const localToday = `${year}-${month}-${day}`;
+
+    return bookings
+      .filter((booking) => String(booking.date || '').trim() >= localToday)
+      .sort((a, b) => {
+        const dateCompare = String(a.date || '').localeCompare(String(b.date || ''));
+        if (dateCompare !== 0) return dateCompare;
+        return String(a.time || '').localeCompare(String(b.time || ''));
+      })
+      .slice(0, 12);
+  }, [bookings]);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -298,10 +315,11 @@ function AdminDashboard() {
                  Refresh
               </button>
             </div>
-            <div className="table-wrapper">
+            <div className="table-wrapper today-table-wrapper">
               <table className="schedule-table">
                 <thead>
                   <tr>
+                    <th>Date</th>
                     <th>Time</th>
                     <th>Student Name</th>
                     <th>Instructor</th>
@@ -312,19 +330,28 @@ function AdminDashboard() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="table-empty">
+                    <td colSpan="6" className="table-empty">
                       Loading bookings...
                     </td>
                   </tr>
                 ) : todayBookings.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="table-empty">
+                    <td colSpan="6" className="table-empty">
                       No bookings for today
                     </td>
                   </tr>
                 ) : (
                   todayBookings.map((booking) => (
                     <tr key={booking.$id}>
+                      <td>
+                        {booking.date
+                          ? new Date(`${booking.date}T00:00:00`).toLocaleDateString('en-US', {
+                              timeZone: 'Asia/Manila',
+                              month: 'short',
+                              day: 'numeric'
+                            }).toUpperCase()
+                          : 'N/A'}
+                      </td>
                       <td className="time-cell">{booking.time}</td>
                       <td className="name-cell">{booking.userName}</td>
                       <td>{booking.instructor}</td>
@@ -339,6 +366,57 @@ function AdminDashboard() {
                 )}
               </tbody>
             </table>
+            </div>
+
+            <div className="upcoming-booked-section" style={{ marginTop: '18px' }}>
+              <h2 className="section-title" style={{ marginBottom: '10px' }}>UPCOMING BOOKED DATES</h2>
+              <div className="table-wrapper upcoming-table-wrapper">
+                <table className="schedule-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Student Name</th>
+                      <th>Lesson Type</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan="5" className="table-empty">Loading booked dates...</td>
+                      </tr>
+                    ) : upcomingBookings.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="table-empty">No upcoming booked dates</td>
+                      </tr>
+                    ) : (
+                      upcomingBookings.map((booking) => (
+                        <tr key={`upcoming-${booking.$id}`}>
+                          <td>
+                            {booking.date
+                              ? new Date(`${booking.date}T00:00:00`).toLocaleDateString('en-US', {
+                                  timeZone: 'Asia/Manila',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                }).toUpperCase()
+                              : 'N/A'}
+                          </td>
+                          <td className="time-cell">{booking.time}</td>
+                          <td className="name-cell">{booking.userName}</td>
+                          <td>{booking.lessonType === 'practical' ? 'Practical' : 'Theory'}</td>
+                          <td>
+                            <span className={`status-badge-table ${booking.status.toLowerCase()}`}>
+                              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 

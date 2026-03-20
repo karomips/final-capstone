@@ -405,9 +405,230 @@
   font-weight: 500;
 }
 
+.signup-enroll-layout {
+  grid-template-columns: minmax(560px, 1.4fr) minmax(360px, 1fr);
+  background: #f3f4f6;
+}
+
+.signup-enroll-layout .enroll-form-side {
+  box-shadow: none;
+  align-items: flex-start;
+  padding: 24px 24px 30px;
+}
+
+.signup-enroll-layout .enroll-info-side {
+  background: linear-gradient(180deg, #0d2240 0%, #1b355a 55%, #27456f 100%);
+  color: #eaf2ff;
+  padding: 22px 26px;
+  justify-content: center;
+  align-items: center;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.signup-enroll-layout .enroll-info-side::after {
+  display: none;
+}
+
+.signup-enroll-layout .auth-card.enroll-card {
+  width: 100%;
+  max-width: 900px;
+  border-radius: 10px;
+  box-shadow: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.enroll-header h3 {
+  margin: 0;
+  color: #2d7cf8;
+  font-size: 1.6rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.enroll-header h1 {
+  margin-top: 8px;
+  margin-bottom: 16px;
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.enroll-step-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #6b7280;
+  margin-bottom: 18px;
+}
+
+.enroll-progress-track {
+  width: 420px;
+  max-width: 100%;
+  height: 16px;
+  border-radius: 999px;
+  background: #dbdde1;
+  overflow: hidden;
+}
+
+.enroll-progress-fill {
+  height: 100%;
+  background: #0d70ba;
+  transition: width 0.2s ease;
+}
+
+.enroll-form {
+  gap: 14px;
+}
+
+.signup-enroll-layout .auth-form input,
+.signup-enroll-layout .auth-form select {
+  border-radius: 3px;
+  border: 1px solid #c6c9cf;
+  background: #fff;
+  height: 44px;
+  padding: 8px 10px;
+  font-size: 1rem;
+}
+
+.signup-enroll-layout .auth-form select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #9ca3af 50%), linear-gradient(135deg, #9ca3af 50%, transparent 50%);
+  background-position: calc(100% - 16px) calc(1em + 7px), calc(100% - 10px) calc(1em + 7px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.name-grid-3,
+.dob-grid-3,
+.address-grid-2 {
+  display: grid;
+  gap: 12px;
+}
+
+.name-grid-3,
+.dob-grid-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.address-grid-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.zip-field {
+  max-width: 240px;
+}
+
+.enroll-next-btn {
+  width: 92px;
+  height: 42px;
+  border-radius: 3px;
+  margin-top: 4px;
+  background: #1976d2;
+  box-shadow: none;
+}
+
+.enroll-step-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+.verification-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.verification-row input {
+  flex: 1;
+  min-width: 220px;
+}
+
+.verified-chip {
+  color: #166534;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.enroll-right-panel {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.enroll-right-panel h2 {
+  margin: 0 0 14px;
+  font-size: 2.7rem;
+  line-height: 1;
+  color: #f3f8ff;
+}
+
+.enroll-right-panel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.enroll-right-panel li {
+  position: relative;
+  padding-left: 22px;
+  color: rgba(239, 246, 255, 0.95);
+  font-size: 1.02rem;
+  line-height: 1.4;
+}
+
+.enroll-right-panel li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #66b2ff;
+  font-weight: 800;
+}
+
+.enroll-right-panel p {
+  margin: 12px 0 0;
+  color: #7fc0ff;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.enroll-image-wrap {
+  margin-top: 18px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(203, 225, 253, 0.35);
+  padding: 16px;
+  box-shadow: 0 12px 24px rgba(8, 20, 40, 0.32);
+}
+
+.enroll-image-wrap img {
+  width: 100%;
+  height: auto;
+}
+
 @media (max-width: 992px) {
   .auth-container {
     grid-template-columns: 1fr;
+  }
+
+  .signup-enroll-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .signup-enroll-layout .enroll-info-side {
+    order: 2;
+    padding-top: 8px;
+  }
+
+  .signup-enroll-layout .enroll-form-side {
+    order: 1;
   }
 
   .auth-split-left {
@@ -450,5 +671,36 @@
 
   .auth-header h1 {
     font-size: 1.3rem;
+  }
+
+  .name-grid-3,
+  .dob-grid-3,
+  .address-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .enroll-header h3 {
+    font-size: 1.2rem;
+  }
+
+  .enroll-header h1 {
+    font-size: 1.45rem;
+  }
+
+  .enroll-step-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .enroll-progress-track {
+    width: 100%;
+  }
+
+  .enroll-right-panel h2 {
+    font-size: 1.7rem;
+  }
+
+  .enroll-right-panel p {
+    font-size: 1.1rem;
   }
 }

@@ -44,6 +44,13 @@ function BookLesson() {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   };
 
+  const addDays = (isoValue, numberOfDays) => {
+    const parsed = parseIsoDate(isoValue);
+    if (!parsed) return '';
+    parsed.setDate(parsed.getDate() + numberOfDays);
+    return toIsoDate(parsed);
+  };
+
   const today = useMemo(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -100,6 +107,11 @@ function BookLesson() {
   );
 
   const selectedDateObject = parseIsoDate(date);
+
+  const practicalCourseDates = useMemo(() => {
+    if (selectedLesson !== 'practical' || !date) return [];
+    return [date, addDays(date, 1), addDays(date, 2)];
+  }, [selectedLesson, date]);
 
   const formattedDateSummary = selectedDateObject
     ? selectedDateObject.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
@@ -304,26 +316,30 @@ function BookLesson() {
         }
       }
 
-      // Create booking in database
-      console.log('Creating booking with date:', date);
-      await databases.createDocument(
-        databaseId,
-        bookingsCollectionId,
-        ID.unique(),
-        {
-          userId: currentUser.$id,
-          userName: currentUser.name || 'User',
-          userEmail: currentUser.email,
-          lessonType: selectedLesson,
-          instructor: instructor,
-          vehicle: selectedLesson === 'theory' ? 'N/A' : vehicle,
-          date: date,
-          time: time,
-          status: 'pending',
-          createdAt: new Date().toISOString()
-        }
-      );
-      console.log('Booking created successfully with date:', date);
+      const bookingDates = selectedLesson === 'practical' ? practicalCourseDates : [date];
+
+      // Create booking document(s) in database
+      for (const bookingDate of bookingDates) {
+        console.log('Creating booking with date:', bookingDate);
+        await databases.createDocument(
+          databaseId,
+          bookingsCollectionId,
+          ID.unique(),
+          {
+            userId: currentUser.$id,
+            userName: currentUser.name || 'User',
+            userEmail: currentUser.email,
+            lessonType: selectedLesson,
+            instructor: instructor,
+            vehicle: selectedLesson === 'theory' ? 'N/A' : vehicle,
+            date: bookingDate,
+            time: time,
+            status: 'pending',
+            createdAt: new Date().toISOString()
+          }
+        );
+      }
+      console.log('Booking created successfully for dates:', bookingDates);
 
       // Update instructor availability to "booked"
       try {
@@ -388,7 +404,11 @@ function BookLesson() {
         }
       }
       
-      setSuccess('Booking confirmed successfully!');
+      setSuccess(
+        selectedLesson === 'practical'
+          ? 'Practical booking confirmed for 3 consecutive course days!'
+          : 'Booking confirmed successfully!'
+      );
       // Reset form
       setInstructor('');
       setVehicle('');
@@ -595,7 +615,12 @@ function BookLesson() {
                     }
 
                     const dayIsoValue = toIsoDate(dayDate);
-                    const isDisabled = isPastDate(dayDate);
+                    const isLockedPracticalDate = (
+                      selectedLesson === 'practical' &&
+                      practicalCourseDates.includes(dayIsoValue) &&
+                      dayIsoValue !== date
+                    );
+                    const isDisabled = isPastDate(dayDate) || isLockedPracticalDate;
                     const isSelected = selectedDateObject ? isSameDay(dayDate, selectedDateObject) : false;
                     const isToday = isSameDay(dayDate, today);
 
@@ -603,7 +628,7 @@ function BookLesson() {
                       <button
                         key={dayIsoValue}
                         type="button"
-                        className={`calendar-day-btn ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
+                        className={`calendar-day-btn ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${isLockedPracticalDate ? 'locked' : ''}`}
                         disabled={isDisabled}
                         onClick={() => handleDatePick(dayDate)}
                         aria-label={dayDate.toLocaleDateString([], {
@@ -618,6 +643,16 @@ function BookLesson() {
                     );
                   })}
                 </div>
+                {selectedLesson === 'practical' && practicalCourseDates.length === 3 && (
+                  <small className="time-hint">
+                    Practical course dates are locked to: {practicalCourseDates.map((isoDate) => {
+                      const parsed = parseIsoDate(isoDate);
+                      return parsed
+                        ? parsed.toLocaleDateString([], { month: 'short', day: 'numeric' })
+                        : isoDate;
+                    }).join(', ')}
+                  </small>
+                )}
               </div>
 
               <div className="time-picker-shell">
@@ -646,9 +681,26 @@ function BookLesson() {
           <div className="booking-summary">
             <h2 className="section-title">Booking Summary</h2>
             <p className="summary-text">
-              You have selected a<br />
-              <strong>{selectedLesson === 'practical' ? 'Practical Lesson' : 'Theory Class'}</strong> on {formattedDateSummary}<br />
-              @ {formattedTimeSummary}
+              {selectedLesson === 'practical' ? (
+                <>
+                  You selected a <strong>Practical Lesson Track</strong><br />
+                  Course Days: {practicalCourseDates.length > 0
+                    ? practicalCourseDates.map((isoDate) => {
+                        const parsed = parseIsoDate(isoDate);
+                        return parsed
+                          ? parsed.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                          : isoDate;
+                      }).join(' • ')
+                    : 'Select date'}<br />
+                  @ {formattedTimeSummary}
+                </>
+              ) : (
+                <>
+                  You have selected a<br />
+                  <strong>Theory Class</strong> on {formattedDateSummary}<br />
+                  @ {formattedTimeSummary}
+                </>
+              )}
             </p>
             <button 
               className="confirm-booking-btn"

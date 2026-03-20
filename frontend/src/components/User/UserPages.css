@@ -154,19 +154,19 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
+  align-content: start;
 }
 
 .dashboard-card {
   background: #ffffff;
   border-radius: 12px;
-  padding: 18px;
+  padding: 14px;
   box-shadow: 0 12px 24px rgba(20, 34, 51, 0.08);
   border: 1px solid #d6deea;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  height: fit-content;
 }
 
 .dashboard-card h2 {
@@ -192,25 +192,25 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .clock-icon {
-  font-size: 28px;
+  font-size: 24px;
 }
 
 .next-lesson-info {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
 }
 
 .lesson-date {
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #11253d;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .lesson-instructor,
@@ -224,12 +224,126 @@
   flex: 1;
   background: #f7f9fc;
   border-radius: 8px;
-  min-height: 150px;
+  min-height: 90px;
   border: 1px solid #e4ebf3;
 }
 
 .notifications-content {
-  min-height: 180px;
+  min-height: 110px;
+}
+
+.notifications-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  background: #ffffff;
+  border: 1px solid #dde6f2;
+  border-radius: 8px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notification-type {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #1f4c86;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.notification-message {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #2d425d;
+  line-height: 1.35;
+}
+
+.notification-time {
+  font-size: 0.72rem;
+  color: #6a7f99;
+}
+
+.notification-empty-state {
+  font-size: 0.82rem;
+  color: #5f7187;
+  padding: 8px;
+}
+
+.practical-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+
+.practical-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1f3f68;
+  text-transform: uppercase;
+}
+
+.practical-course-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid #dde6f2;
+  border-radius: 8px;
+  background: #ffffff;
+  gap: 10px;
+}
+
+.practical-course-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.practical-course-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #203955;
+}
+
+.practical-course-date {
+  font-size: 0.74rem;
+  color: #627791;
+}
+
+.practical-course-status {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.practical-course-status.completed {
+  background: #daf4e5;
+  color: #155e3f;
+}
+
+.practical-course-status.scheduled {
+  background: #d9e9ff;
+  color: #0f4f95;
+}
+
+.practical-course-status.pending {
+  background: #edf1f7;
+  color: #5d6f87;
 }
 
 .schedule-list {
@@ -507,6 +621,12 @@
   background: #f3f6fa;
   border-color: #e2e8f1;
   cursor: not-allowed;
+}
+
+.calendar-day-btn.locked {
+  background: #e7eef9;
+  border-color: #c5d7f0;
+  color: #57739a;
 }
 
 .time-picker-header {

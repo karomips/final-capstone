@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { account, databases, databaseId, usersCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../appwrite/config';
-import { ID, OAuthProvider } from 'appwrite';
+import { ID } from 'appwrite';
 import emailVerificationHelper from '../utils/emailVerificationHelper';
 
 const AuthContext = createContext();
@@ -12,6 +12,23 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  function normalizeBoolean(value) {
+    return value === true || value === 'true' || value === 1 || value === '1';
+  }
+
+  function isAdminUser(user, userDoc) {
+    const email = String(user?.email || '').toLowerCase();
+    return email === 'admin@gmail.com' || userDoc?.role === 'admin';
+  }
+
+  async function getUserDocumentSafe(userId) {
+    try {
+      return await databases.getDocument(databaseId, usersCollectionId, userId);
+    } catch (err) {
+      return null;
+    }
+  }
 
   // Sign up function
   async function signup(email, password, name = 'User', phoneNumber = '', profileImageFile = null) {
@@ -49,7 +66,7 @@ export function AuthProvider({ children }) {
           name: name,
           email: email,
           role: email === 'admin@gmail.com' ? 'admin' : 'user',
-          approved: true,
+          approved: email === 'admin@gmail.com',
           createdAt: new Date().toISOString()
         };
 
@@ -87,10 +104,13 @@ export function AuthProvider({ children }) {
       }
       
       // Fetch and set current user
-      const user = await account.get();
-      setCurrentUser(user);
+      await account.get();
 
       await emailVerificationHelper.consumeVerification(normalizedEmail);
+
+      // Keep new accounts signed out until they are approved by admin.
+      await account.deleteSession('current');
+      setCurrentUser(null);
       
       return response;
     } catch (error) {
@@ -112,8 +132,18 @@ export function AuthProvider({ children }) {
       const session = await account.createEmailPasswordSession(email, password);
       // Fetch user after login
       const user = await account.get();
+      const userDoc = await getUserDocumentSafe(user.$id);
+      const admin = isAdminUser(user, userDoc);
+      const approved = normalizeBoolean(userDoc?.approved);
+
+      if (!admin && !approved) {
+        await account.deleteSession('current');
+        setCurrentUser(null);
+        throw new Error('Your account is pending admin approval. Please wait for approval before logging in.');
+      }
+
       setCurrentUser(user);
-      return session;
+      return { session, user, userDoc };
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -131,29 +161,21 @@ export function AuthProvider({ children }) {
     }
   }
 
-  // Google Sign-In function
-  async function signInWithGoogle() {
-    try {
-      // Note: This will redirect to Google OAuth and back
-      // Make sure to configure OAuth provider in Appwrite Console
-      const redirectUrl = `${window.location.origin}/oauth-callback`;
-      account.createOAuth2Session(
-        OAuthProvider.Google,
-        redirectUrl, // Success URL
-        redirectUrl  // Failure URL
-      );
-    } catch (error) {
-      console.error('Google sign-in error:', error);
-      throw error;
-    }
-  }
-
   // Check for existing session on mount
   useEffect(() => {
     const checkSession = async () => {
       try {
         const user = await account.get();
-        setCurrentUser(user);
+        const userDoc = await getUserDocumentSafe(user.$id);
+        const admin = isAdminUser(user, userDoc);
+        const approved = normalizeBoolean(userDoc?.approved);
+
+        if (!admin && !approved) {
+          await account.deleteSession('current');
+          setCurrentUser(null);
+        } else {
+          setCurrentUser(user);
+        }
       } catch (error) {
         // No active session
         setCurrentUser(null);
@@ -169,8 +191,7 @@ export function AuthProvider({ children }) {
     currentUser,
     signup,
     login,
-    logout,
-    signInWithGoogle
+    logout
   };
 
   return (

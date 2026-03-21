@@ -1,6 +1,15 @@
 .App {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.App.auth-shell {
+  background: transparent;
+}
+
+.App.app-shell-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }

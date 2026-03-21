@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Login from './components/Auth/Login';
 import Signup from './components/Auth/Signup';
@@ -15,89 +15,98 @@ import Profile from './components/User/Profile';
 import PrivateRoute from './components/Shared/PrivateRoute';
 import './App.css';
 
+function AppContent() {
+  const location = useLocation();
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+
+  return (
+    <div className={`App ${isAuthPage ? 'auth-shell' : 'app-shell-gradient'}`}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route 
+          path="/admin" 
+          element={
+            <PrivateRoute>
+              <AdminDashboard />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/admin/students" 
+          element={
+            <PrivateRoute>
+              <StudentManagement />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/admin/instructors" 
+          element={
+            <PrivateRoute>
+              <InstructorsProfile />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/admin/vehicles" 
+          element={
+            <PrivateRoute>
+              <VehicleInventory />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/admin/sms-monitoring" 
+          element={
+            <PrivateRoute>
+              <SMSMonitoring />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/user-dashboard" 
+          element={
+            <PrivateRoute>
+              <UserDashboard />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/book-lesson" 
+          element={
+            <PrivateRoute>
+              <BookLesson />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/profile" 
+          element={
+            <PrivateRoute>
+              <Profile />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/dashboard" 
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          } 
+        />
+        <Route path="/" element={<Navigate to="/login" />} />
+      </Routes>
+    </div>
+  );
+}
+
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <div className="App">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route 
-              path="/admin" 
-              element={
-                <PrivateRoute>
-                  <AdminDashboard />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/admin/students" 
-              element={
-                <PrivateRoute>
-                  <StudentManagement />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/admin/instructors" 
-              element={
-                <PrivateRoute>
-                  <InstructorsProfile />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/admin/vehicles" 
-              element={
-                <PrivateRoute>
-                  <VehicleInventory />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/admin/sms-monitoring" 
-              element={
-                <PrivateRoute>
-                  <SMSMonitoring />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/user-dashboard" 
-              element={
-                <PrivateRoute>
-                  <UserDashboard />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/book-lesson" 
-              element={
-                <PrivateRoute>
-                  <BookLesson />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/profile" 
-              element={
-                <PrivateRoute>
-                  <Profile />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/dashboard" 
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              } 
-            />
-            <Route path="/" element={<Navigate to="/login" />} />
-          </Routes>
-        </div>
+        <AppContent />
       </AuthProvider>
     </Router>
   );

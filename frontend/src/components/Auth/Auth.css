@@ -48,6 +48,19 @@
   }
 }
 
+@keyframes authPageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.992);
+    filter: blur(1.5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
 @keyframes floatDecoration1 {
   0%, 100% {
     transform: translateY(0px) translateX(0px) rotate(0deg);
@@ -91,6 +104,17 @@
   width: 100%;
   font-family: 'DM Sans', sans-serif;
   background: radial-gradient(circle at 90% 10%, rgba(27, 42, 68, 0.08), transparent 40%), #eef2f7;
+  transition: opacity 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+}
+
+body.auth-transition-in .auth-container {
+  animation: authPageEnter 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.auth-transition-out .auth-container {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.992);
+  filter: blur(1.5px);
 }
 
 .auth-split-left {

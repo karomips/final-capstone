@@ -1,6 +1,6 @@
 # Backend API
 
-Node.js/Express backend with Firebase Admin SDK.
+Node.js/Express backend with Appwrite integration.
 
 ## Setup
 
@@ -38,6 +38,16 @@ APP_NAME=Easy Drive Driving School
 Notes:
 - Use an app password if your provider requires it.
 - Verification emails will fail until all SMTP values are set.
+
+## Event-Driven Approval Emails
+
+To send a welcome email when admin approves a user, use the Appwrite Function scaffold in:
+
+- `appwrite-functions/user-approved-email`
+
+Setup guide:
+
+- `EVENT_DRIVEN_APPROVAL_EMAIL_SETUP.md`
 
 ## API Endpoints
 

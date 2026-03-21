@@ -60,9 +60,6 @@
 }
 /* hamburger icon button */
 .hamburger-btn {
-  position: fixed;
-  top: 14px;
-  left: 14px;
   width: 38px;
   height: 38px;
   border: 1px solid rgba(255, 255, 255, 0.28);
@@ -71,7 +68,20 @@
   font-size: 1.2rem;
   border-radius: 8px;
   cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.hamburger-btn.fixed {
+  position: fixed;
+  top: 14px;
+  left: 14px;
   z-index: 1500;
+}
+.hamburger-btn.inside {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 10;
+  background: rgba(16, 52, 98, 0.85);
 }
 
 /* adjust main content when sidebar hidden */

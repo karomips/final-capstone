@@ -111,7 +111,7 @@ function BookLesson() {
   const practicalCourseDates = useMemo(() => {
     if (selectedLesson !== 'practical' || !date) return [];
     return [date, addDays(date, 1), addDays(date, 2)];
-  }, [selectedLesson, date]);
+  }, [selectedLesson, date, addDays]);
 
   const formattedDateSummary = selectedDateObject
     ? selectedDateObject.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
@@ -137,7 +137,7 @@ function BookLesson() {
   useEffect(() => {
     if (!selectedDateObject) return;
     setCalendarMonth(new Date(selectedDateObject.getFullYear(), selectedDateObject.getMonth(), 1));
-  }, [date]);
+  }, [date, selectedDateObject]);
 
   const getTheoryCapacity = (instructorDoc) => {
     const parsed = Number(instructorDoc?.theoryCapacity);

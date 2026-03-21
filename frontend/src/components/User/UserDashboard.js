@@ -151,7 +151,7 @@ function UserDashboard() {
     };
     
     fetchUserData();
-  }, [currentUser]);
+  }, [currentUser, getSmsNotifications]);
 
   const handleLogout = async () => {
     try {

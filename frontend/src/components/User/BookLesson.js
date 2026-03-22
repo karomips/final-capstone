@@ -7,6 +7,28 @@ import { CalendarDays, Clock3, ChevronLeft, ChevronRight } from 'lucide-react';
 import './UserPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
+// ✅ Moved outside component — pure utility functions, never change
+const toIsoDate = (dateObject) => {
+  const year = dateObject.getFullYear();
+  const month = String(dateObject.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObject.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseIsoDate = (value) => {
+  if (!value) return null;
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+// ✅ Moved outside component — no need for useCallback
+const addDays = (isoValue, numberOfDays) => {
+  const parsed = parseIsoDate(isoValue);
+  if (!parsed) return '';
+  parsed.setDate(parsed.getDate() + numberOfDays);
+  return toIsoDate(parsed);
+};
+
 function BookLesson() {
   const THEORY_MIN_CAPACITY = 15;
   const THEORY_MAX_CAPACITY = 20;
@@ -38,26 +60,6 @@ function BookLesson() {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-
-  const toIsoDate = (dateObject) => {
-    const year = dateObject.getFullYear();
-    const month = String(dateObject.getMonth() + 1).padStart(2, '0');
-    const day = String(dateObject.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const parseIsoDate = (value) => {
-    if (!value) return null;
-    const parsed = new Date(`${value}T00:00:00`);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  };
-
-  const addDays = useCallback((isoValue, numberOfDays) => {
-    const parsed = parseIsoDate(isoValue);
-    if (!parsed) return '';
-    parsed.setDate(parsed.getDate() + numberOfDays);
-    return toIsoDate(parsed);
-  }, [parseIsoDate, toIsoDate]);
 
   const today = useMemo(() => {
     const now = new Date();
@@ -119,7 +121,7 @@ function BookLesson() {
   const practicalCourseDates = useMemo(() => {
     if (selectedLesson !== 'practical' || !date) return [];
     return [date, addDays(date, 1), addDays(date, 2)];
-  }, [selectedLesson, date, addDays]);
+  }, [selectedLesson, date]); // ✅ addDays is stable (module-level), no need to list it
 
   const formattedDateSummary = selectedDateObject
     ? selectedDateObject.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
@@ -155,7 +157,7 @@ function BookLesson() {
   useEffect(() => {
     if (!selectedDateObject) return;
     setCalendarMonth(new Date(selectedDateObject.getFullYear(), selectedDateObject.getMonth(), 1));
-  }, [date, selectedDateObject]);
+  }, [date]); // ✅ only 'date' needed; selectedDateObject is derived from it
 
   const getTheoryCapacity = (instructorDoc) => {
     const parsed = Number(instructorDoc?.theoryCapacity);
@@ -189,12 +191,11 @@ function BookLesson() {
         currentUser.$id
       );
       setIsApproved(userDoc.approved || false);
-      // Clear any previous approval-related errors
       if (userDoc.approved) {
         setError('');
       }
-    } catch (error) {
-      console.error('Error checking approval:', error);
+    } catch (err) {
+      console.error('Error checking approval:', err);
       setIsApproved(false);
     } finally {
       setCheckingApproval(false);
@@ -203,17 +204,15 @@ function BookLesson() {
 
   const fetchInstructors = useCallback(async () => {
     try {
-      // Fetch all available instructors
       const response = await databases.listDocuments(
         databaseId,
         instructorsCollectionId,
         [Query.equal('availability', 'available')]
       );
-      
-      // Filter by lesson type: either specific type or "both"
-      const filteredInstructors = response.documents.filter(instructor => {
-        if (!instructor.lessonType) return true; // Backwards compatibility for old records
-        return instructor.lessonType === selectedLesson || instructor.lessonType === 'both';
+
+      const filteredInstructors = response.documents.filter(inst => {
+        if (!inst.lessonType) return true;
+        return inst.lessonType === selectedLesson || inst.lessonType === 'both';
       });
 
       if (selectedLesson === 'theory') {
@@ -236,8 +235,8 @@ function BookLesson() {
       } else {
         setInstructors(filteredInstructors);
       }
-    } catch (error) {
-      console.error('Error fetching instructors:', error);
+    } catch (err) {
+      console.error('Error fetching instructors:', err);
       setInstructors([]);
     }
   }, [selectedLesson]);
@@ -250,8 +249,8 @@ function BookLesson() {
         [Query.equal('status', 'available')]
       );
       setVehicles(response.documents);
-    } catch (error) {
-      console.error('Error fetching vehicles:', error);
+    } catch (err) {
+      console.error('Error fetching vehicles:', err);
       setVehicles([]);
     }
   }, []);
@@ -264,21 +263,19 @@ function BookLesson() {
     }
   }, [currentUser, checkUserApproval, fetchInstructors, fetchVehicles]);
 
-  // Re-fetch instructors when lesson type changes
   useEffect(() => {
     if (currentUser) {
       fetchInstructors();
     }
   }, [selectedLesson, currentUser, fetchInstructors]);
 
-  // Re-check approval when component gains focus
   useEffect(() => {
     const handleFocus = () => {
       if (currentUser) {
         checkUserApproval();
       }
     };
-    
+
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [currentUser, checkUserApproval]);
@@ -287,8 +284,8 @@ function BookLesson() {
     try {
       await logout();
       navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch (err) {
+      console.error('Logout error:', err);
     }
   };
 
@@ -300,26 +297,23 @@ function BookLesson() {
     setError('');
     setSuccess('');
 
-    // Check if user is approved
     if (!isApproved) {
       setError('Your account is pending approval. Please wait for admin confirmation before booking lessons.');
       return;
     }
-    
-    // Validation
+
     if (!instructor || !date || !time) {
       setError('Please fill in all fields');
       return;
     }
-    
-    // Only require vehicle for practical lessons
+
     if (selectedLesson === 'practical' && !vehicle) {
       setError('Please select a vehicle for practical lesson');
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       let selectedInstructorDoc = null;
       let theoryCapacity = THEORY_MAX_CAPACITY;
@@ -340,7 +334,6 @@ function BookLesson() {
 
       const bookingDates = selectedLesson === 'practical' ? practicalCourseDates : [date];
 
-      // Create booking document(s) in database
       for (const bookingDate of bookingDates) {
         console.log('Creating booking with date:', bookingDate);
         await databases.createDocument(
@@ -363,19 +356,15 @@ function BookLesson() {
       }
       console.log('Booking created successfully for dates:', bookingDates);
 
-      // Update instructor availability to "booked"
       try {
-        // Find the instructor by name
         const instructorQuery = await databases.listDocuments(
           databaseId,
           instructorsCollectionId,
           [Query.equal('name', instructor)]
         );
-        
+
         if (instructorQuery.documents.length > 0) {
           const instructorDoc = instructorQuery.documents[0];
-          // Practical lessons lock instructor immediately.
-          // Theory lessons allow multiple active bookings until reaching capacity.
           if (selectedLesson === 'practical') {
             await databases.updateDocument(
               databaseId,
@@ -395,22 +384,19 @@ function BookLesson() {
             }
           }
         }
-      } catch (error) {
-        console.error('Error updating instructor availability:', error);
-        // Don't fail the booking if instructor update fails
+      } catch (err) {
+        console.error('Error updating instructor availability:', err);
       }
 
-      // Update vehicle status to "booked" only for practical lessons
       if (selectedLesson === 'practical' && vehicle) {
         try {
-          // Extract vehicle model from the vehicle string (format: "Model (MT/AT) - PlateNumber")
           const vehicleModel = vehicle.split(' (')[0];
           const vehicleQuery = await databases.listDocuments(
             databaseId,
             vehiclesCollectionId,
             [Query.equal('model', vehicleModel)]
           );
-          
+
           if (vehicleQuery.documents.length > 0) {
             const vehicleDoc = vehicleQuery.documents[0];
             await databases.updateDocument(
@@ -420,29 +406,27 @@ function BookLesson() {
               { status: 'booked' }
             );
           }
-        } catch (error) {
-          console.error('Error updating vehicle status:', error);
-          // Don't fail the booking if vehicle update fails
+        } catch (err) {
+          console.error('Error updating vehicle status:', err);
         }
       }
-      
+
       setSuccess(
         selectedLesson === 'practical'
           ? 'Practical booking confirmed for 3 consecutive course days!'
           : 'Booking confirmed successfully!'
       );
-      // Reset form
       setInstructor('');
       setVehicle('');
       setDate('');
       setTime('');
-      
+
       setTimeout(() => {
         navigate('/user-dashboard');
       }, 2000);
-    } catch (error) {
-      console.error('Booking error:', error);
-      setError('Failed to create booking: ' + error.message);
+    } catch (err) {
+      console.error('Booking error:', err);
+      setError('Failed to create booking: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -463,19 +447,19 @@ function BookLesson() {
         </div>
 
         <div className="user-nav-buttons">
-          <button 
+          <button
             className="user-nav-btn"
             onClick={() => navigate('/user-dashboard')}
           >
             Dashboard
           </button>
-          <button 
+          <button
             className="user-nav-btn active"
             onClick={() => navigate('/book-lesson')}
           >
             Book a Lesson
           </button>
-          <button 
+          <button
             className="user-nav-btn"
             onClick={() => navigate('/profile')}
           >
@@ -499,14 +483,14 @@ function BookLesson() {
         {!isApproved && !checkingApproval && (
           <div style={{background: '#fee2e2', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#991b1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
             <span>Your account is pending approval. Please wait for admin confirmation before booking lessons.</span>
-            <button 
-              onClick={() => checkUserApproval()} 
+            <button
+              onClick={() => checkUserApproval()}
               style={{
-                background: '#dc2626', 
-                color: 'white', 
-                border: 'none', 
-                padding: '8px 16px', 
-                borderRadius: '6px', 
+                background: '#dc2626',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '6px',
                 cursor: 'pointer',
                 fontSize: '14px',
                 fontWeight: '500'
@@ -525,23 +509,23 @@ function BookLesson() {
           <div className="booking-section">
             <h2 className="section-title">Lesson Type</h2>
             <div className="lesson-type-cards">
-              <div 
+              <div
                 className={`lesson-card ${selectedLesson === 'practical' ? 'active' : ''}`}
                 onClick={() => {
                   setSelectedLesson('practical');
-                  setInstructor(''); // Clear instructor selection when changing lesson type
+                  setInstructor('');
                 }}
               >
                 <div className="lesson-icon">🚗</div>
                 <h3>Practical Lesson</h3>
                 <p>2-hour on-road instruction.<br />Vehicle options available.</p>
               </div>
-              <div 
+              <div
                 className={`lesson-card ${selectedLesson === 'theory' ? 'active' : ''}`}
                 onClick={() => {
                   setSelectedLesson('theory');
-                  setInstructor(''); // Clear instructor selection when changing lesson type
-                  setVehicle(''); // Clear vehicle selection for theory class
+                  setInstructor('');
+                  setVehicle('');
                 }}
               >
                 <div className="lesson-icon">📖</div>
@@ -556,8 +540,8 @@ function BookLesson() {
             <h2 className="section-title">{selectedLesson === 'theory' ? 'Instructor' : 'Instructor & Vehicle'}</h2>
             <div className="form-group">
               <label>Instructor Name*</label>
-              <select 
-                value={instructor} 
+              <select
+                value={instructor}
                 onChange={(e) => setInstructor(e.target.value)}
                 className="booking-select"
               >
@@ -578,8 +562,8 @@ function BookLesson() {
             {selectedLesson === 'practical' && (
               <div className="form-group">
                 <label>Vehicle Model*</label>
-                <select 
-                  value={vehicle} 
+                <select
+                  value={vehicle}
                   onChange={(e) => setVehicle(e.target.value)}
                   className="booking-select"
                 >
@@ -728,7 +712,7 @@ function BookLesson() {
                 </>
               )}
             </p>
-            <button 
+            <button
               className="confirm-booking-btn"
               onClick={handleConfirmBooking}
               disabled={loading}

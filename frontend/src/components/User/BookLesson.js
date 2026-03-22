@@ -14,6 +14,14 @@ function BookLesson() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dashboardTheme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  });
   const [selectedLesson, setSelectedLesson] = useState('practical');
   const [instructor, setInstructor] = useState('');
   const [vehicle, setVehicle] = useState('');
@@ -133,6 +141,16 @@ function BookLesson() {
     if (!dayDate || isPastDate(dayDate)) return;
     setDate(toIsoDate(dayDate));
   };
+
+  useEffect(() => {
+    const body = document.body;
+    if (theme === 'dark') {
+      body.classList.add('dark-mode');
+    } else {
+      body.classList.remove('dark-mode');
+    }
+    localStorage.setItem('dashboardTheme', theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!selectedDateObject) return;
@@ -272,6 +290,10 @@ function BookLesson() {
     } catch (error) {
       console.error('Logout error:', error);
     }
+  };
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
 
   const handleConfirmBooking = async () => {
@@ -460,6 +482,10 @@ function BookLesson() {
             My Profile
           </button>
         </div>
+
+        <button className="user-theme-toggle-btn" onClick={toggleTheme}>
+          {theme === 'dark' ? ' Light Mode' : ' Dark Mode'}
+        </button>
 
         <button className="user-signout-btn" onClick={handleLogout}>
           Sign Out

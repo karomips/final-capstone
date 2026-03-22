@@ -10,6 +10,14 @@ function UserDashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dashboardTheme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  });
   const [bookings, setBookings] = useState([]);
   const [smsNotifications, setSmsNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -115,6 +123,16 @@ function UserDashboard() {
     });
 
   useEffect(() => {
+    const body = document.body;
+    if (theme === 'dark') {
+      body.classList.add('dark-mode');
+    } else {
+      body.classList.remove('dark-mode');
+    }
+    localStorage.setItem('dashboardTheme', theme);
+  }, [theme]);
+
+  useEffect(() => {
     const fetchUserData = async () => {
       if (currentUser) {
         try {
@@ -162,6 +180,10 @@ function UserDashboard() {
     }
   };
 
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'));
+  };
+
   return (
     <div className="user-page-container">
       <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -196,6 +218,10 @@ function UserDashboard() {
             My Profile
           </button>
         </div>
+
+        <button className="user-theme-toggle-btn" onClick={toggleTheme}>
+          {theme === 'dark' ? ' Light Mode' : ' Dark Mode'}
+        </button>
 
         <button className="user-signout-btn" onClick={handleLogout}>
           Sign Out

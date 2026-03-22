@@ -113,6 +113,27 @@
   font-family: inherit;
 }
 
+.user-theme-toggle-btn {
+  width: 100%;
+  padding: 11px 15px;
+  background: rgba(255, 255, 255, 0.14);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+  font-family: inherit;
+}
+
+.user-theme-toggle-btn:hover,
+.user-signout-btn:hover {
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
 .user-signout-btn:hover {
   background: rgba(255, 255, 255, 0.25);
   border-color: rgba(255, 255, 255, 0.3);
@@ -222,7 +243,7 @@
 .progress-placeholder,
 .notifications-content {
   flex: 1;
-  background: #f7f9fc;
+  background: #f7fcf8;
   border-radius: 8px;
   min-height: 90px;
   border: 1px solid #e4ebf3;
@@ -258,6 +279,84 @@
   letter-spacing: 0.3px;
 }
 
+body.dark-mode .user-page-container {
+  background: radial-gradient(circle at 90% 8%, rgba(0, 0, 0, 0.25), transparent 40%), #161b24;
+}
+
+body.dark-mode .user-sidebar {
+  background: linear-gradient(180deg, #0b1322 0%, #101923 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .user-nav-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f2f6ff;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.dark-mode .user-nav-btn.active,
+body.dark-mode .user-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.17);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.dark-mode .user-theme-toggle-btn,
+body.dark-mode .user-signout-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #f8fbff;
+}
+
+body.dark-mode .user-main-content,
+body.dark-mode .dashboard-card,
+body.dark-mode .progress-placeholder,
+body.dark-mode .schedule-item,
+body.dark-mode .notifications-content,
+body.dark-mode .practical-course-item,
+body.dark-mode .profile-container,
+body.dark-mode .profile-file-input,
+body.dark-mode .profile-form-container input {
+  background: #1b2431;
+  border-color: #2c3b50;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+}
+body.dark-mode  {
+  background: #1b2431;
+  color: #d8e2f5;
+  border-color: #2c3b50;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .page-title,
+body.dark-mode .lesson-date,
+body.dark-mode .lesson-instructor,
+body.dark-mode .lesson-vehicle,
+body.dark-mode .practical-course-name,
+body.dark-mode .practical-course-date,
+body.dark-mode .schedule-date,
+body.dark-mode .schedule-type,
+body.dark-mode .practical-progress-header,
+body.dark-mode .profile-info h2, 
+body.dark-mode .profile-email,
+body.dark-mode .detail-group p,
+body.dark-mode .detail-group label,
+body.dark-mode .profile-edit h2,
+body.dark-mode .form-group label,
+body.dark-mode .profile-help-text {
+  color: #d8e2f5;
+}
+body.dark-mode .detail-group {
+  color: #e5ebff;
+}
+
+body.dark-mode .dashboard-card h2 {
+  color: #e8f1ff;
+}
+
+body.dark-mode input.user-typing-color {
+    color: #ffffff !important;
+}
+
 .notification-message {
   margin: 0;
   font-size: 0.8rem;
@@ -289,7 +388,7 @@
   align-items: center;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #1f3f68;
+  color: #000000;
   text-transform: uppercase;
 }
 
@@ -327,7 +426,7 @@
   text-transform: uppercase;
   letter-spacing: 0.2px;
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: 7px;
   white-space: nowrap;
 }
 
@@ -359,7 +458,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 13px;
-  background: #f8fbff;
+  background: #fff8f8;
   border-radius: 8px;
   border: 1px solid #e0e8f2;
 }
@@ -390,7 +489,7 @@
   letter-spacing: 0.3px;
 }
 
-.schedule-status.confirmed {
+.schedule-status.completed {
   background: #daf4e5;
   color: #155e3f;
 }

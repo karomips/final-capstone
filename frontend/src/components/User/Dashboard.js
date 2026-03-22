@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Dashboard.css';
@@ -6,6 +6,14 @@ import './Dashboard.css';
 function Dashboard() {
   const { currentUser, logout } = useAuth();
   const [error, setError] = useState('');
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dashboardTheme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  });
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -19,6 +27,20 @@ function Dashboard() {
     }
   };
 
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'));
+  };
+
+  useEffect(() => {
+    const body = document.body;
+    if (theme === 'dark') {
+      body.classList.add('dark-mode');
+    } else {
+      body.classList.remove('dark-mode');
+    }
+    localStorage.setItem('dashboardTheme', theme);
+  }, [theme]);
+
   return (
     <div className="dashboard-container">
       <nav className="dashboard-nav">
@@ -26,6 +48,9 @@ function Dashboard() {
           <h2>My App</h2>
         </div>
         <div className="nav-user">
+          <button onClick={toggleTheme} className="btn-theme-toggle">
+            {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+          </button>
           <span className="user-email">{currentUser?.email}</span>
           <button onClick={handleLogout} className="btn-logout">
             Logout

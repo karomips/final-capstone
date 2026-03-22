@@ -11,6 +11,14 @@ function Profile() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dashboardTheme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  });
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
@@ -97,6 +105,16 @@ function Profile() {
       setLoading(false);
     }
   }, [currentUser, getResolvedProfileImageUrl]);
+
+  useEffect(() => {
+    const body = document.body;
+    if (theme === 'dark') {
+      body.classList.add('dark-mode');
+    } else {
+      body.classList.remove('dark-mode');
+    }
+    localStorage.setItem('dashboardTheme', theme);
+  }, [theme]);
 
   useEffect(() => {
     fetchUserData();
@@ -236,6 +254,10 @@ function Profile() {
     }
   };
 
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'));
+  };
+
   if (loading) {
     return (
       <div className="user-page-container">
@@ -280,6 +302,10 @@ function Profile() {
             My Profile
           </button>
         </div>
+
+        <button className="user-theme-toggle-btn" onClick={toggleTheme}>
+          {theme === 'dark' ? ' Light Mode' : ' Dark Mode'}
+        </button>
 
         <button className="user-signout-btn" onClick={handleLogout}>
           Sign out
@@ -412,42 +438,44 @@ function Profile() {
                   </small>
                 </div>
 
-                <div className="form-group">
-                  <label>Full Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="profile-input"
-                    required
-                  />
-                </div>
+                <div className="profile-form-container">
+  < div className="form-group">
+    <label className="input-label">Full Name</label>
+    <input
+      type="text"
+      name="name"
+      value={formData.name}
+      onChange={handleInputChange}
+      className="profile-input user-typing-color"
+      required
+    />
+  </div>
 
-                <div className="form-group">
-                  <label>Email Address</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="profile-input"
-                    required
-                  />
-                </div>
+  <div className="form-group">
+    <label className="input-label">Email Address</label>
+    <input
+      type="email"
+      name="email"
+      value={formData.email}
+      onChange={handleInputChange}
+      className="profile-input user-typing-color"
+      required
+    />
+  </div>
 
-                <div className="form-group">
-                  <label>Phone Number</label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleInputChange}
-                    className="profile-input"
-                    placeholder="09123456789"
-                    required
-                  />
-                </div>
+  <div className="form-group">
+    <label className="input-label">Phone Number</label>
+    <input
+      type="tel"
+      name="phoneNumber"
+      value={formData.phoneNumber}
+      onChange={handleInputChange}
+      className="profile-input user-typing-color"
+      placeholder="09123456789"
+      required
+    />
+  </div>
+</div>
 
                 <div className="form-actions">
                   <button type="submit" className="submit-btn">

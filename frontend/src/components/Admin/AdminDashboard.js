@@ -421,7 +421,19 @@ function AdminDashboard() {
           </div>
 
           <div className="sms-section">
-            <h2 className="section-title">RECENT SMS ACTIVITY</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 className="section-title" style={{ margin: 0 }}>RECENT SMS ACTIVITY</h2>
+              <button
+                className="clear-sms-btn"
+                onClick={() => {
+                  localStorage.setItem('smsHistory', JSON.stringify([]));
+                  setSmsHistory([]);
+                }}
+                style={{ background: '#e74c3c', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', marginLeft: '16px' }}
+              >
+                Clear SMS History
+              </button>
+            </div>
             <div className="sms-content">
               {smsHistory.length === 0 ? (
                 <div className="sms-empty">

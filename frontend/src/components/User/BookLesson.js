@@ -52,12 +52,12 @@ function BookLesson() {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   };
 
-  const addDays = (isoValue, numberOfDays) => {
+  const addDays = useCallback((isoValue, numberOfDays) => {
     const parsed = parseIsoDate(isoValue);
     if (!parsed) return '';
     parsed.setDate(parsed.getDate() + numberOfDays);
     return toIsoDate(parsed);
-  };
+  }, [parseIsoDate, toIsoDate]);
 
   const today = useMemo(() => {
     const now = new Date();

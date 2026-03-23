@@ -315,7 +315,12 @@ body.dark-mode .notifications-content,
 body.dark-mode .practical-course-item,
 body.dark-mode .profile-container,
 body.dark-mode .profile-file-input,
-body.dark-mode .profile-form-container input {
+body.dark-mode .profile-form-container input,
+body.dark-mode .booking-section,
+body.dark-mode .booking-summary,
+body.dark-mode .calendar-shell,
+body.dark-mode .time-picker-shell,
+body.dark-mode .lesson-card {
   background: #1b2431;
   border-color: #2c3b50;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
@@ -342,7 +347,12 @@ body.dark-mode .detail-group p,
 body.dark-mode .detail-group label,
 body.dark-mode .profile-edit h2,
 body.dark-mode .form-group label,
-body.dark-mode .profile-help-text {
+body.dark-mode .profile-help-text,
+body.dark-mode .section-title,
+body.dark-mode .time-picker-header,
+body.dark-mode .calendar-shell-title,
+body.dark-mode .calendar-weekday-label,
+body.dark-mode .summary-text {
   color: #d8e2f5;
 }
 body.dark-mode .detail-group {
@@ -355,6 +365,14 @@ body.dark-mode .dashboard-card h2 {
 
 body.dark-mode input.user-typing-color {
     color: #ffffff !important;
+}
+
+body.dark-mode .lesson-card.active {
+  color: #d8ca4f;
+}
+
+body.dark-mode .summary-text strong {
+  color: #d8ca4f;
 }
 
 .notification-message {
@@ -523,7 +541,7 @@ body.dark-mode input.user-typing-color {
 .section-title {
   font-size: 1rem;
   font-weight: 800;
-  color: #1b3453;
+  color: #531b4e;
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -537,7 +555,7 @@ body.dark-mode input.user-typing-color {
 
 .lesson-card {
   padding: 16px;
-  background: white;
+  background: rgb(255, 255, 255);
   border: 1px solid #d4deeb;
   border-radius: 8px;
   cursor: pointer;
@@ -634,7 +652,7 @@ body.dark-mode input.user-typing-color {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #1f3c60;
+  color: #1f2e60;
   font-size: 0.92rem;
   font-weight: 700;
 }

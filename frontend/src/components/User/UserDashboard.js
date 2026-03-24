@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, usersCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import './UserPages.css';
+import TwitterLogo from '../../assets/icons/twitter.png';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function UserDashboard() {
@@ -198,12 +199,10 @@ function UserDashboard() {
         </div>
 
         <div className="user-nav-buttons">
-          <button
-            className="user-nav-btn active"
-            onClick={() => navigate('/user-dashboard')}
-          >
-            Dashboard
-          </button>
+          <button className="user-nav-btn active" onClick={() => navigate('/user-dashboard')}>
+    <img src={TwitterLogo} alt="Dashboard" className="twitter.png" />
+    <span className="nav-text">Dashboard</span>
+  </button>
           <button
             className="user-nav-btn"
             onClick={() => navigate('/book-lesson')}

@@ -836,6 +836,16 @@ body.dark-mode .summary-text strong {
   will-change: opacity, transform;
 }
 
+.twitter-icon {
+  width: 30px;     /* Set desired width */
+  height: 30px;    /* Set desired height */
+  object-fit: contain;  /* Keeps proportions */
+}
+
+.user-nav-btn.active .twitter-icon {
+  filter: brightness(0) invert(1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .user-page-container,
   .user-main-content {

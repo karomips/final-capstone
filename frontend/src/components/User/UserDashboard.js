@@ -200,7 +200,7 @@ function UserDashboard() {
 
         <div className="user-nav-buttons">
           <button className="user-nav-btn active" onClick={() => navigate('/user-dashboard')}>
-    <img src={TwitterLogo} alt="Dashboard" className="twitter.png" />
+    <img src={TwitterLogo} alt="Dashboard" className="twitter-icon" />
     <span className="nav-text">Dashboard</span>
   </button>
           <button

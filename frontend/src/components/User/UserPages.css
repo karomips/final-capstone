@@ -247,8 +247,10 @@ body.dark-mode input.user-typing-color {
 }
 
 body.dark-mode .lesson-card.active {
-  color: #d8ca4f;
-}
+  background: #5488d6;
+  border-color: #1f4c86;
+  color: white;
+  }
 
 body.dark-mode .summary-text strong {
   color: #d8ca4f;
@@ -448,7 +450,7 @@ body.dark-mode .summary-text strong {
 }
 
 .lesson-card.active {
-  background: #1f4c86;
+  background: #5488d6;
   border-color: #1f4c86;
   color: white;
 }

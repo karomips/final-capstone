@@ -4,13 +4,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, vehiclesCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import './AdminPages.css';
-import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function VehicleInventory() {
   const VEHICLES_PER_PAGE = 8;
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -176,14 +174,7 @@ function VehicleInventory() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
+
 
   const totalPages = Math.max(1, Math.ceil(vehicles.length / VEHICLES_PER_PAGE));
   const paginatedVehicles = vehicles.slice(
@@ -196,58 +187,7 @@ function VehicleInventory() {
   };
 
   return (
-    <div className="admin-page-container">
-      <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        ☰
-      </button>
-              {/* Sidebar */}
-              <div className={`admin-sidebar ${sidebarOpen ? '' : 'closed'}`}>
-                <div className="admin-logo-section">
-                  <div className="admin-logo">
-                    <img src={EasyDriveLogo} alt="Easy Drive Logo" />
-                  </div>
-                </div>
-
-        <div className="admin-nav-buttons">
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin')}
-          >
-            Dashboard
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/students')}
-          >
-            Student Management
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/instructors')}
-          >
-            Instructors' Profile
-          </button>
-          <button 
-            className="admin-nav-btn active"
-            onClick={() => navigate('/admin/vehicles')}
-          >
-            Vehicle Inventory
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/sms-monitoring')}
-          >
-            SMS Monitoring
-          </button>
-        </div>
-
-        <button className="admin-signout-btn" onClick={handleLogout}>
-          Sign out
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="admin-main-content">
+    <div className="admin-main-content admin-main-content--fit">
         <div className="page-header">
           <h1 className="admin-page-title">Vehicle Inventory</h1>
           <button className="add-btn" onClick={() => setShowModal(true)}>
@@ -408,7 +348,6 @@ function VehicleInventory() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

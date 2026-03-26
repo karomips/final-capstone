@@ -12,6 +12,8 @@ import SMSMonitoring from './components/Admin/SMSMonitoring';
 import UserDashboard from './components/User/UserDashboard';
 import BookLesson from './components/User/BookLesson';
 import Profile from './components/User/Profile';
+import AdminLayout from './components/Layouts/AdminLayout';
+import UserLayout from './components/Layouts/UserLayout';
 import PrivateRoute from './components/Shared/PrivateRoute';
 import './App.css';
 
@@ -24,78 +26,68 @@ function AppContent() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        
+        {/* Admin Routes with AdminLayout */}
         <Route 
-          path="/admin" 
+          path="/admin/*" 
           element={
             <PrivateRoute>
-              <AdminDashboard />
+              <AdminLayout />
             </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/admin/students" 
-          element={
-            <PrivateRoute>
-              <StudentManagement />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/admin/instructors" 
-          element={
-            <PrivateRoute>
-              <InstructorsProfile />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/admin/vehicles" 
-          element={
-            <PrivateRoute>
-              <VehicleInventory />
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/admin/sms-monitoring" 
-          element={
-            <PrivateRoute>
-              <SMSMonitoring />
-            </PrivateRoute>
-          } 
-        />
+          }
+        >
+          <Route path="" element={<AdminDashboard />} />
+          <Route path="students" element={<StudentManagement />} />
+          <Route path="instructors" element={<InstructorsProfile />} />
+          <Route path="vehicles" element={<VehicleInventory />} />
+          <Route path="sms-monitoring" element={<SMSMonitoring />} />
+        </Route>
+        
+        {/* User Routes with UserLayout */}
         <Route 
           path="/user-dashboard" 
           element={
             <PrivateRoute>
-              <UserDashboard />
+              <UserLayout />
             </PrivateRoute>
-          } 
-        />
+          }
+        >
+          <Route path="" element={<UserDashboard />} />
+        </Route>
+        
         <Route 
           path="/book-lesson" 
           element={
             <PrivateRoute>
-              <BookLesson />
+              <UserLayout />
             </PrivateRoute>
-          } 
-        />
+          }
+        >
+          <Route path="" element={<BookLesson />} />
+        </Route>
+        
         <Route 
           path="/profile" 
           element={
             <PrivateRoute>
-              <Profile />
+              <UserLayout />
             </PrivateRoute>
-          } 
-        />
+          }
+        >
+          <Route path="" element={<Profile />} />
+        </Route>
+        
         <Route 
           path="/dashboard" 
           element={
             <PrivateRoute>
-              <Dashboard />
+              <UserLayout />
             </PrivateRoute>
-          } 
-        />
+          }
+        >
+          <Route path="" element={<Dashboard />} />
+        </Route>
+        
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </div>

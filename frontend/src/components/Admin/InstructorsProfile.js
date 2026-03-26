@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, instructorsCollectionId, bookingsCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import './AdminPages.css';
-import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function InstructorsProfile() {
   const INSTRUCTORS_PER_PAGE = 8;
@@ -12,7 +11,7 @@ function InstructorsProfile() {
   const THEORY_MAX_CAPACITY = 20;
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -229,14 +228,7 @@ function InstructorsProfile() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
+
 
   const totalPages = Math.max(1, Math.ceil(instructors.length / INSTRUCTORS_PER_PAGE));
   const paginatedInstructors = instructors.slice(
@@ -249,67 +241,7 @@ function InstructorsProfile() {
   };
 
   return (
-    <div className="admin-page-container">
-      {/* Hamburger button: only fixed when sidebar is closed */}
-      {!sidebarOpen && (
-        <button className="hamburger-btn fixed" onClick={() => setSidebarOpen(true)}>
-          ☰
-        </button>
-      )}
-              {/* Sidebar */}
-              <div className={`admin-sidebar ${sidebarOpen ? '' : 'closed'}`}> 
-                {/* Hamburger button inside sidebar when open */}
-                {sidebarOpen && (
-                  <button className="hamburger-btn inside" onClick={() => setSidebarOpen(false)}>
-                    ☰
-                  </button>
-                )}
-                <div className="admin-logo-section">
-                  <div className="admin-logo">
-                    <img src={EasyDriveLogo} alt="Easy Drive Logo" />
-                  </div>
-                </div>
-
-        <div className="admin-nav-buttons">
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin')}
-          >
-            Dashboard
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/students')}
-          >
-            Student Management
-          </button>
-          <button 
-            className="admin-nav-btn active"
-            onClick={() => navigate('/admin/instructors')}
-          >
-            Instructors' Profile
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/vehicles')}
-          >
-            Vehicle Inventory
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/sms-monitoring')}
-          >
-            SMS Monitoring
-          </button>
-        </div>
-
-        <button className="admin-signout-btn" onClick={handleLogout}>
-          Sign out
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="admin-main-content">
+    <div className="admin-main-content admin-main-content--fit">
         <div className="page-header">
           <h1 className="admin-page-title">Instructors' Profile</h1>
           <button className="add-btn" onClick={() => setShowModal(true)}>
@@ -475,7 +407,6 @@ function InstructorsProfile() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

@@ -5,20 +5,10 @@ import { databases, databaseId, usersCollectionId, storage, storageBucketId, bui
 import { ID } from 'appwrite';
 import './UserPages.css';
 import './Profile.css';
-import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function Profile() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dashboardTheme');
-      if (saved === 'dark' || saved === 'light') return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return 'light';
-  });
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
@@ -105,16 +95,6 @@ function Profile() {
       setLoading(false);
     }
   }, [currentUser, getResolvedProfileImageUrl]);
-
-  useEffect(() => {
-    const body = document.body;
-    if (theme === 'dark') {
-      body.classList.add('dark-mode');
-    } else {
-      body.classList.remove('dark-mode');
-    }
-    localStorage.setItem('dashboardTheme', theme);
-  }, [theme]);
 
   useEffect(() => {
     fetchUserData();
@@ -245,22 +225,9 @@ function Profile() {
     setError('');
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'));
-  };
-
   if (loading) {
     return (
-      <div className="user-page-container">
+      <div className="user-main-content user-main-content--fit">
         <div style={{ padding: '40px', textAlign: 'center' }}>
           <p>Loading profile...</p>
         </div>
@@ -269,51 +236,7 @@ function Profile() {
   }
 
   return (
-    <div className="user-page-container">
-      <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        ☰
-      </button>
-
-      {/* Sidebar */}
-      <div className={`user-sidebar ${sidebarOpen ? '' : 'closed'}`}>
-        <div className="user-logo-section">
-          <div className="user-logo">
-            <img src={EasyDriveLogo} alt="Easy Drive Logo" />
-          </div>
-        </div>
-
-        <div className="user-nav-buttons">
-          <button 
-            className="user-nav-btn"
-            onClick={() => navigate('/user-dashboard')}
-          >
-            Dashboard
-          </button>
-          <button 
-            className="user-nav-btn"
-            onClick={() => navigate('/book-lesson')}
-          >
-            Book a Lesson
-          </button>
-          <button 
-            className="user-nav-btn active"
-            onClick={() => navigate('/profile')}
-          >
-            My Profile
-          </button>
-        </div>
-
-        <button className="user-theme-toggle-btn" onClick={toggleTheme}>
-          {theme === 'dark' ? ' Light Mode' : ' Dark Mode'}
-        </button>
-
-        <button className="user-signout-btn" onClick={handleLogout}>
-          Sign out
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="user-main-content">
+    <div className="user-main-content user-main-content--fit">
         <h1 className="user-page-title">My Profile</h1>
 
         {error && (
@@ -490,7 +413,6 @@ function Profile() {
           )}
         </div>
       </div>
-    </div>
   );
 }
 

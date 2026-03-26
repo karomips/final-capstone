@@ -153,31 +153,11 @@ body.auth-transition-out .auth-container {
 
 /* Floating decoration squares */
 .auth-logo-section::before {
-  content: '';
-  position: absolute;
-  width: 90px;
-  height: 90px;
-  top: -80px;
-  left: -60px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
-  border-radius: 14px;
-  animation: floatDecoration1 7s ease-in-out infinite;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  display: none;
 }
 
 .auth-logo-section::after {
-  content: '';
-  position: absolute;
-  width: 70px;
-  height: 70px;
-  bottom: -70px;
-  right: -50px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  animation: floatDecoration2 6s ease-in-out infinite;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  display: none;
 }
 
 .auth-logo {

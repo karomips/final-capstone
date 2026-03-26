@@ -6,7 +6,6 @@ import { Query } from 'appwrite';
 import smsHelper from '../../utils/smsHelper';
 import './AdminPages.css';
 import './SMSMonitoring.css';
-import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 // Utility function to format timestamps in Philippine Time (UTC+8)
 const formatPhilippineTime = (timestamp) => {
@@ -30,7 +29,6 @@ const formatPhilippineTime = (timestamp) => {
 function SMSMonitoring() {
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingStatus, setSendingStatus] = useState({});
@@ -312,14 +310,7 @@ function SMSMonitoring() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Failed to logout:', error);
-    }
-  };
+
 
   const getFilteredBookings = () => {
     let filtered = bookings;
@@ -385,58 +376,7 @@ function SMSMonitoring() {
   };
 
   return (
-    <div className="admin-page-container">
-      <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        ☰
-      </button>
-                  {/* Sidebar */}
-                  <div className={`admin-sidebar ${sidebarOpen ? '' : 'closed'}`}>
-                    <div className="admin-logo-section">
-                      <div className="admin-logo">
-                        <img src={EasyDriveLogo} alt="Easy Drive Logo" />
-                      </div>
-                    </div>
-
-        <div className="admin-nav-buttons">
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin')}
-          >
-            Dashboard
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/students')}
-          >
-            Student Management
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/instructors')}
-          >
-            Instructors' Profile
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/vehicles')}
-          >
-            Vehicle Inventory
-          </button>
-          <button 
-            className="admin-nav-btn active"
-            onClick={() => navigate('/admin/sms-monitoring')}
-          >
-            SMS Monitoring
-          </button>
-        </div>
-
-        <button className="admin-signout-btn" onClick={handleLogout}>
-          Sign out
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="admin-main-content">
+    <div className="admin-main-content admin-main-content--fit">
         <div className="page-header">
           <div>
             <h1 className="admin-page-title">SMS Monitoring & Notifications</h1>
@@ -638,7 +578,6 @@ function SMSMonitoring() {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 }

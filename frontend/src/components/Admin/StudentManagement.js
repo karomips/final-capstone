@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, usersCollectionId } from '../../appwrite/config';
 import './AdminPages.css';
-import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function StudentManagement() {
   const STUDENTS_PER_PAGE = 10;
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -176,15 +174,6 @@ function StudentManagement() {
   //   }
   // };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
   const totalPages = Math.max(1, Math.ceil(students.length / STUDENTS_PER_PAGE));
   const startIndex = (currentPage - 1) * STUDENTS_PER_PAGE;
   const paginatedStudents = students.slice(startIndex, startIndex + STUDENTS_PER_PAGE);
@@ -194,58 +183,7 @@ function StudentManagement() {
   };
 
   return (
-    <div className="admin-page-container">
-      <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        ☰
-      </button>
-          {/* Sidebar */}
-          <div className={`admin-sidebar ${sidebarOpen ? '' : 'closed'}`}>
-            <div className="admin-logo-section">
-              <div className="admin-logo">
-                <img src={EasyDriveLogo} alt="Easy Drive Logo" />
-              </div>
-            </div>
-
-        <div className="admin-nav-buttons">
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin')}
-          >
-            Dashboard
-          </button>
-          <button 
-            className="admin-nav-btn active"
-            onClick={() => navigate('/admin/students')}
-          >
-            Student Management
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/instructors')}
-          >
-            Instructors' Profile
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/vehicles')}
-          >
-            Vehicle Inventory
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/sms-monitoring')}
-          >
-            SMS Monitoring
-          </button>
-        </div>
-
-        <button className="admin-signout-btn" onClick={handleLogout}>
-          Sign out
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="admin-main-content admin-main-content--fit">
+    <div className="admin-main-content admin-main-content--fit">
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
           <h1 className="admin-page-title">Student Management</h1>
           <button 
@@ -404,7 +342,6 @@ function StudentManagement() {
           )}
         </div>
       </div>
-    </div>
   );
 }
 

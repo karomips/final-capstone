@@ -5,7 +5,6 @@ import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehicle
 import { ID, Query } from 'appwrite';
 import { CalendarDays, Clock3, ChevronLeft, ChevronRight } from 'lucide-react';
 import './UserPages.css';
-import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 // ✅ Moved outside component — pure utility functions, never change
 const toIsoDate = (dateObject) => {
@@ -35,15 +34,6 @@ function BookLesson() {
 
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dashboardTheme');
-      if (saved === 'dark' || saved === 'light') return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return 'light';
-  });
   const [selectedLesson, setSelectedLesson] = useState('practical');
   const [instructor, setInstructor] = useState('');
   const [vehicle, setVehicle] = useState('');
@@ -143,16 +133,6 @@ function BookLesson() {
     if (!dayDate || isPastDate(dayDate)) return;
     setDate(toIsoDate(dayDate));
   };
-
-  useEffect(() => {
-    const body = document.body;
-    if (theme === 'dark') {
-      body.classList.add('dark-mode');
-    } else {
-      body.classList.remove('dark-mode');
-    }
-    localStorage.setItem('dashboardTheme', theme);
-  }, [theme]);
 
   useEffect(() => {
     if (!selectedDateObject) return;
@@ -279,19 +259,6 @@ function BookLesson() {
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [currentUser, checkUserApproval]);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (err) {
-      console.error('Logout error:', err);
-    }
-  };
-
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'));
-  };
 
   const handleConfirmBooking = async () => {
     setError('');
@@ -433,51 +400,7 @@ function BookLesson() {
   };
 
   return (
-    <div className="user-page-container">
-      <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        ☰
-      </button>
-
-      {/* Sidebar */}
-      <div className={`user-sidebar ${sidebarOpen ? '' : 'closed'}`}>
-        <div className="user-logo-section">
-          <div className="user-logo">
-            <img src={EasyDriveLogo} alt="Easy Drive Logo" />
-          </div>
-        </div>
-
-        <div className="user-nav-buttons">
-          <button
-            className="user-nav-btn"
-            onClick={() => navigate('/user-dashboard')}
-          >
-            Dashboard
-          </button>
-          <button
-            className="user-nav-btn active"
-            onClick={() => navigate('/book-lesson')}
-          >
-            Book a Lesson
-          </button>
-          <button
-            className="user-nav-btn"
-            onClick={() => navigate('/profile')}
-          >
-            My Profile
-          </button>
-        </div>
-
-        <button className="user-theme-toggle-btn" onClick={toggleTheme}>
-          {theme === 'dark' ? ' Light Mode' : ' Dark Mode'}
-        </button>
-
-        <button className="user-signout-btn" onClick={handleLogout}>
-          Sign Out
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="user-main-content">
+    <div className="user-main-content user-main-content--fit">
         <h1 className="page-title">Book a Lesson</h1>
 
         {!isApproved && !checkingApproval && (
@@ -722,7 +645,6 @@ function BookLesson() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

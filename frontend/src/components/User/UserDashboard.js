@@ -1,24 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, usersCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import './UserPages.css';
-import TwitterLogo from '../../assets/icons/twitter.png';
-import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 
 function UserDashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dashboardTheme');
-      if (saved === 'dark' || saved === 'light') return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return 'light';
-  });
+  const { theme } = useOutletContext();
   const [bookings, setBookings] = useState([]);
   const [smsNotifications, setSmsNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -131,7 +121,6 @@ function UserDashboard() {
     } else {
       body.classList.remove('dark-mode');
     }
-    localStorage.setItem('dashboardTheme', theme);
   }, [theme]);
 
   useEffect(() => {
@@ -180,54 +169,8 @@ function UserDashboard() {
     }
   };
 
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'));
-  };
-
   return (
-    <div className="user-page-container">
-      <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        ☰
-      </button>
-
-      {/* Sidebar */}
-      <div className={`user-sidebar ${sidebarOpen ? '' : 'closed'}`}>
-        <div className="user-logo-section">
-          <div className="user-logo">
-            <img src={EasyDriveLogo} alt="Easy Drive Logo" />
-          </div>
-        </div>
-
-        <div className="user-nav-buttons">
-          <button className="user-nav-btn active" onClick={() => navigate('/user-dashboard')}>
-    <img src={TwitterLogo} alt="Dashboard" className="twitter-icon" />
-    <span className="nav-text">Dashboard</span>
-  </button>
-          <button
-            className="user-nav-btn"
-            onClick={() => navigate('/book-lesson')}
-          >
-            Book a Lesson
-          </button>
-          <button
-            className="user-nav-btn"
-            onClick={() => navigate('/profile')}
-          >
-            My Profile
-          </button>
-        </div>
-
-        <button className="user-theme-toggle-btn" onClick={toggleTheme}>
-          {theme === 'dark' ? ' Light Mode' : ' Dark Mode'}
-        </button>
-
-        <button className="user-signout-btn" onClick={handleLogout}>
-          Sign Out
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="user-main-content">
+    <div className="user-main-content user-main-content--fit">
         <h1 className="page-title">Welcome, {userName}</h1>
 
         <div className="dashboard-grid">
@@ -339,7 +282,6 @@ function UserDashboard() {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 }

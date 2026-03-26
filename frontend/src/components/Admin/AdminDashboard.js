@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, instructorsCollectionId, usersCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import './AdminPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
+import DashboardIcon from '../../assets/icons/dashboard-white.png';
+import StudentsIcon from '../../assets/icons/students-white.png';
+import InstructorIcon from '../../assets/icons/instructor-white.png';
+import VehicleIcon from '../../assets/icons/vehicle-white.png';
+import SMSIcon from '../../assets/icons/sms-icon.png';
 
 
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { theme } = useOutletContext() || {};
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [smsHistory, setSmsHistory] = useState([]);
@@ -209,58 +214,7 @@ function AdminDashboard() {
   };
 
   return (
-    <div className="admin-page-container">
-      <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        ☰
-      </button>
-      {/* Sidebar */}
-      <div className={`admin-sidebar ${sidebarOpen ? '' : 'closed'}`}>
-        <div className="admin-logo-section">
-          <div className="admin-logo">
-            <img src={EasyDriveLogo} alt="Easy Drive Logo" />
-          </div>
-        </div>
-
-        <div className="admin-nav-buttons">
-          <button 
-            className="admin-nav-btn active"
-            onClick={() => navigate('/admin')}
-          >
-            Dashboard
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/students')}
-          >
-            Student Management
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/instructors')}
-          >
-            Instructors' Profile
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/vehicles')}
-          >
-            Vehicle Inventory
-          </button>
-          <button 
-            className="admin-nav-btn"
-            onClick={() => navigate('/admin/sms-monitoring')}
-          >
-            SMS Monitoring
-          </button>
-        </div>
-
-        <button className="admin-signout-btn" onClick={handleLogout}>
-          Sign out
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <div className="admin-main-content">
+    <div className="admin-main-content">
         <h1 className="admin-page-title">Welcome, {adminName}</h1>
 
         {/* Stats Cards */}
@@ -487,8 +441,7 @@ function AdminDashboard() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-export default AdminDashboard;
+    );
+  }
+  
+  export default AdminDashboard;

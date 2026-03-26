@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Sidebar.css';
 import SignoutIcon from '../../assets/icons/signout-white.png';
-import MoonIcon from '../../assets/icons/moon-white.png';
-import SunIcon from '../../assets/icons/sun-white.png';
 
 function Sidebar({ 
   isOpen, 
@@ -80,22 +78,10 @@ function Sidebar({
           </button>
         ))}
 
-        {/* Footer Actions - Theme and Signout */}
-        {userType === 'user' && (
+        {/* Footer Actions - Signout */}
+        {(userType === 'user' || userType === 'admin') && (
           <div className="app-sidebar-footer">
-            {/* Theme Toggle Button */}
-            <button 
-              className={`app-theme-toggle-btn ${isCollapsed ? 'collapsed' : ''}`}
-              onClick={onThemeToggle}
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            >
-              <span className="app-nav-icon">
-                <img src={theme === 'dark' ? SunIcon : MoonIcon} alt="Theme toggle" className="app-nav-icon-img" />
-              </span>
-              {!isCollapsed && <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
-            </button>
-
-            {/* Signout Button - Always visible */}
+            {/* Signout Button */}
             <button 
               className={`app-signout-btn ${isCollapsed ? 'collapsed' : ''}`}
               onClick={onLogout}

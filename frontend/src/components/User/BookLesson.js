@@ -462,7 +462,7 @@ function BookLesson() {
           <div className="booking-section">
             <h2 className="section-title">{selectedLesson === 'theory' ? 'Instructor' : 'Instructor & Vehicle'}</h2>
             <div className="form-group">
-              <label>Instructor Name*</label>
+              <label>Instructor Name</label>
               <select
                 value={instructor}
                 onChange={(e) => setInstructor(e.target.value)}
@@ -484,7 +484,7 @@ function BookLesson() {
             </div>
             {selectedLesson === 'practical' && (
               <div className="form-group">
-                <label>Vehicle Model*</label>
+                <label>Vehicle Model</label>
                 <select
                   value={vehicle}
                   onChange={(e) => setVehicle(e.target.value)}

@@ -199,7 +199,10 @@ body.dark-mode .booking-section,
 body.dark-mode .booking-summary,
 body.dark-mode .calendar-shell,
 body.dark-mode .time-picker-shell,
-body.dark-mode .lesson-card {
+body.dark-mode .lesson-card,
+body.dark-mode .booking-select,
+body.dark-mode .calendar-nav-btn,
+body.dark-mode .calendar-day-btn {
   background: #1b2431;
   border-color: #2c3b50;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
@@ -225,13 +228,16 @@ body.dark-mode .profile-email,
 body.dark-mode .detail-group p,
 body.dark-mode .detail-group label,
 body.dark-mode .profile-edit h2,
-body.dark-mode .form-group label,
 body.dark-mode .profile-help-text,
 body.dark-mode .section-title,
 body.dark-mode .time-picker-header,
 body.dark-mode .calendar-shell-title,
 body.dark-mode .calendar-weekday-label,
-body.dark-mode .summary-text {
+body.dark-mode .summary-text,
+body.dark-mode .booking-select,
+body.dark-mode .time-hint,
+body.dark-mode .calendar-nav-btn,
+body.dark-mode .calendar-day-btn{
   color: #d8e2f5;
 }
 body.dark-mode .detail-group {
@@ -242,11 +248,16 @@ body.dark-mode .dashboard-card h2 {
   color: #e8f1ff;
 }
 
-body.dark-mode input.user-typing-color {
+body.dark-mode input.user-typing-color,
+body.dark-mode .form-group label {
     color: #ffffff !important;
 }
 
-body.dark-mode .lesson-card.active {
+body.dark-mode .lesson-card.active,
+body.dark-mode .calendar-nav-btn:hover,
+body.dark-mode .calendar-day-btn:hover:not(:disabled),
+body.dark-mode .calendar-day-btn.selected,
+body.dark-mode .calendar-day-btn.locked {
   background: #5488d6;
   border-color: #1f4c86;
   color: white;
@@ -408,7 +419,7 @@ body.dark-mode .summary-text strong {
 
 .booking-section,
 .booking-summary {
-  background: white;
+  background: rgb(255, 255, 255);
   border-radius: 12px;
   padding: 18px;
   box-shadow: 0 12px 24px rgba(20, 34, 51, 0.08);
@@ -488,15 +499,15 @@ body.dark-mode .summary-text strong {
   margin-bottom: 6px;
 }
 
-.booking-select,
+.booking-select,  
 .booking-input {
   width: 100%;
   padding: 11px 12px;
-  border: 1px solid #d1dcea;
+  border: 1px solid #dfead1;
   border-radius: 8px;
   font-size: 0.9rem;
   font-family: inherit;
-  background: #fcfdff;
+  background: #fcfeff;
   color: #1b2f47;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -599,7 +610,7 @@ body.dark-mode .summary-text strong {
 }
 
 .calendar-day-btn:hover:not(:disabled) {
-  background: #eef4ff;
+  background: #5488d6;
   border-color: #8fb0e4;
 }
 
@@ -609,7 +620,7 @@ body.dark-mode .summary-text strong {
 }
 
 .calendar-day-btn.selected {
-  background: #1f4c86;
+  background: #5488d6;
   border-color: #1f4c86;
   color: white;
 }
@@ -622,9 +633,9 @@ body.dark-mode .summary-text strong {
 }
 
 .calendar-day-btn.locked {
-  background: #e7eef9;
+  background: #5488d6;
   border-color: #c5d7f0;
-  color: #57739a;
+  color: #ffffff;
 }
 
 .time-picker-header {

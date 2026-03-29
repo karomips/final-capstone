@@ -83,21 +83,23 @@ function Sidebar({
         {/* Footer Actions - Theme Toggle & Signout */}
         {(userType === 'user' || userType === 'admin') && (
           <div className="app-sidebar-footer">
-            {/* Theme Toggle Button */}
-            <button 
-              className={`app-theme-toggle-btn ${isCollapsed ? 'collapsed' : ''}`}
-              onClick={onThemeToggle}
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              <span className="app-nav-icon">
-                <img 
-                  src={theme === 'dark' ? SunIcon : MoonIcon} 
-                  alt={theme === 'dark' ? 'Light mode' : 'Dark mode'} 
-                  className="app-nav-icon-img" 
-                />
-              </span>
-              {!isCollapsed && <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
-            </button>
+            {/* Theme Toggle Button - Only for users */}
+            {userType === 'user' && (
+              <button 
+                className={`app-theme-toggle-btn ${isCollapsed ? 'collapsed' : ''}`}
+                onClick={onThemeToggle}
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                <span className="app-nav-icon">
+                  <img 
+                    src={theme === 'dark' ? SunIcon : MoonIcon} 
+                    alt={theme === 'dark' ? 'Light mode' : 'Dark mode'} 
+                    className="app-nav-icon-img" 
+                  />
+                </span>
+                {!isCollapsed && <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
+              </button>
+            )}
 
             {/* Signout Button */}
             <button 

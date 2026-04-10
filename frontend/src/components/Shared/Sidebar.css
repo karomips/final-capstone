@@ -325,7 +325,30 @@
   margin-top: auto;
 }
 
-.app-theme-toggle-btn,
+.app-theme-toggle-btn {
+  width: 100%;
+  padding: 11px 15px;
+  background: transparent;
+  color: rgb(255, 255, 255);
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.25s ease, transform 0.25s ease;
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .app-signout-btn {
   width: 100%;
   padding: 11px 15px;
@@ -341,12 +364,51 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 12px;
   position: relative;
   overflow: hidden;
 }
 
-.app-theme-toggle-btn:hover,
+.theme-toggle-track {
+  position: relative;
+  width: 46px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  box-sizing: border-box;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.theme-toggle-knob {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: transform 0.25s ease, background 0.25s ease;
+  transform: translateX(0);
+}
+
+.app-theme-toggle-btn.toggled .theme-toggle-knob {
+  transform: translateX(22px);
+}
+
+.app-theme-toggle-btn.toggled .theme-toggle-track {
+  background: rgba(91, 157, 255, 0.35);
+  border-color: rgba(91, 157, 255, 0.45);
+}
+
+.app-theme-toggle-btn:hover {
+  background: transparent;
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
 .app-signout-btn:hover {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.08) 100%);
   transform: translateY(-2px);
@@ -399,24 +461,29 @@ body.dark-mode .app-nav-btn.active {
   font-weight: 700;
 }
 
-body.dark-mode .app-theme-toggle-btn,
-body.dark-mode .app-signout-btn {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+body.dark-mode .app-theme-toggle-btn {
+  background: transparent;
+  border: none;
   color: #f8fbff;
 }
 
-body.dark-mode .app-theme-toggle-btn:hover,
-body.dark-mode .app-signout-btn:hover {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+body.dark-mode .app-theme-toggle-btn:hover {
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 body.dark-mode .app-signout-btn {
   background: linear-gradient(135deg, rgba(255, 100, 100, 0.12) 0%, rgba(255, 100, 100, 0.06) 100%);
   border-color: rgba(255, 100, 100, 0.2);
   color: #ffb3b3;
+}
+
+body.dark-mode .app-signout-btn:hover {
+  background: linear-gradient(135deg, rgba(255, 100, 100, 0.22) 0%, rgba(255, 100, 100, 0.12) 100%);
+  border-color: rgba(255, 100, 100, 0.35);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(255, 100, 100, 0.2);
 }
 
 body.dark-mode .app-signout-btn:hover {

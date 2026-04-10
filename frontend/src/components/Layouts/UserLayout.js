@@ -45,7 +45,14 @@ function UserLayout() {
     } else {
       body.classList.remove('dark-mode');
     }
+    body.classList.add('theme-transition');
+    const timeoutId = window.setTimeout(() => {
+      body.classList.remove('theme-transition');
+    }, 350);
     localStorage.setItem('userTheme', theme);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [theme]);
 
   return (

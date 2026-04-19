@@ -71,6 +71,22 @@ function Login() {
       setSuccessMessage('');
       
       console.log('Login result:', loginResult);
+      
+      // Get the actual account role from database or email
+      let actualRole = 'user'; // Default to user
+      if (email.toLowerCase() === 'admin@gmail.com' || loginResult?.userDoc?.role === 'admin') {
+        actualRole = 'admin';
+      } else if (loginResult?.userDoc?.role === 'instructor') {
+        actualRole = 'instructor';
+      }
+      
+      // Check if selected role matches actual account role
+      if (role !== actualRole) {
+        setRole(actualRole); // Auto-correct dropdown to actual role
+        setError(`This account is a ${actualRole}. Logging in as ${actualRole} instead.`);
+        setLoading(false);
+        return;
+      }
 
       // Route based on selected role
       if (role === 'admin') {

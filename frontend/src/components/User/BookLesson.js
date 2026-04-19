@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId, instructorsCollectionId } from '../../appwrite/config';
+import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId, instructorsCollectionId, instructorSchedulesCollectionId } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import { CalendarDays, Clock3, ChevronLeft, ChevronRight } from 'lucide-react';
 import './UserPages.css';
@@ -163,6 +163,31 @@ function BookLesson() {
     }).length;
   };
 
+  const isInstructorOnLeave = async (instructorName, dateToCheck) => {
+    try {
+      const scheduleResponse = await databases.listDocuments(
+        databaseId,
+        instructorSchedulesCollectionId,
+        [Query.equal('instructorName', instructorName)]
+      );
+
+      if (scheduleResponse.documents.length === 0) return false;
+
+      const schedule = scheduleResponse.documents[0];
+      if (!schedule.leaves || !Array.isArray(schedule.leaves)) return false;
+
+      const checkDate = new Date(dateToCheck);
+      return schedule.leaves.some(leave => {
+        const leaveStart = new Date(leave.startDate);
+        const leaveEnd = new Date(leave.endDate);
+        return checkDate >= leaveStart && checkDate <= leaveEnd;
+      });
+    } catch (err) {
+      console.error('Error checking instructor leave:', err);
+      return false;
+    }
+  };
+
   const checkUserApproval = useCallback(async () => {
     try {
       const userDoc = await databases.getDocument(
@@ -195,9 +220,23 @@ function BookLesson() {
         return inst.lessonType === selectedLesson || inst.lessonType === 'both';
       });
 
+      // Check for leaves if a date is selected
+      let instructorsAfterLeaveCheck = filteredInstructors;
+      if (date) {
+        const leaveCheckPromises = filteredInstructors.map(async (inst) => {
+          const onLeave = await isInstructorOnLeave(inst.name, date);
+          return { inst, onLeave };
+        });
+        
+        const leaveCheckResults = await Promise.all(leaveCheckPromises);
+        instructorsAfterLeaveCheck = leaveCheckResults
+          .filter(result => !result.onLeave)
+          .map(result => result.inst);
+      }
+
       if (selectedLesson === 'theory') {
         const instructorsWithSlots = await Promise.all(
-          filteredInstructors.map(async (inst) => {
+          instructorsAfterLeaveCheck.map(async (inst) => {
             const capacity = getTheoryCapacity(inst);
             const activeTheoryBookings = await countActiveTheoryBookings(inst.name);
             const remainingSlots = Math.max(0, capacity - activeTheoryBookings);
@@ -213,13 +252,13 @@ function BookLesson() {
 
         setInstructors(instructorsWithSlots.filter((inst) => inst.theoryRemainingSlots > 0));
       } else {
-        setInstructors(filteredInstructors);
+        setInstructors(instructorsAfterLeaveCheck);
       }
     } catch (err) {
       console.error('Error fetching instructors:', err);
       setInstructors([]);
     }
-  }, [selectedLesson]);
+  }, [selectedLesson, date]);
 
   const fetchVehicles = useCallback(async () => {
     try {
@@ -440,7 +479,7 @@ function BookLesson() {
                 }}
               >
                 <div className="lesson-icon">🚗</div>
-                <h3>Practical Lesson</h3>
+                <h3>Behind-the-Wheel Lesson</h3>
                 <p>2-hour on-road instruction.<br />Vehicle options available.</p>
               </div>
               <div
@@ -616,7 +655,7 @@ function BookLesson() {
             <p className="summary-text">
               {selectedLesson === 'practical' ? (
                 <>
-                  You selected a <strong>Practical Lesson Track</strong><br />
+                  You selected a <strong>Behind-the-Wheel Track</strong><br />
                   Course Days: {practicalCourseDates.length > 0
                     ? practicalCourseDates.map((isoDate) => {
                         const parsed = parseIsoDate(isoDate);

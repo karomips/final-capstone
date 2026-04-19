@@ -122,6 +122,100 @@ function SMSMonitoring() {
   const releaseBookingResources = async (booking) => {
     const normalize = (value) => String(value || '').trim().toLowerCase();
 
+    // For practical lessons, check if all 3 days have been completed before releasing vehicle
+    if (booking.lessonType === 'practical' && booking.vehicle && booking.vehicle !== 'N/A') {
+      try {
+        // Get all bookings for this user with the same instructor and vehicle
+        const allUserBookings = await databases.listDocuments(
+          databaseId,
+          bookingsCollectionId,
+          [Query.equal('userId', booking.userId)]
+        );
+
+        const relatedPracticalBookings = allUserBookings.documents.filter(b => 
+          b.instructor === booking.instructor &&
+          b.vehicle === booking.vehicle &&
+          b.lessonType === 'practical' &&
+          b.$id !== booking.$id
+        );
+
+        // Check if there are any incomplete related bookings
+        const hasIncompleteBookings = relatedPracticalBookings.some(b => 
+          b.status !== 'completed' && b.status !== 'cancelled'
+        );
+
+        // Only release vehicle if no other incomplete bookings exist
+        if (!hasIncompleteBookings) {
+          const vehicleModel = booking.vehicle.split(' (')[0];
+          let vehicleDoc = null;
+
+          const vehicleQuery = await databases.listDocuments(
+            databaseId,
+            vehiclesCollectionId,
+            [Query.equal('model', vehicleModel)]
+          );
+
+          if (vehicleQuery.documents.length > 0) {
+            vehicleDoc = vehicleQuery.documents[0];
+          } else {
+            const allVehicles = await databases.listDocuments(
+              databaseId,
+              vehiclesCollectionId
+            );
+            vehicleDoc = allVehicles.documents.find(
+              (doc) => normalize(doc.model) === normalize(vehicleModel)
+            );
+          }
+
+          if (vehicleDoc) {
+            await databases.updateDocument(
+              databaseId,
+              vehiclesCollectionId,
+              vehicleDoc.$id,
+              { status: 'available' }
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Error checking related bookings for vehicle release:', error);
+      }
+    } else if (booking.vehicle && booking.vehicle !== 'N/A') {
+      // For non-practical lessons, release vehicle immediately
+      try {
+        const vehicleModel = booking.vehicle.split(' (')[0];
+        let vehicleDoc = null;
+
+        const vehicleQuery = await databases.listDocuments(
+          databaseId,
+          vehiclesCollectionId,
+          [Query.equal('model', vehicleModel)]
+        );
+
+        if (vehicleQuery.documents.length > 0) {
+          vehicleDoc = vehicleQuery.documents[0];
+        } else {
+          const allVehicles = await databases.listDocuments(
+            databaseId,
+            vehiclesCollectionId
+          );
+          vehicleDoc = allVehicles.documents.find(
+            (doc) => normalize(doc.model) === normalize(vehicleModel)
+          );
+        }
+
+        if (vehicleDoc) {
+          await databases.updateDocument(
+            databaseId,
+            vehiclesCollectionId,
+            vehicleDoc.$id,
+            { status: 'available' }
+          );
+        }
+      } catch (error) {
+        console.error('Error releasing vehicle status:', error);
+      }
+    }
+
     if (booking.instructor) {
       try {
         let instructorDoc = null;
@@ -156,44 +250,6 @@ function SMSMonitoring() {
         }
       } catch (error) {
         console.error('Error releasing instructor availability:', error);
-      }
-    }
-
-    if (booking.vehicle && booking.vehicle !== 'N/A') {
-      try {
-        const vehicleModel = booking.vehicle.split(' (')[0];
-        let vehicleDoc = null;
-
-        // Fast path: exact model query first.
-        const vehicleQuery = await databases.listDocuments(
-          databaseId,
-          vehiclesCollectionId,
-          [Query.equal('model', vehicleModel)]
-        );
-
-        if (vehicleQuery.documents.length > 0) {
-          vehicleDoc = vehicleQuery.documents[0];
-        } else {
-          // Fallback: normalize model values to tolerate case/spacing differences.
-          const allVehicles = await databases.listDocuments(
-            databaseId,
-            vehiclesCollectionId
-          );
-          vehicleDoc = allVehicles.documents.find(
-            (doc) => normalize(doc.model) === normalize(vehicleModel)
-          );
-        }
-
-        if (vehicleDoc) {
-          await databases.updateDocument(
-            databaseId,
-            vehiclesCollectionId,
-            vehicleDoc.$id,
-            { status: 'available' }
-          );
-        }
-      } catch (error) {
-        console.error('Error releasing vehicle status:', error);
       }
     }
   };
@@ -283,6 +339,22 @@ function SMSMonitoring() {
             result = await smsHelper.sendAppointmentCancellation(booking.userPhone, appointmentData);
           }
           await updateBookingStatus(booking, 'cancelled');
+          
+          // Notify instructor about the cancelled slot (available for rescheduling)
+          const instructorNotification = {
+            instructorName: booking.instructor,
+            date: booking.date,
+            time: booking.time,
+            studentName: booking.userName,
+            lessonType: booking.lessonType,
+            vehicle: booking.vehicle,
+            timestamp: new Date().toISOString()
+          };
+          
+          const existingNotifications = JSON.parse(localStorage.getItem('cancelledNotifications') || '[]');
+          existingNotifications.push(instructorNotification);
+          localStorage.setItem('cancelledNotifications', JSON.stringify(existingNotifications));
+          
           addToHistory(
             booking,
             'cancellation',

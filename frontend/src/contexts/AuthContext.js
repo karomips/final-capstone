@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { account, databases, databaseId, usersCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../appwrite/config';
-import { ID } from 'appwrite';
+import { ID, Query } from 'appwrite';
 import emailVerificationHelper from '../utils/emailVerificationHelper';
 
 const AuthContext = createContext();
@@ -20,6 +20,10 @@ export function AuthProvider({ children }) {
   function isAdminUser(user, userDoc) {
     const email = String(user?.email || '').toLowerCase();
     return email === 'admin@gmail.com' || userDoc?.role === 'admin';
+  }
+
+  function isInstructorUser(userDoc) {
+    return userDoc?.role === 'instructor';
   }
 
   async function getUserDocumentSafe(userId) {
@@ -57,17 +61,31 @@ export function AuthProvider({ children }) {
       // Auto-login after signup
       await account.createEmailPasswordSession(email, password);
       
-      // Create user document in database with the same ID as auth user
+      // Check if user document already exists (created by admin)
+      let existingDoc = null;
       try {
-        console.log('Creating user document in database...');
-        console.log('User data:', { name, email, phoneNumber, role: email === 'admin@gmail.com' ? 'admin' : 'user' });
+        const response = await databases.listDocuments(
+          databaseId,
+          usersCollectionId,
+          [Query.equal('email', email)]
+        );
+        if (response.documents.length > 0) {
+          existingDoc = response.documents[0];
+        }
+      } catch (e) {
+        console.log('Could not check for existing user document');
+      }
+
+      // Create or update user document
+      try {
+        console.log('Creating/Updating user document in database...');
         
         const userData = {
-          name: name,
+          name: name || existingDoc?.name || 'User',
           email: email,
-          role: email === 'admin@gmail.com' ? 'admin' : 'user',
-          approved: email === 'admin@gmail.com',
-          createdAt: new Date().toISOString()
+          role: email === 'admin@gmail.com' ? 'admin' : email === 'instructor@gmail.com' ? 'instructor' : existingDoc?.role || 'user',
+          approved: email === 'admin@gmail.com' || email === 'instructor@gmail.com' || existingDoc?.approved || false,
+          createdAt: existingDoc?.createdAt || new Date().toISOString()
         };
 
         if (profileImageFile && storageBucketId) {
@@ -88,16 +106,29 @@ export function AuthProvider({ children }) {
         if (phoneNumber) {
           userData.phoneNumber = phoneNumber;
         }
-        
-        const userDoc = await databases.createDocument(
-          databaseId,
-          usersCollectionId,
-          response.$id, // Use auth user ID as document ID for consistency
-          userData
-        );
-        console.log('User document created successfully:', userDoc);
+
+        let userDoc;
+        if (existingDoc) {
+          // Update existing document
+          userDoc = await databases.updateDocument(
+            databaseId,
+            usersCollectionId,
+            existingDoc.$id,
+            userData
+          );
+          console.log('User document updated successfully:', userDoc);
+        } else {
+          // Create new document
+          userDoc = await databases.createDocument(
+            databaseId,
+            usersCollectionId,
+            response.$id, // Use auth user ID as document ID for consistency
+            userData
+          );
+          console.log('User document created successfully:', userDoc);
+        }
       } catch (dbError) {
-        console.error('Error creating user document:', dbError);
+        console.error('Error creating/updating user document:', dbError);
         console.error('Error details:', dbError.message, dbError.code, dbError.type);
         // This is critical - throw error so user knows
         throw new Error('Account created but failed to save user details: ' + dbError.message);
@@ -108,9 +139,11 @@ export function AuthProvider({ children }) {
 
       await emailVerificationHelper.consumeVerification(normalizedEmail);
 
-      // Keep new accounts signed out until they are approved by admin.
-      await account.deleteSession('current');
-      setCurrentUser(null);
+      // Keep new accounts signed out until they are approved by admin (unless instructor/admin email)
+      if (normalizedEmail !== 'admin@gmail.com' && normalizedEmail !== 'instructor@gmail.com') {
+        await account.deleteSession('current');
+        setCurrentUser(null);
+      }
       
       return response;
     } catch (error) {
@@ -132,11 +165,39 @@ export function AuthProvider({ children }) {
       const session = await account.createEmailPasswordSession(email, password);
       // Fetch user after login
       const user = await account.get();
-      const userDoc = await getUserDocumentSafe(user.$id);
+      let userDoc = await getUserDocumentSafe(user.$id);
+      const normalizedEmail = String(email || '').toLowerCase();
+      
+      // Auto-create user document for special emails if it doesn't exist
+      const isSpecialEmail = normalizedEmail === 'admin@gmail.com' || normalizedEmail === 'instructor@gmail.com';
+      if (isSpecialEmail && !userDoc) {
+        try {
+          const newUserDoc = await databases.createDocument(
+            databaseId,
+            usersCollectionId,
+            user.$id,
+            {
+              email: normalizedEmail,
+              role: normalizedEmail === 'admin@gmail.com' ? 'admin' : 'instructor',
+              approved: true,
+              createdAt: new Date().toISOString()
+            }
+          );
+          userDoc = newUserDoc;
+          console.log('Auto-created user document for special email:', normalizedEmail);
+        } catch (createError) {
+          console.error('Error auto-creating user document:', createError);
+          // Continue anyway, user might still be able to login
+        }
+      }
+      
       const admin = isAdminUser(user, userDoc);
+      const instructor = isInstructorUser(userDoc);
       const approved = normalizeBoolean(userDoc?.approved);
 
-      if (!admin && !approved) {
+      console.log('Login debug - email:', normalizedEmail, 'admin:', admin, 'instructor:', instructor, 'approved:', approved, 'isSpecialEmail:', isSpecialEmail, 'userDoc:', userDoc);
+
+      if (!admin && !instructor && !approved && !isSpecialEmail) {
         await account.deleteSession('current');
         setCurrentUser(null);
         throw new Error('Your account is pending admin approval. Please wait for approval before logging in.');

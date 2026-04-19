@@ -195,7 +195,7 @@ function AdminDashboard() {
     const localToday = `${year}-${month}-${day}`;
 
     return bookings
-      .filter((booking) => String(booking.date || '').trim() >= localToday)
+      .filter((booking) => String(booking.date || '').trim() >= localToday && String(booking.status || '').toLowerCase() !== 'completed')
       .sort((a, b) => {
         const dateCompare = String(a.date || '').localeCompare(String(b.date || ''));
         if (dateCompare !== 0) return dateCompare;

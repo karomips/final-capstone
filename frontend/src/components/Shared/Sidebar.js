@@ -79,7 +79,7 @@ function Sidebar({
             {!isCollapsed && <span className="app-nav-text">{item.label}</span>}
           </button>
         ))}
-        {(userType === 'user' || userType === 'admin') && (
+        {(userType === 'user' || userType === 'admin' || userType === 'instructor') && (
           <div className="app-sidebar-footer">
             {userType === 'user' && (
               <button 

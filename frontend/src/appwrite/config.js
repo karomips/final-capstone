@@ -10,6 +10,7 @@ const appwriteConfig = {
   bookingsCollectionId: 'bookings', // Bookings collection ID (create this in Appwrite Console)
   vehiclesCollectionId: 'vehicles', // Vehicles collection ID (create this in Appwrite Console)
   instructorsCollectionId: 'instructors', // Instructors collection ID (create this in Appwrite Console)
+  instructorSchedulesCollectionId: 'instructor-schedules', // Instructor schedules collection ID (create this in Appwrite Console)
   storageBucketId: process.env.REACT_APP_APPWRITE_STORAGE_BUCKET_ID || '' // Optional Appwrite Storage bucket ID for uploads
 };
 
@@ -33,6 +34,6 @@ export const buildStorageFileUrl = (bucketId, fileId) => {
 };
 
 // Export config for use in other files
-export const { databaseId, usersCollectionId, appointmentsCollectionId, bookingsCollectionId, vehiclesCollectionId, instructorsCollectionId, storageBucketId } = appwriteConfig;
+export const { databaseId, usersCollectionId, appointmentsCollectionId, bookingsCollectionId, vehiclesCollectionId, instructorsCollectionId, instructorSchedulesCollectionId, storageBucketId } = appwriteConfig;
 
 export default client;

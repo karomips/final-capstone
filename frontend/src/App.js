@@ -12,8 +12,10 @@ import SMSMonitoring from './components/Admin/SMSMonitoring';
 import UserDashboard from './components/User/UserDashboard';
 import BookLesson from './components/User/BookLesson';
 import Profile from './components/User/Profile';
+import InstructorDashboard from './components/Instructor/InstructorDashboard';
 import AdminLayout from './components/Layouts/AdminLayout';
 import UserLayout from './components/Layouts/UserLayout';
+import InstructorLayout from './components/Layouts/InstructorLayout';
 import PrivateRoute from './components/Shared/PrivateRoute';
 import './App.css';
 
@@ -86,6 +88,18 @@ function AppContent() {
           }
         >
           <Route path="" element={<Dashboard />} />
+        </Route>
+
+        {/* Instructor Routes with InstructorLayout */}
+        <Route 
+          path="/instructor/*" 
+          element={
+            <PrivateRoute>
+              <InstructorLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route path="" element={<InstructorDashboard />} />
         </Route>
         
         <Route path="/" element={<Navigate to="/login" />} />

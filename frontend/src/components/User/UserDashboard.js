@@ -107,7 +107,7 @@ function UserDashboard() {
   });
 
   const upcomingSchedules = bookings
-    .filter((booking) => String(booking.date || '').trim() >= manilaTodayIso)
+    .filter((booking) => String(booking.date || '').trim() >= manilaTodayIso && String(booking.status || '').toLowerCase() !== 'completed')
     .sort((a, b) => {
       const dateCompare = String(a.date || '').localeCompare(String(b.date || ''));
       if (dateCompare !== 0) return dateCompare;
@@ -201,7 +201,7 @@ function UserDashboard() {
           <div className="dashboard-card course-progress-card">
             <h2>Course Progress</h2>
             <div className="progress-placeholder practical-progress-list">
-              {practicalCourseProgress.length > 0 ? (
+              {practicalCourseProgress.length > 0 && completedCourseCount < 3 ? (
                 <>
                   <div className="practical-progress-header">
                     <span>Practical Track</span>
@@ -219,6 +219,8 @@ function UserDashboard() {
                     </div>
                   ))}
                 </>
+              ) : completedCourseCount === 3 ? (
+                <div className="notification-empty-state">🎉 All courses completed!</div>
               ) : (
                 <div className="notification-empty-state">No practical lessons booked yet.</div>
               )}

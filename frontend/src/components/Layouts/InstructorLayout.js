@@ -1,29 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { databases, databaseId, usersCollectionId } from '../../appwrite/config';
 import Sidebar from '../Shared/Sidebar';
-import '../Admin/AdminPages.css';
+import '../Instructor/InstructorPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 import DashboardIcon from '../../assets/icons/dashboard-white.png';
-import StudentsIcon from '../../assets/icons/students-white.png';
-import InstructorIcon from '../../assets/icons/instructor-white.png';
-import VehicleIcon from '../../assets/icons/vehicle-white.png';
-import SMSIcon from '../../assets/icons/sms-icon.png';
 
-function AdminLayout() {
+function InstructorLayout() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('adminTheme');
+      const saved = localStorage.getItem('instructorTheme');
       if (saved === 'dark' || saved === 'light') return saved;
       return 'light';
     }
     return 'light';
   });
+
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   const handleLogout = async () => {
     setShowSignOutModal(true);
@@ -41,7 +37,7 @@ function AdminLayout() {
   const toggleTheme = () => {
     setTheme((prevTheme) => {
       const newTheme = prevTheme === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('adminTheme', newTheme);
+      localStorage.setItem('instructorTheme', newTheme);
       return newTheme;
     });
   };
@@ -53,11 +49,18 @@ function AdminLayout() {
     } else {
       body.classList.remove('dark-mode');
     }
-    localStorage.setItem('adminTheme', theme);
+    body.classList.add('theme-transition');
+    const timeoutId = window.setTimeout(() => {
+      body.classList.remove('theme-transition');
+    }, 350);
+    localStorage.setItem('instructorTheme', theme);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [theme]);
 
   return (
-    <div className="admin-page-container">
+    <div className="instructor-page-container" style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
@@ -65,49 +68,21 @@ function AdminLayout() {
         navItems={[
           {
             id: 'dashboard',
-            label: 'Dashboard',
+            label: 'My Dashboard',
             icon: DashboardIcon,
-            active: window.location.pathname === '/admin',
-            onClick: () => navigate('/admin')
-          },
-          {
-            id: 'students',
-            label: 'Students',
-            icon: StudentsIcon,
-            active: window.location.pathname === '/admin/students',
-            onClick: () => navigate('/admin/students')
-          },
-          {
-            id: 'instructors',
-            label: 'Instructors',
-            icon: InstructorIcon,
-            active: window.location.pathname === '/admin/instructors',
-            onClick: () => navigate('/admin/instructors')
-          },
-          {
-            id: 'vehicles',
-            label: 'Vehicles',
-            icon: VehicleIcon,
-            active: window.location.pathname === '/admin/vehicles',
-            onClick: () => navigate('/admin/vehicles')
-          },
-          {
-            id: 'sms',
-            label: 'SMS Monitoring',
-            icon: SMSIcon,
-            active: window.location.pathname === '/admin/sms-monitoring',
-            onClick: () => navigate('/admin/sms-monitoring')
+            active: window.location.pathname === '/instructor',
+            onClick: () => navigate('/instructor')
           }
         ]}
         currentUser={currentUser}
         onLogout={handleLogout}
         theme={theme}
         onThemeToggle={toggleTheme}
-        userType="admin"
+        userType="instructor"
       />
 
       {/* Content wrapper that responds to sidebar state */}
-      <div className="admin-content-wrapper" data-sidebar-state={sidebarOpen ? 'open' : 'closed'}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Outlet context={{ theme, setTheme }} />
       </div>
 
@@ -197,4 +172,4 @@ function AdminLayout() {
   );
 }
 
-export default AdminLayout;
+export default InstructorLayout;

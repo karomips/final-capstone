@@ -400,7 +400,6 @@ function BookLesson() {
             userEmail: currentUser.email,
             lessonType: selectedLesson,
             instructor: instructor,
-            transmission: selectedLesson === 'practical' ? transmission : 'N/A', // NEW: Include transmission
             vehicle: selectedLesson === 'theory' ? 'N/A' : vehicle,
             date: bookingDate,
             time: time,

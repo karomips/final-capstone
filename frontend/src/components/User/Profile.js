@@ -5,6 +5,7 @@ import { databases, databaseId, usersCollectionId, storage, storageBucketId, bui
 import { ID } from 'appwrite';
 import './UserPages.css';
 import './Profile.css';
+import { formatPhoneNumber, isValidPhoneNumber } from '../../utils/phoneNumberFormatter';
 
 function Profile() {
   const { currentUser, logout } = useAuth();
@@ -108,6 +109,14 @@ function Profile() {
     }));
   };
 
+  const handlePhoneNumberChange = (e) => {
+    const formattedPhone = formatPhoneNumber(e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      phoneNumber: formattedPhone
+    }));
+  };
+
   const handleProfileImageChange = (e) => {
     const file = e.target.files?.[0];
 
@@ -138,9 +147,8 @@ function Profile() {
     setSuccess('');
 
     // Validate phone number
-    const phoneRegex = /^(09|\+639|639)\d{9}$/;
-    if (!phoneRegex.test(formData.phoneNumber.replace(/\s/g, ''))) {
-      setError('Please enter a valid Philippine phone number (e.g., 09123456789)');
+    if (!isValidPhoneNumber(formData.phoneNumber)) {
+      setError('Please enter a valid Philippine phone number (e.g., +63 921 234 5678)');
       return;
     }
 
@@ -392,9 +400,9 @@ function Profile() {
       type="tel"
       name="phoneNumber"
       value={formData.phoneNumber}
-      onChange={handleInputChange}
+      onChange={handlePhoneNumberChange}
       className="profile-input user-typing-color"
-      placeholder="09123456789"
+      placeholder="+63 9XX XXX XXXX"
       required
     />
   </div>

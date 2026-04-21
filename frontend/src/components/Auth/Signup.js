@@ -5,6 +5,7 @@ import './Auth.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 import { Eye, EyeOff } from 'lucide-react';
 import emailVerificationHelper from '../../utils/emailVerificationHelper';
+import { formatPhoneNumber, getFullPhoneNumber, isValidPhoneNumber } from '../../utils/phoneNumberFormatter';
 
 
 function Signup() {
@@ -21,6 +22,10 @@ function Signup() {
   const [zipCode, setZipCode] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  // NEW: Contact Person Fields
+  const [contactPersonName, setContactPersonName] = useState('');
+  const [contactPersonPhone, setContactPersonPhone] = useState('');
+  const [contactPersonRelationship, setContactPersonRelationship] = useState('');
   const [password, setPassword] = useState('');
   const [step, setStep] = useState(1);
   const [verificationCode, setVerificationCode] = useState('');
@@ -128,9 +133,8 @@ function Signup() {
     }
 
     // Validate phone number format
-    const phoneRegex = /^(09|\+639|639)\d{9}$/;
-    if (!phoneRegex.test(phoneNumber.replace(/\s/g, ''))) {
-      setError('Please enter a valid Philippine phone number (e.g., 09123456789)');
+    if (!isValidPhoneNumber(phoneNumber)) {
+      setError('Please enter a valid Philippine phone number (e.g., +63 921 234 5678)');
       setLoading(false);
       return;
     }
@@ -158,6 +162,15 @@ function Signup() {
       try {
         const userDoc = await databases.getDocument(databaseId, usersCollectionId, result.$id);
         console.log('✓ User document verified in database:', userDoc);
+        
+        // NEW: Update user document with contact person information
+        await databases.updateDocument(databaseId, usersCollectionId, result.$id, {
+          contactPersonName: contactPersonName,
+          contactPersonPhone: contactPersonPhone,
+          contactPersonRelationship: contactPersonRelationship,
+          parentPhoneNumber: parentPhoneNumber
+        });
+        console.log('✓ Contact person and additional info saved');
       } catch (verifyError) {
         console.error('✗ Could not verify user document:', verifyError);
         alert('Account created but may not appear in admin panel. Please contact administrator.');
@@ -198,8 +211,8 @@ function Signup() {
     }
 
     const phoneRegex = /^(09|\+639|639)\d{9}$/;
-    if (!phoneRegex.test(phoneNumber.replace(/\s/g, ''))) {
-      setError('Please enter a valid Philippine phone number (e.g., 09123456789)');
+    if (!isValidPhoneNumber(phoneNumber)) {
+      setError('Please enter a valid Philippine phone number (e.g., +63 921 234 5678)');
       return;
     }
 
@@ -214,6 +227,33 @@ function Signup() {
     }
 
     setStep(2);
+  };
+
+  // NEW: Handle going from Step 2 to Step 3
+  const handleNextStep2 = () => {
+    setError('');
+
+    if (!contactPersonName.trim()) {
+      setError('Please enter the contact person\'s name.');
+      return;
+    }
+
+    if (!contactPersonPhone.trim()) {
+      setError('Please enter the contact person\'s phone number.');
+      return;
+    }
+
+    if (!isValidPhoneNumber(contactPersonPhone)) {
+      setError('Please enter a valid Philippine phone number for the contact person (e.g., +63 921 234 5678)');
+      return;
+    }
+
+    if (!contactPersonRelationship.trim()) {
+      setError('Please specify the contact person\'s relationship to you.');
+      return;
+    }
+
+    setStep(3);
   };
 
   const handleAuthPageSwitch = (e, targetPath) => {
@@ -239,9 +279,9 @@ function Signup() {
             <h3>Online Registration</h3>
             <h1>Enroll Now to Get Started on Your Driving Journey!</h1>
             <div className="enroll-step-row">
-              <span>Step {step} of 2</span>
+              <span>Step {step} of 3</span>
               <div className="enroll-progress-track">
-                <div className="enroll-progress-fill" style={{ width: step === 1 ? '50%' : '100%' }} />
+                <div className="enroll-progress-fill" style={{ width: step === 1 ? '33%' : step === 2 ? '66%' : '100%' }} />
               </div>
             </div>
           </div>
@@ -302,21 +342,10 @@ function Signup() {
                   <input
                     type="tel"
                     id="phoneNumber"
-                    placeholder="Student Phone Number"
+                    placeholder="+63 9XX XXX XXXX"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
                     required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="parentPhoneNumber">Parent Phone Number</label>
-                  <input
-                    type="tel"
-                    id="parentPhoneNumber"
-                    placeholder="Parent Phone Number"
-                    value={parentPhoneNumber}
-                    onChange={(e) => setParentPhoneNumber(e.target.value)}
                   />
                 </div>
 
@@ -403,7 +432,62 @@ function Signup() {
               </>
             )}
 
+            {/* NEW: Step 2 - Contact Person Information */}
             {step === 2 && (
+              <>
+                <div className="form-group">
+                  <label>Contact Person Name *</label>
+                  <input
+                    type="text"
+                    placeholder="Full name"
+                    value={contactPersonName}
+                    onChange={(e) => setContactPersonName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Contact Person Phone Number *</label>
+                  <input
+                    type="tel"
+                    placeholder="+63 9XX XXX XXXX"
+                    value={contactPersonPhone}
+                    onChange={(e) => setContactPersonPhone(formatPhoneNumber(e.target.value))}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Relationship *</label>
+                  <select
+                    value={contactPersonRelationship}
+                    onChange={(e) => setContactPersonRelationship(e.target.value)}
+                    required
+                  >
+                    <option value="">Select relationship</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Guardian">Guardian</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Relative">Relative</option>
+                    <option value="Friend">Friend</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="enroll-step-actions">
+                  <button type="button" className="btn-google" onClick={() => setStep(1)}>
+                    Back
+                  </button>
+                  <button type="button" className="btn-primary enroll-next-btn" onClick={handleNextStep2}>
+                    Next
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Step 3 - Password & Email Verification (previously Step 2) */}
+            {step === 3 && (
               <>
                 <div className="form-group">
                   <label htmlFor="password">Password *</label>
@@ -468,7 +552,7 @@ function Signup() {
                 </div>
 
                 <div className="enroll-step-actions">
-                  <button type="button" className="btn-google" onClick={() => setStep(1)}>
+                  <button type="button" className="btn-google" onClick={() => setStep(2)}>
                     Back
                   </button>
                   <button type="submit" className="btn-primary" disabled={loading}>

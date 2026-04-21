@@ -35,9 +35,10 @@ function BookLesson() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [selectedLesson, setSelectedLesson] = useState('practical');
+  const [transmission, setTransmission] = useState(''); // New: transmission type selection
   const [instructor, setInstructor] = useState('');
   const [vehicle, setVehicle] = useState('');
-  const [date, setDate] = useState('');
+  const [selectedDates, setSelectedDates] = useState([]); // Array of ISO date strings
   const [time, setTime] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -106,16 +107,14 @@ function BookLesson() {
     dateA.getDate() === dateB.getDate()
   );
 
-  const selectedDateObject = parseIsoDate(date);
+  const selectedDateObject = selectedDates.length > 0 ? parseIsoDate(selectedDates[0]) : null;
 
-  const practicalCourseDates = useMemo(() => {
-    if (selectedLesson !== 'practical' || !date) return [];
-    return [date, addDays(date, 1), addDays(date, 2)];
-  }, [selectedLesson, date]); // ✅ addDays is stable (module-level), no need to list it
-
-  const formattedDateSummary = selectedDateObject
-    ? selectedDateObject.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-    : 'Select date';
+  // For practical: show all selected dates, for theory: show the single date
+  const formattedDateSummary = selectedDates.length > 0
+    ? selectedDates.map(isoDate => parseIsoDate(isoDate)).filter(Boolean).map(d => 
+        d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+      ).join(', ')
+    : 'Select date(s)';
 
   const formattedTimeSummary = time
     ? new Date(`1970-01-01T${time}:00`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
@@ -131,13 +130,35 @@ function BookLesson() {
 
   const handleDatePick = (dayDate) => {
     if (!dayDate || isPastDate(dayDate)) return;
-    setDate(toIsoDate(dayDate));
+    
+    const dayIsoValue = toIsoDate(dayDate);
+    
+    if (selectedLesson === 'practical') {
+      // For practical: allow selecting up to 3 dates (toggle)
+      setSelectedDates(prev => {
+        if (prev.includes(dayIsoValue)) {
+          // Already selected, remove it
+          return prev.filter(d => d !== dayIsoValue);
+        } else if (prev.length < 3) {
+          // Not selected yet, add it (if under limit)
+          return [...prev, dayIsoValue];
+        }
+        // Already have 3, don't add more
+        return prev;
+      });
+    } else {
+      // For theory: only 1 date
+      setSelectedDates([dayIsoValue]);
+    }
   };
 
   useEffect(() => {
-    if (!selectedDateObject) return;
-    setCalendarMonth(new Date(selectedDateObject.getFullYear(), selectedDateObject.getMonth(), 1));
-  }, [date]); // ✅ only 'date' needed; selectedDateObject is derived from it
+    if (selectedDates.length === 0) return;
+    const firstDate = parseIsoDate(selectedDates[0]);
+    if (firstDate) {
+      setCalendarMonth(new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
+    }
+  }, [selectedDates]);
 
   const getTheoryCapacity = (instructorDoc) => {
     const parsed = Number(instructorDoc?.theoryCapacity);
@@ -215,16 +236,24 @@ function BookLesson() {
         [Query.equal('availability', 'available')]
       );
 
-      const filteredInstructors = response.documents.filter(inst => {
+      let filteredInstructors = response.documents.filter(inst => {
         if (!inst.lessonType) return true;
         return inst.lessonType === selectedLesson || inst.lessonType === 'both';
       });
 
+      // NEW: For practical lessons, filter by transmission if selected
+      if (selectedLesson === 'practical' && transmission) {
+        filteredInstructors = filteredInstructors.filter(inst => {
+          if (!inst.transmission) return false; // Only show instructors with transmission set
+          return inst.transmission === transmission;
+        });
+      }
+
       // Check for leaves if a date is selected
       let instructorsAfterLeaveCheck = filteredInstructors;
-      if (date) {
+      if (selectedDates.length > 0) {
         const leaveCheckPromises = filteredInstructors.map(async (inst) => {
-          const onLeave = await isInstructorOnLeave(inst.name, date);
+          const onLeave = await isInstructorOnLeave(inst.name, selectedDates[0]);
           return { inst, onLeave };
         });
         
@@ -258,7 +287,7 @@ function BookLesson() {
       console.error('Error fetching instructors:', err);
       setInstructors([]);
     }
-  }, [selectedLesson, date]);
+  }, [selectedLesson, selectedDates, transmission]); // Updated: added transmission dependency
 
   const fetchVehicles = useCallback(async () => {
     try {
@@ -267,12 +296,19 @@ function BookLesson() {
         vehiclesCollectionId,
         [Query.equal('status', 'available')]
       );
-      setVehicles(response.documents);
+      
+      // NEW: Filter vehicles by transmission if selected
+      let filteredVehicles = response.documents;
+      if (transmission) {
+        filteredVehicles = response.documents.filter(veh => veh.transmission === transmission);
+      }
+      
+      setVehicles(filteredVehicles);
     } catch (err) {
       console.error('Error fetching vehicles:', err);
       setVehicles([]);
     }
-  }, []);
+  }, [transmission]); // Updated: added transmission dependency
 
   useEffect(() => {
     if (currentUser) {
@@ -308,14 +344,25 @@ function BookLesson() {
       return;
     }
 
-    if (!instructor || !date || !time) {
+    if (!instructor || selectedDates.length === 0 || !time) {
       setError('Please fill in all fields');
       return;
     }
 
-    if (selectedLesson === 'practical' && !vehicle) {
-      setError('Please select a vehicle for practical lesson');
-      return;
+    // NEW: Validate transmission for practical lessons
+    if (selectedLesson === 'practical') {
+      if (!transmission) {
+        setError('Please select a transmission type');
+        return;
+      }
+      if (!vehicle) {
+        setError('Please select a vehicle for practical lesson');
+        return;
+      }
+      if (selectedDates.length !== 3) {
+        setError('Please select exactly 3 dates for the practical lesson');
+        return;
+      }
     }
 
     setLoading(true);
@@ -338,7 +385,8 @@ function BookLesson() {
         }
       }
 
-      const bookingDates = selectedLesson === 'practical' ? practicalCourseDates : [date];
+      // Use selected dates (1 for theory, 3 for practical)
+      const bookingDates = selectedDates;
 
       for (const bookingDate of bookingDates) {
         console.log('Creating booking with date:', bookingDate);
@@ -352,6 +400,7 @@ function BookLesson() {
             userEmail: currentUser.email,
             lessonType: selectedLesson,
             instructor: instructor,
+            transmission: selectedLesson === 'practical' ? transmission : 'N/A', // NEW: Include transmission
             vehicle: selectedLesson === 'theory' ? 'N/A' : vehicle,
             date: bookingDate,
             time: time,
@@ -417,14 +466,11 @@ function BookLesson() {
         }
       }
 
-      setSuccess(
-        selectedLesson === 'practical'
-          ? 'Practical booking confirmed for 3 consecutive course days!'
-          : 'Booking confirmed successfully!'
-      );
+      setSuccess('Booking confirmed successfully!');
       setInstructor('');
       setVehicle('');
-      setDate('');
+      setTransmission(''); // NEW: Reset transmission after booking
+      setSelectedDates([]);
       setTime('');
 
       setTimeout(() => {
@@ -476,6 +522,9 @@ function BookLesson() {
                 onClick={() => {
                   setSelectedLesson('practical');
                   setInstructor('');
+                  setSelectedDates([]);
+                  setTransmission(''); // Reset transmission when switching lessons
+                  setVehicle('');
                 }}
               >
                 <div className="lesson-icon">🚗</div>
@@ -488,6 +537,8 @@ function BookLesson() {
                   setSelectedLesson('theory');
                   setInstructor('');
                   setVehicle('');
+                  setSelectedDates([]);
+                  setTransmission(''); // Reset transmission when switching to theory
                 }}
               >
                 <div className="lesson-icon">📖</div>
@@ -500,14 +551,40 @@ function BookLesson() {
           {/* Instructor & Vehicle Section */}
           <div className="booking-section">
             <h2 className="section-title">{selectedLesson === 'theory' ? 'Instructor' : 'Instructor & Vehicle'}</h2>
+            
+            {/* NEW: Transmission Type Selection (for practical lessons only) */}
+            {selectedLesson === 'practical' && (
+              <div className="form-group">
+                <label>Transmission Type</label>
+                <select
+                  value={transmission}
+                  onChange={(e) => {
+                    setTransmission(e.target.value);
+                    setInstructor(''); // Reset instructor when transmission changes
+                    setVehicle(''); // Reset vehicle when transmission changes
+                  }}
+                  className="booking-select"
+                >
+                  <option value="">Select Transmission Type</option>
+                  <option value="MT">Manual Transmission (MT)</option>
+                  <option value="AT">Automatic Transmission (AT)</option>
+                </select>
+              </div>
+            )}
+            
             <div className="form-group">
               <label>Instructor Name</label>
               <select
                 value={instructor}
                 onChange={(e) => setInstructor(e.target.value)}
                 className="booking-select"
+                disabled={selectedLesson === 'practical' && !transmission} // NEW: Disable until transmission is selected
               >
-                <option value="">Select Instructor</option>
+                <option value="">
+                  {selectedLesson === 'practical' && !transmission 
+                    ? 'Select transmission type first' 
+                    : 'Select Instructor'}
+                </option>
                 {instructors.length === 0 ? (
                   <option disabled>No available instructors</option>
                 ) : (
@@ -528,8 +605,13 @@ function BookLesson() {
                   value={vehicle}
                   onChange={(e) => setVehicle(e.target.value)}
                   className="booking-select"
+                  disabled={!transmission} // NEW: Disable until transmission is selected
                 >
-                  <option value="">Select Vehicle</option>
+                  <option value="">
+                    {!transmission 
+                      ? 'Select transmission type first' 
+                      : 'Select Vehicle'}
+                  </option>
                   {vehicles.length === 0 ? (
                     <option disabled>No available vehicles</option>
                   ) : (
@@ -587,20 +669,15 @@ function BookLesson() {
                     }
 
                     const dayIsoValue = toIsoDate(dayDate);
-                    const isLockedPracticalDate = (
-                      selectedLesson === 'practical' &&
-                      practicalCourseDates.includes(dayIsoValue) &&
-                      dayIsoValue !== date
-                    );
-                    const isDisabled = isPastDate(dayDate) || isLockedPracticalDate;
-                    const isSelected = selectedDateObject ? isSameDay(dayDate, selectedDateObject) : false;
+                    const isDisabled = isPastDate(dayDate);
+                    const isSelected = selectedDates.includes(dayIsoValue);
                     const isToday = isSameDay(dayDate, today);
 
                     return (
                       <button
                         key={dayIsoValue}
                         type="button"
-                        className={`calendar-day-btn ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${isLockedPracticalDate ? 'locked' : ''}`}
+                        className={`calendar-day-btn ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
                         disabled={isDisabled}
                         onClick={() => handleDatePick(dayDate)}
                         aria-label={dayDate.toLocaleDateString([], {
@@ -615,22 +692,12 @@ function BookLesson() {
                     );
                   })}
                 </div>
-                {selectedLesson === 'practical' && practicalCourseDates.length === 3 && (
-                  <small className="time-hint">
-                    Practical course dates are locked to: {practicalCourseDates.map((isoDate) => {
-                      const parsed = parseIsoDate(isoDate);
-                      return parsed
-                        ? parsed.toLocaleDateString([], { month: 'short', day: 'numeric' })
-                        : isoDate;
-                    }).join(', ')}
-                  </small>
-                )}
               </div>
 
-              <div className="time-picker-shell">
-                <div className="time-picker-header">
-                  <Clock3 size={16} />
-                  <span>Pick a Time Slot</span>
+              <div className="booking-section time-picker-section">
+                  <div className="time-picker-header">
+                    <Clock3 size={16} />
+                    <span>Pick a Time Slot</span>
                 </div>
                 <select
                   value={time}
@@ -656,14 +723,7 @@ function BookLesson() {
               {selectedLesson === 'practical' ? (
                 <>
                   You selected a <strong>Behind-the-Wheel Track</strong><br />
-                  Course Days: {practicalCourseDates.length > 0
-                    ? practicalCourseDates.map((isoDate) => {
-                        const parsed = parseIsoDate(isoDate);
-                        return parsed
-                          ? parsed.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-                          : isoDate;
-                      }).join(' • ')
-                    : 'Select date'}<br />
+                  Dates: {formattedDateSummary} ({selectedDates.length}/3 selected)<br />
                   @ {formattedTimeSummary}
                 </>
               ) : (

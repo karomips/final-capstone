@@ -8,7 +8,6 @@ import { Eye, EyeOff } from "lucide-react";
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('user'); // Role selector: 'user', 'instructor', 'admin'
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isSwitchingAuthPage, setIsSwitchingAuthPage] = useState(false);
@@ -72,7 +71,7 @@ function Login() {
       
       console.log('Login result:', loginResult);
       
-      // Get the actual account role from database or email
+      // Get the actual account role from database
       let actualRole = 'user'; // Default to user
       if (email.toLowerCase() === 'admin@gmail.com' || loginResult?.userDoc?.role === 'admin') {
         actualRole = 'admin';
@@ -80,31 +79,14 @@ function Login() {
         actualRole = 'instructor';
       }
       
-      // Check if selected role matches actual account role
-      if (role !== actualRole) {
-        setRole(actualRole); // Auto-correct dropdown to actual role
-        setError(`This account is a ${actualRole}. Logging in as ${actualRole} instead.`);
-        setLoading(false);
-        return;
-      }
-
-      // Route based on selected role
-      if (role === 'admin') {
-        if (loginResult?.userDoc?.role === 'admin' || email.toLowerCase() === 'admin@gmail.com') {
-          navigate('/admin');
-        } else {
-          setError('This account does not have admin privileges');
-        }
-      } else if (role === 'instructor') {
-        if (!loginResult?.userDoc) {
-          setError('Instructor account not properly configured. Please contact admin.');
-        } else if (loginResult?.userDoc?.role === 'instructor') {
-          navigate('/instructor');
-        } else {
-          setError('This account does not have instructor privileges');
-        }
+      console.log('Auto-detected role:', actualRole);
+      
+      // Auto-route based on actual role
+      if (actualRole === 'admin') {
+        navigate('/admin');
+      } else if (actualRole === 'instructor') {
+        navigate('/instructor');
       } else {
-        // User role
         navigate('/user-dashboard');
       }
     } catch (error) {
@@ -113,6 +95,8 @@ function Login() {
         setError('Invalid email or password');
       } else if (error.message.includes('email')) {
         setError('Invalid email address');
+      } else if (error.message.includes('not approved')) {
+        setError('Your account is pending approval. Please contact the administrator.');
       } else {
         setError('Failed to log in: ' + error.message);
       }
@@ -145,29 +129,6 @@ function Login() {
           <form onSubmit={handleSubmit} className="auth-form">
             {successMessage && <div className="success-message">{successMessage}</div>}
             {error && <div className="error-message">{error}</div>}
-            
-            <div className="form-group">
-              <label htmlFor="role">Login As</label>
-              <select
-                id="role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  border: '1px solid #d6deea',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontFamily: 'Manrope, sans-serif',
-                  backgroundColor: '#fff',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="user">Student</option>
-                <option value="instructor">Instructor</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
             
             <div className="form-group">
               <label htmlFor="email">Email Address</label>

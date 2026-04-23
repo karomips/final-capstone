@@ -1127,6 +1127,14 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 
@@ -1148,6 +1156,16 @@
 .add-btn:hover {
   background: #0f1b2f;
   box-shadow: 0 4px 12px rgba(17, 31, 51, 0.4);
+  transform: translateY(-2px);
+}
+
+.add-motorcycle-btn {
+  background: #111f33;
+}
+
+.add-motorcycle-btn:hover {
+  background: #111f33;
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
   transform: translateY(-2px);
 }
 

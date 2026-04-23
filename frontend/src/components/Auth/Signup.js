@@ -22,6 +22,11 @@ function Signup() {
   const [zipCode, setZipCode] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [age, setAge] = useState('');
+  const [sex, setSex] = useState('');
+  const [citizenship, setCitizenship] = useState('');
+  const [civilStatus, setCivilStatus] = useState('');
+  const [ltoClientId, setLtoClientId] = useState('');
   // NEW: Contact Person Fields
   const [contactPersonName, setContactPersonName] = useState('');
   const [contactPersonPhone, setContactPersonPhone] = useState('');
@@ -163,12 +168,17 @@ function Signup() {
         const userDoc = await databases.getDocument(databaseId, usersCollectionId, result.$id);
         console.log('✓ User document verified in database:', userDoc);
         
-        // NEW: Update user document with contact person information
+        // NEW: Update user document with contact person and additional personal details
         await databases.updateDocument(databaseId, usersCollectionId, result.$id, {
           contactPersonName: contactPersonName,
           contactPersonPhone: contactPersonPhone,
           contactPersonRelationship: contactPersonRelationship,
-          parentPhoneNumber: parentPhoneNumber
+          parentPhoneNumber: parentPhoneNumber,
+          age: age,
+          sex: sex,
+          citizenship: citizenship,
+          civilStatus: civilStatus,
+          ltoClientId: ltoClientId
         });
         console.log('✓ Contact person and additional info saved');
       } catch (verifyError) {
@@ -210,11 +220,52 @@ function Signup() {
       return;
     }
 
-    const phoneRegex = /^(09|\+639|639)\d{9}$/;
     if (!isValidPhoneNumber(phoneNumber)) {
       setError('Please enter a valid Philippine phone number (e.g., +63 921 234 5678)');
       return;
     }
+
+    if (!age.trim()) {
+      setError('Please enter your age.');
+      return;
+    }
+
+    const numericAge = Number(age.trim());
+    if (!/^[0-9]+$/.test(age.trim()) || numericAge < 18 || numericAge > 85) {
+      setError('Please enter a valid age 18+.');
+      return;
+    }
+
+    if (!sex) {
+      setError('Please select your sex.');
+      return;
+    }
+
+    if (!citizenship.trim()) {
+      setError('Please enter your citizenship.');
+      return;
+    }
+
+    if (!civilStatus) {
+      setError('Please select your civil status.');
+      return;
+    }
+
+    if (!ltoClientId.trim()) {
+      setError('Please enter your LTO Client ID No.');
+      return;
+    }
+
+    if (!/^[A-Z0-9\- ]{5,20}$/.test(ltoClientId.trim())) {
+      setError('Please enter a valid LTO Client ID No. (numbers only).');
+      return;
+    }
+
+    setStep(2);
+  };
+
+  const handleNextStep2 = () => {
+    setError('');
 
     if (!birthMonth || !birthDay || !birthYear) {
       setError('Please complete your date of birth.');
@@ -226,11 +277,10 @@ function Signup() {
       return;
     }
 
-    setStep(2);
+    setStep(3);
   };
 
-  // NEW: Handle going from Step 2 to Step 3
-  const handleNextStep2 = () => {
+  const handleNextStep3 = () => {
     setError('');
 
     if (!contactPersonName.trim()) {
@@ -253,7 +303,7 @@ function Signup() {
       return;
     }
 
-    setStep(3);
+    setStep(4);
   };
 
   const handleAuthPageSwitch = (e, targetPath) => {
@@ -279,9 +329,12 @@ function Signup() {
             <h3>Online Registration</h3>
             <h1>Enroll Now to Get Started on Your Driving Journey!</h1>
             <div className="enroll-step-row">
-              <span>Step {step} of 3</span>
+              <span>Step {step} of 4</span>
               <div className="enroll-progress-track">
-                <div className="enroll-progress-fill" style={{ width: step === 1 ? '33%' : step === 2 ? '66%' : '100%' }} />
+                <div
+                  className="enroll-progress-fill"
+                  style={{ width: step === 1 ? '25%' : step === 2 ? '50%' : step === 3 ? '75%' : '100%' }}
+                />
               </div>
             </div>
           </div>
@@ -350,6 +403,74 @@ function Signup() {
                 </div>
 
                 <div className="form-group">
+                  <label>Age *</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Enter your age"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value.replace(/\D/g, ''))}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Sex *</label>
+                  <select value={sex} onChange={(e) => setSex(e.target.value)} required>
+                    <option value="">Select sex</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Citizenship *</label>
+                  <input
+                    type="text"
+                    placeholder="Enter your citizenship"
+                    value={citizenship}
+                    onChange={(e) => setCitizenship(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Civil Status *</label>
+                  <select value={civilStatus} onChange={(e) => setCivilStatus(e.target.value)} required>
+                    <option value="">Select civil status</option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Widowed">Widowed</option>
+                    <option value="Separated">Separated</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Annulled">Annulled</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>LTO Client ID No. *</label>
+                  <input
+                    type="text"
+                    inputMode="text"
+                    placeholder="Enter your LTO Client ID No."
+                    value={ltoClientId}
+                    onChange={(e) => setLtoClientId(e.target.value.toUpperCase().replace(/[^A-Z0-9\- ]/g, ''))}
+                    maxLength={20}
+                    required
+                  />
+                </div>
+
+                <button type="button" className="btn-primary enroll-next-btn" onClick={handleNextStep}>
+                  Next
+                </button>
+              </>
+            )}
+
+            {/* Step 2 - Date of Birth & Address */}
+            {step === 2 && (
+              <>
+                <div className="form-group">
                   <label>Date of Birth (MM/DD/YY) *</label>
                   <div className="dob-grid-3">
                     <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required>
@@ -380,7 +501,7 @@ function Signup() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="addressLine1">Address *</label>
+                  <label htmlFor="addressLine1">Complete Address *</label>
                   <input
                     type="text"
                     id="addressLine1"
@@ -426,14 +547,19 @@ function Signup() {
                   <small>Zip Code</small>
                 </div>
 
-                <button type="button" className="btn-primary enroll-next-btn" onClick={handleNextStep}>
-                  Next
-                </button>
+                <div className="enroll-step-actions">
+                  <button type="button" className="btn-google" onClick={() => setStep(1)}>
+                    Back
+                  </button>
+                  <button type="button" className="btn-primary enroll-next-btn" onClick={handleNextStep2}>
+                    Next
+                  </button>
+                </div>
               </>
             )}
 
-            {/* NEW: Step 2 - Contact Person Information */}
-            {step === 2 && (
+            {/* Step 3 - Contact Person Information */}
+            {step === 3 && (
               <>
                 <div className="form-group">
                   <label>Contact Person Name *</label>
@@ -476,18 +602,18 @@ function Signup() {
                 </div>
 
                 <div className="enroll-step-actions">
-                  <button type="button" className="btn-google" onClick={() => setStep(1)}>
+                  <button type="button" className="btn-google" onClick={() => setStep(2)}>
                     Back
                   </button>
-                  <button type="button" className="btn-primary enroll-next-btn" onClick={handleNextStep2}>
+                  <button type="button" className="btn-primary enroll-next-btn" onClick={handleNextStep3}>
                     Next
                   </button>
                 </div>
               </>
             )}
 
-            {/* Step 3 - Password & Email Verification (previously Step 2) */}
-            {step === 3 && (
+            {/* Step 4 - Password & Email Verification */}
+            {step === 4 && (
               <>
                 <div className="form-group">
                   <label htmlFor="password">Password *</label>
@@ -552,7 +678,7 @@ function Signup() {
                 </div>
 
                 <div className="enroll-step-actions">
-                  <button type="button" className="btn-google" onClick={() => setStep(2)}>
+                  <button type="button" className="btn-google" onClick={() => setStep(3)}>
                     Back
                   </button>
                   <button type="submit" className="btn-primary" disabled={loading}>
@@ -576,7 +702,7 @@ function Signup() {
         <div className="enroll-right-panel">
           <h2>Why Easy Drive Driving School</h2>
           <ul>
-            <li>Serving Olongapo City, Subic, Castillejos, San Marcelino, and nearby areas in Zambales.</li>
+            <li>Serving Olongapo City!</li>
             <li>Friendly, punctual, and responsible local instructors.</li>
             <li>Affordable driving packages with quality practical sessions.</li>
             <li>Safe, insured, and professionally handled training units.</li>
@@ -584,7 +710,7 @@ function Signup() {
             <li>Dual-control vehicles for safer beginner training.</li>
           </ul>
           <p>Learn from Certified Local Instructors</p>
-          <p>Covering Safe Driving Across Olongapo and Zambales</p>
+          <p>Covering Safe Driving Across Olongapo!</p>
           <div className="enroll-image-wrap">
             <img src={EasyDriveLogo} alt="EZ Driving School" />
           </div>

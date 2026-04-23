@@ -13,11 +13,14 @@ function VehicleInventory() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState('vehicle');
   const [formData, setFormData] = useState({
     plateNumber: '',
     model: '',
     transmission: 'MT',
-    status: 'available'
+    status: 'available',
+    engineCapacity: '',
+    bikeType: 'Scooter'
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -86,7 +89,9 @@ function VehicleInventory() {
       plateNumber: '',
       model: '',
       transmission: 'MT',
-      status: 'available'
+      status: 'available',
+      engineCapacity: '',
+      bikeType: 'Scooter'
     });
     setImageFile(null);
     setImagePreview('');
@@ -100,6 +105,18 @@ function VehicleInventory() {
     if (!formData.plateNumber.trim() || !formData.model.trim()) {
       setError('Please fill in all required fields');
       return;
+    }
+
+    if (modalType === 'motorcycle') {
+      if (!formData.engineCapacity.trim()) {
+        setError('Please enter the motorcycle engine capacity');
+        return;
+      }
+
+      if (!/^[0-9]+$/.test(formData.engineCapacity.trim())) {
+        setError('Engine capacity must be a numeric value');
+        return;
+      }
     }
 
     try {
@@ -137,8 +154,11 @@ function VehicleInventory() {
         {
           plateNumber: formData.plateNumber.trim(),
           model: formData.model.trim(),
-          transmission: formData.transmission,
+          transmission: modalType === 'vehicle' ? formData.transmission : undefined,
           status: formData.status,
+          vehicleCategory: modalType,
+          engineCapacity: modalType === 'motorcycle' ? formData.engineCapacity.trim() : undefined,
+          bikeType: modalType === 'motorcycle' ? formData.bikeType : undefined,
           imageFileId,
           imageUrl: imageToSave,
           createdAt: new Date().toISOString()
@@ -190,9 +210,14 @@ function VehicleInventory() {
     <div className="admin-main-content admin-main-content--fit">
         <div className="page-header">
           <h1 className="admin-page-title">Vehicle Inventory</h1>
-          <button className="add-btn" onClick={() => setShowModal(true)}>
-            + Add Vehicle
-          </button>
+          <div className="header-actions">
+            <button className="add-btn" onClick={() => { setModalType('vehicle'); setShowModal(true); }}>
+              + Add Vehicle
+            </button>
+            <button className="add-btn add-motorcycle-btn" onClick={() => { setModalType('motorcycle'); setShowModal(true); }}>
+              + Add Motorcycle
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -262,7 +287,7 @@ function VehicleInventory() {
           <div className="modal-overlay" onClick={() => { resetVehicleForm(); setShowModal(false); }}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>Add New Vehicle</h2>
+                <h2>{modalType === 'motorcycle' ? 'Add New Motorcycle' : 'Add New Vehicle'}</h2>
                 <button className="modal-close" onClick={() => { resetVehicleForm(); setShowModal(false); }}>×</button>
               </div>
               
@@ -282,29 +307,66 @@ function VehicleInventory() {
                 </div>
 
                 <div className="form-group">
-                  <label>Car Model *</label>
+                  <label>{modalType === 'motorcycle' ? 'Motorcycle Model *' : 'Car Model *'}</label>
                   <input
                     type="text"
                     name="model"
                     value={formData.model}
                     onChange={handleInputChange}
-                    placeholder="e.g., Toyota Corolla 2024"
+                    placeholder={modalType === 'motorcycle' ? 'e.g., Honda Click 125i' : 'e.g., Toyota Corolla 2024'}
                     required
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Transmission Type *</label>
-                  <select
-                    name="transmission"
-                    value={formData.transmission}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="MT">MT (Manual Transmission)</option>
-                    <option value="AT">AT (Automatic Transmission)</option>
-                  </select>
-                </div>
+                {modalType === 'vehicle' ? (
+                  <div className="form-group">
+                    <label>Transmission Type *</label>
+                    <select
+                      name="transmission"
+                      value={formData.transmission}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="MT">MT (Manual Transmission)</option>
+                      <option value="AT">AT (Automatic Transmission)</option>
+                    </select>
+                  </div>
+                ) : (
+                  <>
+                    <div className="form-group">
+                      <label>Engine Capacity (cc) *</label>
+                      <input
+                        type="text"
+                        name="engineCapacity"
+                        value={formData.engineCapacity}
+                        onChange={(e) => handleInputChange({
+                          ...e,
+                          target: {
+                            ...e.target,
+                            value: e.target.value.replace(/\D/g, '')
+                          }
+                        })}
+                        placeholder="e.g., 150"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Motorcycle Type *</label>
+                      <select
+                        name="bikeType"
+                        value={formData.bikeType}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="Scooter">Scooter</option>
+                        <option value="Standard">Standard</option>
+                        <option value="Cruiser">Cruiser</option>
+                        <option value="Sport">Sport</option>
+                        <option value="Adventure">Adventure</option>
+                      </select>
+                    </div>
+                  </>
+                )}
 
                 <div className="form-group">
                   <label>Status *</label>
@@ -341,7 +403,7 @@ function VehicleInventory() {
                     Cancel
                   </button>
                   <button type="submit" className="btn-submit">
-                    Add Vehicle
+                    {modalType === 'motorcycle' ? 'Add Motorcycle' : 'Add Vehicle'}
                   </button>
                 </div>
               </form>

@@ -334,18 +334,17 @@ function VehicleInventory() {
                 ) : (
                   <>
                     <div className="form-group">
-                      <label>Engine Capacity (cc) *</label>
+                      <label>Engine Capacity (CC) *</label>
                       <input
                         type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         name="engineCapacity"
                         value={formData.engineCapacity}
-                        onChange={(e) => handleInputChange({
-                          ...e,
-                          target: {
-                            ...e.target,
-                            value: e.target.value.replace(/\D/g, '')
-                          }
-                        })}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          engineCapacity: e.target.value.replace(/\D/g, '')
+                        }))}
                         placeholder="e.g., 150"
                         required
                       />
@@ -358,11 +357,8 @@ function VehicleInventory() {
                         onChange={handleInputChange}
                         required
                       >
-                        <option value="Scooter">Scooter</option>
-                        <option value="Standard">Standard</option>
-                        <option value="Cruiser">Cruiser</option>
-                        <option value="Sport">Sport</option>
-                        <option value="Adventure">Adventure</option>
+                        <option value="Scooter">Scooter (Automatic)</option>
+                        <option value="Barako">Barako (Manual)</option>
                       </select>
                     </div>
                   </>
@@ -403,7 +399,7 @@ function VehicleInventory() {
                     Cancel
                   </button>
                   <button type="submit" className="btn-submit">
-                    {modalType === 'motorcycle' ? 'Add Motorcycle' : 'Add Vehicle'}
+                    Add Vehicle
                   </button>
                 </div>
               </form>

@@ -221,7 +221,7 @@ function Signup() {
     }
 
     if (!isValidLtoClientId(ltoClientId.trim())) {
-      setError('Please enter a valid LTO Client ID No. in this format: 24-041010-6090664.');
+      setError('Please enter a valid LTO Client ID No. in this format: 12-XXXXXX-XXXXXXX.');
       return;
     }
 
@@ -404,7 +404,7 @@ function Signup() {
                     <input
                       type="text"
                       inputMode="numeric"
-                      placeholder="24-041010-6090664"
+                      placeholder="12-XXXXXX-XXXXXXX"
                       value={ltoClientId}
                       onChange={(e) => setLtoClientId(formatLtoClientId(e.target.value))}
                       maxLength={17}

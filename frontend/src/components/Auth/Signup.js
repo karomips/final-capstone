@@ -5,7 +5,7 @@ import './Auth.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 import { Eye, EyeOff } from 'lucide-react';
 import emailVerificationHelper from '../../utils/emailVerificationHelper';
-import { formatPhoneNumber, getFullPhoneNumber, isValidPhoneNumber } from '../../utils/phoneNumberFormatter';
+import { formatPhoneNumber, getFullPhoneNumber, isValidPhoneNumber, formatLtoClientId, isValidLtoClientId } from '../../utils/phoneNumberFormatter';
 
 
 function Signup() {
@@ -256,8 +256,8 @@ function Signup() {
       return;
     }
 
-    if (!/^[A-Z0-9\- ]{5,20}$/.test(ltoClientId.trim())) {
-      setError('Please enter a valid LTO Client ID No. (numbers only).');
+    if (!isValidLtoClientId(ltoClientId.trim())) {
+      setError('Please enter a valid LTO Client ID No. in this format: 24-041010-6090664.');
       return;
     }
 
@@ -452,11 +452,11 @@ function Signup() {
                   <label>LTO Client ID No. *</label>
                   <input
                     type="text"
-                    inputMode="text"
-                    placeholder="Enter your LTO Client ID No."
+                    inputMode="numeric"
+                    placeholder="12-XXXXXX-XXXXXXX"
                     value={ltoClientId}
-                    onChange={(e) => setLtoClientId(e.target.value.toUpperCase().replace(/[^A-Z0-9\- ]/g, ''))}
-                    maxLength={20}
+                    onChange={(e) => setLtoClientId(formatLtoClientId(e.target.value))}
+                    maxLength={17}
                     required
                   />
                 </div>

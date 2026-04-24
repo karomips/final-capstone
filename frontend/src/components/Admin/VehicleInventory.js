@@ -313,7 +313,7 @@ function VehicleInventory() {
                     name="model"
                     value={formData.model}
                     onChange={handleInputChange}
-                    placeholder={modalType === 'motorcycle' ? 'e.g., Honda Click 125i' : 'e.g., Toyota Corolla 2024'}
+                    placeholder={modalType === 'motorcycle' ? 'e.g., Honda Click 125i' : 'e.g., Toyota Vios 2024'}
                     required
                   />
                 </div>

@@ -319,7 +319,7 @@ body.auth-transition-out .auth-container {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1f2f49 0%, #2f4668 100%);
+  background: #1976d2;
   color: #fff;
   padding: 10px 14px;
   border: none;

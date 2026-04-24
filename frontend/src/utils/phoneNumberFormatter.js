@@ -101,9 +101,38 @@ export const isValidPhoneNumber = (phoneNumber) => {
   return false;
 };
 
+/**
+ * Format LTO Client ID input into the mask 24-041010-6090664.
+ * Accepts digit-only input and inserts hyphens at the correct positions.
+ *
+ * @param {string} input - Raw LTO Client ID input
+ * @returns {string} Masked LTO Client ID
+ */
+export const formatLtoClientId = (input) => {
+  if (!input) return '';
+
+  const digits = input.replace(/\D/g, '').substring(0, 15);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+  if (digits.length <= 8) {
+    return `${digits.substring(0, 2)}-${digits.substring(2)}`;
+  }
+
+  return `${digits.substring(0, 2)}-${digits.substring(2, 8)}-${digits.substring(8)}`;
+};
+
+export const isValidLtoClientId = (value) => {
+  return /^[0-9]{2}-[0-9]{6}-[0-9]{7}$/.test(value);
+};
+
 export default {
   formatPhoneNumber,
   extractPhoneDigits,
   getFullPhoneNumber,
-  isValidPhoneNumber
+  isValidPhoneNumber,
+  formatLtoClientId,
+  isValidLtoClientId
 };

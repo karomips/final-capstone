@@ -215,6 +215,16 @@ function Signup() {
       return;
     }
 
+    if (!ltoClientId.trim()) {
+      setError('Please enter your LTO Client ID No.');
+      return;
+    }
+
+    if (!isValidLtoClientId(ltoClientId.trim())) {
+      setError('Please enter a valid LTO Client ID No. in this format: 24-041010-6090664.');
+      return;
+    }
+
     if (!email.trim()) {
       setError('Please enter your email address.');
       return;
@@ -248,16 +258,6 @@ function Signup() {
 
     if (!civilStatus) {
       setError('Please select your civil status.');
-      return;
-    }
-
-    if (!ltoClientId.trim()) {
-      setError('Please enter your LTO Client ID No.');
-      return;
-    }
-
-    if (!isValidLtoClientId(ltoClientId.trim())) {
-      setError('Please enter a valid LTO Client ID No. in this format: 24-041010-6090664.');
       return;
     }
 
@@ -329,13 +329,30 @@ function Signup() {
             <h3>Online Registration</h3>
             <h1>Enroll Now to Get Started on Your Driving Journey!</h1>
             <div className="enroll-step-row">
-              <span>Step {step} of 4</span>
+              <div className="enroll-step-indicators">
+                {[1, 2, 3, 4].map((stepNum) => (
+                  <div
+                    key={stepNum}
+                    className={`step-indicator ${
+                      step === stepNum ? 'active' :
+                      step > stepNum ? 'completed' : ''
+                    }`}
+                  >
+                    {step > stepNum ? '✓' : stepNum}
+                  </div>
+                ))}
+              </div>
               <div className="enroll-progress-track">
                 <div
                   className="enroll-progress-fill"
                   style={{ width: step === 1 ? '25%' : step === 2 ? '50%' : step === 3 ? '75%' : '100%' }}
                 />
               </div>
+              <span className="step-label">
+                {step === 1 ? 'Personal Info' :
+                 step === 2 ? 'Address & DOB' :
+                 step === 3 ? 'Contact Person' : 'Verification'}
+              </span>
             </div>
           </div>
 
@@ -344,125 +361,130 @@ function Signup() {
 
             {step === 1 && (
               <>
-                <div className="form-group">
-                  <label>Student Name *</label>
-                  <div className="name-grid-3">
-                    <div>
-                      <input
-                        type="text"
-                        placeholder=""
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        required
-                      />
-                      <small>First</small>
+                <div className="form-section">
+                  <h3 className="form-section-title">Personal Information</h3>
+
+                  <div className="form-group required">
+                    <label>Student Name</label>
+                    <div className="name-grid-3">
+                      <div>
+                        <input
+                          type="text"
+                          placeholder=""
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          required
+                        />
+                        <small>First</small>
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder=""
+                          value={middleName}
+                          onChange={(e) => setMiddleName(e.target.value)}
+                        />
+                        <small>Middle</small>
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder=""
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          required
+                        />
+                        <small>Last</small>
+                      </div>
                     </div>
-                    <div>
-                      <input
-                        type="text"
-                        placeholder=""
-                        value={middleName}
-                        onChange={(e) => setMiddleName(e.target.value)}
-                      />
-                      <small>Middle</small>
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        placeholder=""
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        required
-                      />
-                      <small>Last</small>
-                    </div>
+                  </div>
+
+                  <div className="form-group required">
+                    <label>LTO Client ID No.</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="24-041010-6090664"
+                      value={ltoClientId}
+                      onChange={(e) => setLtoClientId(formatLtoClientId(e.target.value))}
+                      maxLength={17}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group required">
+                    <label htmlFor="email">Email Address</label>
+                    <input
+                      type="email"
+                      id="email"
+                      placeholder="your.email@example.com"
+                      value={email}
+                      onChange={(e) => handleEmailChange(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group required">
+                    <label htmlFor="phoneNumber">Student Phone Number</label>
+                    <input
+                      type="tel"
+                      id="phoneNumber"
+                      placeholder="+63 9XX XXX XXXX"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group required">
+                    <label>Age</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Enter your age"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value.replace(/\D/g, ''))}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group required">
+                    <label>Sex</label>
+                    <select value={sex} onChange={(e) => setSex(e.target.value)} required>
+                      <option value="">Select your sex</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group required">
+                    <label>Citizenship</label>
+                    <input
+                      type="text"
+                      placeholder="Enter your citizenship"
+                      value={citizenship}
+                      onChange={(e) => setCitizenship(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group required">
+                    <label>Civil Status</label>
+                    <select value={civilStatus} onChange={(e) => setCivilStatus(e.target.value)} required>
+                      <option value="">Select your civil status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Widowed">Widowed</option>
+                      <option value="Separated">Separated</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Annulled">Annulled</option>
+                    </select>
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="email">Email *</label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => handleEmailChange(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="phoneNumber">Student Phone Number *</label>
-                  <input
-                    type="tel"
-                    id="phoneNumber"
-                    placeholder="+63 9XX XXX XXXX"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Age *</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Enter your age"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value.replace(/\D/g, ''))}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Sex *</label>
-                  <select value={sex} onChange={(e) => setSex(e.target.value)} required>
-                    <option value="">Select sex</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Citizenship *</label>
-                  <input
-                    type="text"
-                    placeholder="Enter your citizenship"
-                    value={citizenship}
-                    onChange={(e) => setCitizenship(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Civil Status *</label>
-                  <select value={civilStatus} onChange={(e) => setCivilStatus(e.target.value)} required>
-                    <option value="">Select civil status</option>
-                    <option value="Single">Single</option>
-                    <option value="Married">Married</option>
-                    <option value="Widowed">Widowed</option>
-                    <option value="Separated">Separated</option>
-                    <option value="Divorced">Divorced</option>
-                    <option value="Annulled">Annulled</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>LTO Client ID No. *</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="12-XXXXXX-XXXXXXX"
-                    value={ltoClientId}
-                    onChange={(e) => setLtoClientId(formatLtoClientId(e.target.value))}
-                    maxLength={17}
-                    required
-                  />
-                </div>
-
-                <button type="button" className="btn-primary enroll-next-btn" onClick={handleNextStep}>
-                  Next
+                <button type="button" className="enroll-next-btn" onClick={handleNextStep}>
+                  Continue to Address
                 </button>
               </>
             )}
@@ -470,89 +492,93 @@ function Signup() {
             {/* Step 2 - Date of Birth & Address */}
             {step === 2 && (
               <>
-                <div className="form-group">
-                  <label>Date of Birth (MM/DD/YY) *</label>
-                  <div className="dob-grid-3">
-                    <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required>
-                      <option value="">MM</option>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((monthValue) => (
-                        <option key={monthValue} value={String(monthValue).padStart(2, '0')}>
-                          {String(monthValue).padStart(2, '0')}
-                        </option>
-                      ))}
-                    </select>
-                    <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required>
-                      <option value="">DD</option>
-                      {Array.from({ length: 31 }, (_, i) => i + 1).map((dayValue) => (
-                        <option key={dayValue} value={String(dayValue).padStart(2, '0')}>
-                          {String(dayValue).padStart(2, '0')}
-                        </option>
-                      ))}
-                    </select>
-                    <select value={birthYear} onChange={(e) => setBirthYear(e.target.value)} required>
-                      <option value="">YYYY</option>
-                      {Array.from({ length: 70 }, (_, i) => new Date().getFullYear() - 15 - i).map((yearValue) => (
-                        <option key={yearValue} value={String(yearValue)}>
-                          {yearValue}
-                        </option>
-                      ))}
-                    </select>
+                <div className="form-section">
+                  <h3 className="form-section-title">Date of Birth & Address</h3>
+
+                  <div className="form-group required">
+                    <label>Date of Birth</label>
+                    <div className="dob-grid-3">
+                      <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} required>
+                        <option value="">Month</option>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((monthValue) => (
+                          <option key={monthValue} value={String(monthValue).padStart(2, '0')}>
+                            {String(monthValue).padStart(2, '0')}
+                          </option>
+                        ))}
+                      </select>
+                      <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)} required>
+                        <option value="">Day</option>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((dayValue) => (
+                          <option key={dayValue} value={String(dayValue).padStart(2, '0')}>
+                            {String(dayValue).padStart(2, '0')}
+                          </option>
+                        ))}
+                      </select>
+                      <select value={birthYear} onChange={(e) => setBirthYear(e.target.value)} required>
+                        <option value="">Year</option>
+                        {Array.from({ length: 70 }, (_, i) => new Date().getFullYear() - 15 - i).map((yearValue) => (
+                          <option key={yearValue} value={String(yearValue)}>
+                            {yearValue}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                </div>
 
-                <div className="form-group">
-                  <label htmlFor="addressLine1">Complete Address *</label>
-                  <input
-                    type="text"
-                    id="addressLine1"
-                    placeholder="Enter a location"
-                    value={addressLine1}
-                    onChange={(e) => setAddressLine1(e.target.value)}
-                    required
-                  />
-                  <small>Address Line 1</small>
-                </div>
-
-                <div className="form-group address-grid-2">
-                  <div>
+                  <div className="form-group required">
+                    <label htmlFor="addressLine1">Complete Address</label>
                     <input
                       type="text"
-                      placeholder="City"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
+                      id="addressLine1"
+                      placeholder="Enter your complete address"
+                      value={addressLine1}
+                      onChange={(e) => setAddressLine1(e.target.value)}
+                      required
                     />
-                    <small>City</small>
+                    <small>Street address, barangay, municipality</small>
                   </div>
-                  <div>
-                    <select value={stateValue} onChange={(e) => setStateValue(e.target.value)}>
-                      <option value="Zambales">Zambales</option>
-                      <option value="Olongapo City">Olongapo City</option>
-                      <option value="Bataan">Bataan</option>
-                      <option value="Pampanga">Pampanga</option>
-                      <option value="Tarlac">Tarlac</option>
-                      <option value="Nueva Ecija">Nueva Ecija</option>
-                      <option value="Bulacan">Bulacan</option>
-                    </select>
-                    <small>State</small>
-                  </div>
-                </div>
 
-                <div className="form-group zip-field">
-                  <input
-                    type="text"
-                    placeholder=""
-                    value={zipCode}
-                    onChange={(e) => setZipCode(e.target.value)}
-                  />
-                  <small>Zip Code</small>
+                  <div className="form-group address-grid-2">
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Enter city"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                      />
+                      <small>City</small>
+                    </div>
+                    <div>
+                      <select value={stateValue} onChange={(e) => setStateValue(e.target.value)}>
+                        <option value="Zambales">Zambales</option>
+                        <option value="Olongapo City">Olongapo City</option>
+                        <option value="Bataan">Bataan</option>
+                        <option value="Pampanga">Pampanga</option>
+                        <option value="Tarlac">Tarlac</option>
+                        <option value="Nueva Ecija">Nueva Ecija</option>
+                        <option value="Bulacan">Bulacan</option>
+                      </select>
+                      <small>Province</small>
+                    </div>
+                  </div>
+
+                  <div className="form-group zip-field">
+                    <input
+                      type="text"
+                      placeholder="Enter zip code"
+                      value={zipCode}
+                      onChange={(e) => setZipCode(e.target.value)}
+                    />
+                    <small>Zip Code</small>
+                  </div>
                 </div>
 
                 <div className="enroll-step-actions">
                   <button type="button" className="btn-google" onClick={() => setStep(1)}>
                     Back
                   </button>
-                  <button type="button" className="btn-primary enroll-next-btn" onClick={handleNextStep2}>
-                    Next
+                  <button type="button" className="enroll-next-btn" onClick={handleNextStep2}>
+                    Continue to Contact
                   </button>
                 </div>
               </>

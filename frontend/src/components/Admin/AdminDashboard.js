@@ -31,20 +31,47 @@ function AdminDashboard() {
   }, [bookings]);
 
   useEffect(() => {
-    fetchAdminName();
-    fetchBookings();
-    loadSMSHistory();
-    fetchInstructorCount();
-    fetchEnrolleeCount();
+    // Load initial data on component mount
+    const loadInitialData = async () => {
+      try {
+        await Promise.all([
+          fetchAdminName(),
+          fetchBookings(),
+          loadSMSHistory(),
+          fetchInstructorCount(),
+          fetchEnrolleeCount()
+        ]);
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      }
+    };
+
+    loadInitialData();
     
-    // Refresh bookings and SMS history every 30 seconds
+    // ✅ Reduced refresh interval from 30s to 5 minutes to save database quota
+    // Only refresh if component is visible (avoid background refreshes)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchBookings();
+        loadSMSHistory();
+        fetchInstructorCount();
+      }
+    };
+
     const interval = setInterval(() => {
-      fetchBookings();
-      loadSMSHistory();
-      fetchInstructorCount();
-    }, 30000);
+      if (!document.hidden) {
+        fetchBookings();
+        loadSMSHistory();
+        fetchInstructorCount();
+      }
+    }, 300000); // 5 minutes instead of 30 seconds
     
-    return () => clearInterval(interval);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

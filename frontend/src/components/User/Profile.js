@@ -16,7 +16,26 @@ function Profile() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phoneNumber: ''
+    phoneNumber: '',
+    firstName: '',
+    middleName: '',
+    lastName: '',
+    ltoClientId: '',
+    age: '',
+    sex: '',
+    citizenship: '',
+    civilStatus: '',
+    birthMonth: '',
+    birthDay: '',
+    birthYear: '',
+    addressLine1: '',
+    city: '',
+    stateValue: '',
+    zipCode: '',
+    parentPhoneNumber: '',
+    contactPersonName: '',
+    contactPersonPhone: '',
+    contactPersonRelationship: ''
   });
   const [pendingChanges, setPendingChanges] = useState(null);
   const [success, setSuccess] = useState('');
@@ -78,7 +97,26 @@ function Profile() {
       setFormData({
         name: userDoc.name || '',
         email: userDoc.email || '',
-        phoneNumber: userDoc.phoneNumber || ''
+        phoneNumber: userDoc.phoneNumber || '',
+        firstName: userDoc.firstName || '',
+        middleName: userDoc.middleName || '',
+        lastName: userDoc.lastName || '',
+        ltoClientId: userDoc.ltoClientId || '',
+        age: userDoc.age || '',
+        sex: userDoc.sex || '',
+        citizenship: userDoc.citizenship || '',
+        civilStatus: userDoc.civilStatus || '',
+        birthMonth: userDoc.birthMonth || '',
+        birthDay: userDoc.birthDay || '',
+        birthYear: userDoc.birthYear || '',
+        addressLine1: userDoc.addressLine1 || '',
+        city: userDoc.city || '',
+        stateValue: userDoc.stateValue || '',
+        zipCode: userDoc.zipCode || '',
+        parentPhoneNumber: userDoc.parentPhoneNumber || '',
+        contactPersonName: userDoc.contactPersonName || '',
+        contactPersonPhone: userDoc.contactPersonPhone || '',
+        contactPersonRelationship: userDoc.contactPersonRelationship || ''
       });
       setProfileImageFile(null);
       setProfileImagePreview('');
@@ -225,7 +263,26 @@ function Profile() {
     setFormData({
       name: userData.name || '',
       email: userData.email || '',
-      phoneNumber: userData.phoneNumber || ''
+      phoneNumber: userData.phoneNumber || '',
+      firstName: userData.firstName || '',
+      middleName: userData.middleName || '',
+      lastName: userData.lastName || '',
+      ltoClientId: userData.ltoClientId || '',
+      age: userData.age || '',
+      sex: userData.sex || '',
+      citizenship: userData.citizenship || '',
+      civilStatus: userData.civilStatus || '',
+      birthMonth: userData.birthMonth || '',
+      birthDay: userData.birthDay || '',
+      birthYear: userData.birthYear || '',
+      addressLine1: userData.addressLine1 || '',
+      city: userData.city || '',
+      stateValue: userData.stateValue || '',
+      zipCode: userData.zipCode || '',
+      parentPhoneNumber: userData.parentPhoneNumber || '',
+      contactPersonName: userData.contactPersonName || '',
+      contactPersonPhone: userData.contactPersonPhone || '',
+      contactPersonRelationship: userData.contactPersonRelationship || ''
     });
     setProfileImageFile(null);
     setProfileImagePreview('');
@@ -309,25 +366,181 @@ function Profile() {
               </div>
 
               <div className="profile-details">
-                <div className="detail-group">
-                  <label>Full Name</label>
-                  <p>{userData?.name}</p>
+                {/* Personal Information */}
+                <div className="detail-section">
+                  <h3 className="detail-section-title">Personal Information</h3>
+                  
+                  <div className="detail-group">
+                    <label>Full Name</label>
+                    <p>{userData?.name}</p>
+                  </div>
+
+                  {userData?.firstName && (
+                    <div className="detail-group">
+                      <label>First Name</label>
+                      <p>{userData.firstName}</p>
+                    </div>
+                  )}
+
+                  {userData?.middleName && (
+                    <div className="detail-group">
+                      <label>Middle Name</label>
+                      <p>{userData.middleName}</p>
+                    </div>
+                  )}
+
+                  {userData?.lastName && (
+                    <div className="detail-group">
+                      <label>Last Name</label>
+                      <p>{userData.lastName}</p>
+                    </div>
+                  )}
+
+                  {userData?.ltoClientId && (
+                    <div className="detail-group">
+                      <label>LTO Client ID</label>
+                      <p>{userData.ltoClientId}</p>
+                    </div>
+                  )}
+
+                  <div className="detail-group">
+                    <label>Email Address</label>
+                    <p>{userData?.email}</p>
+                  </div>
+
+                  <div className="detail-group">
+                    <label>Phone Number</label>
+                    <p>{userData?.phoneNumber}</p>
+                  </div>
+
+                  {userData?.age && (
+                    <div className="detail-group">
+                      <label>Age</label>
+                      <p>{userData.age}</p>
+                    </div>
+                  )}
+
+                  {userData?.sex && (
+                    <div className="detail-group">
+                      <label>Sex</label>
+                      <p>{userData.sex}</p>
+                    </div>
+                  )}
+
+                  {userData?.citizenship && (
+                    <div className="detail-group">
+                      <label>Citizenship</label>
+                      <p>{userData.citizenship}</p>
+                    </div>
+                  )}
+
+                  {userData?.civilStatus && (
+                    <div className="detail-group">
+                      <label>Civil Status</label>
+                      <p>{userData.civilStatus}</p>
+                    </div>
+                  )}
                 </div>
-                <div className="detail-group">
-                  <label>Email Address</label>
-                  <p>{userData?.email}</p>
-                </div>
-                <div className="detail-group">
-                  <label>Phone Number</label>
-                  <p>{userData?.phoneNumber}</p>
-                </div>
-                <div className="detail-group">
-                  <label>Account Status</label>
-                  <p>{userData?.approved ? 'Approved for Booking' : 'Pending Admin Approval'}</p>
-                </div>
-                <div className="detail-group">
-                  <label>Member Since</label>
-                  <p>{userData?.$createdAt ? new Date(userData.$createdAt).toLocaleDateString() : 'N/A'}</p>
+
+                {/* Date of Birth & Address */}
+                {(userData?.birthMonth || userData?.birthDay || userData?.birthYear || userData?.addressLine1) && (
+                  <div className="detail-section">
+                    <h3 className="detail-section-title">Date of Birth & Address</h3>
+                    
+                    {(userData?.birthMonth || userData?.birthDay || userData?.birthYear) && (
+                      <div className="detail-group">
+                        <label>Date of Birth</label>
+                        <p>
+                          {[userData?.birthMonth, userData?.birthDay, userData?.birthYear]
+                            .filter(Boolean)
+                            .join('/')}
+                        </p>
+                      </div>
+                    )}
+
+                    {userData?.addressLine1 && (
+                      <div className="detail-group">
+                        <label>Address</label>
+                        <p>{userData.addressLine1}</p>
+                      </div>
+                    )}
+
+                    {userData?.city && (
+                      <div className="detail-group">
+                        <label>City</label>
+                        <p>{userData.city}</p>
+                      </div>
+                    )}
+
+                    {userData?.stateValue && (
+                      <div className="detail-group">
+                        <label>Province</label>
+                        <p>{userData.stateValue}</p>
+                      </div>
+                    )}
+
+                    {userData?.zipCode && (
+                      <div className="detail-group">
+                        <label>Zip Code</label>
+                        <p>{userData.zipCode}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Contact Person Information */}
+                {(userData?.contactPersonName || userData?.contactPersonPhone || userData?.contactPersonRelationship) && (
+                  <div className="detail-section">
+                    <h3 className="detail-section-title">Contact Person Information</h3>
+                    
+                    {userData?.contactPersonName && (
+                      <div className="detail-group">
+                        <label>Contact Person Name</label>
+                        <p>{userData.contactPersonName}</p>
+                      </div>
+                    )}
+
+                    {userData?.contactPersonPhone && (
+                      <div className="detail-group">
+                        <label>Contact Person Phone</label>
+                        <p>{userData.contactPersonPhone}</p>
+                      </div>
+                    )}
+
+                    {userData?.contactPersonRelationship && (
+                      <div className="detail-group">
+                        <label>Contact Person Relationship</label>
+                        <p>{userData.contactPersonRelationship}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Emergency Contact */}
+                {userData?.parentPhoneNumber && (
+                  <div className="detail-section">
+                    <h3 className="detail-section-title">Emergency Contact</h3>
+                    
+                    <div className="detail-group">
+                      <label>Parent/Guardian Phone</label>
+                      <p>{userData.parentPhoneNumber}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Account Information */}
+                <div className="detail-section">
+                  <h3 className="detail-section-title">Account Information</h3>
+                  
+                  <div className="detail-group">
+                    <label>Account Status</label>
+                    <p>{userData?.approved ? 'Approved for Booking' : 'Pending Admin Approval'}</p>
+                  </div>
+
+                  <div className="detail-group">
+                    <label>Member Since</label>
+                    <p>{userData?.$createdAt ? new Date(userData.$createdAt).toLocaleDateString() : 'N/A'}</p>
+                  </div>
                 </div>
               </div>
 

@@ -127,7 +127,7 @@ function InstructorsProfile() {
       // Convert user instructor accounts to instructor cards
       const instructorAccountsAsCards = usersResponse.documents.map(user => ({
         $id: user.$id,
-        name: user.email.split('@')[0], // Use email prefix as name
+        name: user.name || user.email.split('@')[0], // Use actual name field, fall back to email prefix
         email: user.email,
         certifications: 'Instructor Account',
         availability: 'available',
@@ -300,10 +300,10 @@ function InstructorsProfile() {
           usersCollectionId,
           authUserId,
           {
+            name: formData.name.trim(),
             email: formData.email.trim(),
             role: 'instructor',
             approved: true,
-            lessonType: formData.lessonType,
             createdAt: new Date().toISOString()
           }
         );

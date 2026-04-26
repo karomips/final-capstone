@@ -43,6 +43,7 @@ function InstructorDashboard() {
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [showSaveBreaksModal, setShowSaveBreaksModal] = useState(false);
   const [showSaveLeavesModal, setShowSaveLeavesModal] = useState(false);
+  const [showSaveHoursModal, setShowSaveHoursModal] = useState(false);
   const [showSaveSettingsModal, setShowSaveSettingsModal] = useState(false);
 
   // Tab State
@@ -131,7 +132,6 @@ function InstructorDashboard() {
   const saveScheduleSettings = async () => {
     try {
       const settingsData = {
-        instructorId: currentUser.$id,
         instructorName: instructorName,
         workingHours: JSON.stringify(workingHours),
         breaks: JSON.stringify(breaks),
@@ -146,17 +146,27 @@ function InstructorDashboard() {
           scheduleSettings.$id,
           settingsData
         );
+        console.log('Schedule settings updated:', settingsData);
+        setScheduleSettings({ ...scheduleSettings, ...settingsData });
         alert('Schedule settings updated successfully!');
       } else {
+        // Create new document if it doesn't exist
         const created = await databases.createDocument(
           databaseId,
           instructorSchedulesCollectionId,
           ID.unique(),
-          settingsData
+          {
+            instructorId: currentUser.$id,
+            instructorName: instructorName,
+            ...settingsData
+          }
         );
+        console.log('Schedule settings created:', created);
         setScheduleSettings({ $id: created.$id, ...settingsData });
         alert('Schedule settings saved successfully!');
       }
+      // Refresh the data after saving
+      await fetchScheduleSettings();
     } catch (error) {
       console.error('Error saving schedule settings:', error);
       alert('Failed to save settings: ' + error.message);
@@ -281,8 +291,13 @@ function InstructorDashboard() {
     await saveScheduleSettings();
   };
 
-  const handleSaveSettings = (action) => {
-    setShowSaveSettingsModal(true);
+  const handleSaveHours = () => {
+    setShowSaveHoursModal(true);
+  };
+
+  const confirmSaveHours = async () => {
+    setShowSaveHoursModal(false);
+    await saveScheduleSettings();
   };
 
   const confirmSaveSettings = async () => {
@@ -488,7 +503,7 @@ function InstructorDashboard() {
                   </div>
                 ))}
               </div>
-              <button className="save-button" onClick={saveScheduleSettings}>
+              <button className="save-button" onClick={handleSaveHours}>
                 Save Working Hours
               </button>
             </div>
@@ -550,7 +565,7 @@ function InstructorDashboard() {
                 <button className="add-button" onClick={addBreak}>
                   ➕ Add Break
                 </button>
-                <button className="save-button" onClick={saveScheduleSettings}>
+                <button className="save-button" onClick={handleSaveBreaks}>
                   💾 Save Breaks
                 </button>
               </div>
@@ -878,6 +893,52 @@ function InstructorDashboard() {
                 </button>
                 <button
                   onClick={confirmSaveLeaves}
+                  style={{
+                    background: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Confirmation Modal */}
+      {/* Save Working Hours Confirmation Modal */}
+      {showSaveHoursModal && (
+        <div className="modal-overlay" onClick={() => setShowSaveHoursModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Save Working Hours</h2>
+              <button className="modal-close" onClick={() => setShowSaveHoursModal(false)}>×</button>
+            </div>
+            <div style={{padding: '20px', textAlign: 'center'}}>
+              <p style={{marginBottom: '20px', color: '#333'}}>Are you sure you want to save these working hours changes?</p>
+              <div style={{display: 'flex', gap: '10px', justifyContent: 'center'}}>
+                <button
+                  onClick={() => setShowSaveHoursModal(false)}
+                  style={{
+                    background: '#e5e7eb',
+                    color: '#333',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmSaveHours}
                   style={{
                     background: '#10b981',
                     color: 'white',

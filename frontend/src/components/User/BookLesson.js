@@ -28,6 +28,15 @@ const addDays = (isoValue, numberOfDays) => {
   return toIsoDate(parsed);
 };
 
+// ✅ Debounce utility to prevent excessive database calls
+const createDebounce = () => {
+  let timeoutId = null;
+  return (fn, delay = 500) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(fn, delay);
+  };
+};
+
 function BookLesson() {
   const THEORY_MIN_CAPACITY = 15;
   const THEORY_MAX_CAPACITY = 20;
@@ -43,10 +52,12 @@ function BookLesson() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [checkingApproval, setCheckingApproval] = useState(true);
   const [instructors, setInstructors] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const [debounce] = useState(() => createDebounce());
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -310,20 +321,30 @@ function BookLesson() {
     }
   }, [transmission]); // Updated: added transmission dependency
 
+  // ✅ Consolidated useEffect: runs on mount and when critical props change
   useEffect(() => {
-    if (currentUser) {
-      checkUserApproval();
+    if (!currentUser) return;
+    
+    // Check approval on mount
+    checkUserApproval();
+    
+    // Debounce instructor and vehicle fetches
+    debounce(() => {
       fetchInstructors();
       fetchVehicles();
-    }
-  }, [currentUser, checkUserApproval, fetchInstructors, fetchVehicles]);
+    }, 300);
+  }, [currentUser]);
 
+  // ✅ Separate effect for lesson type changes (requires debouncing)
   useEffect(() => {
-    if (currentUser) {
+    if (!currentUser) return;
+    
+    debounce(() => {
       fetchInstructors();
-    }
-  }, [selectedLesson, currentUser, fetchInstructors]);
+    }, 300);
+  }, [selectedLesson, currentUser, transmission]);
 
+  // ✅ Window focus handler
   useEffect(() => {
     const handleFocus = () => {
       if (currentUser) {
@@ -336,6 +357,9 @@ function BookLesson() {
   }, [currentUser, checkUserApproval]);
 
   const handleConfirmBooking = async () => {
+    // ✅ Prevent double-submit and excessive writes
+    if (isSubmitting || loading) return;
+    
     setError('');
     setSuccess('');
 
@@ -365,6 +389,7 @@ function BookLesson() {
       }
     }
 
+    setIsSubmitting(true);
     setLoading(true);
 
     try {
@@ -480,6 +505,7 @@ function BookLesson() {
       setError('Failed to create booking: ' + err.message);
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -736,9 +762,9 @@ function BookLesson() {
             <button
               className="confirm-booking-btn"
               onClick={handleConfirmBooking}
-              disabled={loading}
+              disabled={loading || isSubmitting}
             >
-              {loading ? 'BOOKING...' : 'CONFIRM BOOKING'}
+              {loading || isSubmitting ? 'BOOKING...' : 'CONFIRM BOOKING'}
             </button>
           </div>
         </div>

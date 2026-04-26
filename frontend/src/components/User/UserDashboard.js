@@ -114,6 +114,11 @@ function UserDashboard() {
       return String(a.time || '').localeCompare(String(b.time || ''));
     });
 
+  // Get next lesson (first non-cancelled upcoming booking)
+  const nextLesson = upcomingSchedules.find(
+    (booking) => String(booking.status || '').toLowerCase() !== 'cancelled'
+  );
+
   useEffect(() => {
     const body = document.body;
     if (theme === 'dark') {
@@ -183,13 +188,13 @@ function UserDashboard() {
             <div className="next-lesson-info">
               {loading ? (
                 <div>Loading...</div>
-              ) : bookings.length > 0 ? (
+              ) : nextLesson ? (
                 <>
                   <div className="lesson-date">
-                    {new Date(bookings[0].date).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric' }).toUpperCase()} | {bookings[0].time}
+                    {new Date(nextLesson.date).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric' }).toUpperCase()} | {nextLesson.time}
                   </div>
-                  <div className="lesson-instructor">Instructor: {bookings[0].instructor}</div>
-                  <div className="lesson-vehicle">Vehicle: {bookings[0].vehicle}</div>
+                  <div className="lesson-instructor">Instructor: {nextLesson.instructor}</div>
+                  <div className="lesson-vehicle">Vehicle: {nextLesson.vehicle}</div>
                 </>
               ) : (
                 <div className="lesson-date">No upcoming lessons</div>

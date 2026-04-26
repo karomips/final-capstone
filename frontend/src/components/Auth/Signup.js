@@ -170,6 +170,9 @@ function Signup() {
         
         // NEW: Update user document with contact person and additional personal details
         await databases.updateDocument(databaseId, usersCollectionId, result.$id, {
+          firstName: firstName,
+          middleName: middleName,
+          lastName: lastName,
           contactPersonName: contactPersonName,
           contactPersonPhone: contactPersonPhone,
           contactPersonRelationship: contactPersonRelationship,
@@ -178,7 +181,14 @@ function Signup() {
           sex: sex,
           citizenship: citizenship,
           civilStatus: civilStatus,
-          ltoClientId: ltoClientId
+          ltoClientId: ltoClientId,
+          birthMonth: birthMonth,
+          birthDay: birthDay,
+          birthYear: birthYear,
+          addressLine1: addressLine1,
+          city: city,
+          stateValue: stateValue,
+          zipCode: zipCode
         });
         console.log('✓ Contact person and additional info saved');
       } catch (verifyError) {

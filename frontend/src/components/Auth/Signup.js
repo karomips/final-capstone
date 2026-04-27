@@ -18,7 +18,7 @@ function Signup() {
   const [birthYear, setBirthYear] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
   const [city, setCity] = useState('');
-  const [stateValue, setStateValue] = useState('Zambales');
+  const [stateValue, setStateValue] = useState('Olongapo City');
   const [zipCode, setZipCode] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -31,6 +31,7 @@ function Signup() {
   const [contactPersonName, setContactPersonName] = useState('');
   const [contactPersonPhone, setContactPersonPhone] = useState('');
   const [contactPersonRelationship, setContactPersonRelationship] = useState('');
+  const [contactPersonEmail, setContactPersonEmail] = useState('');
   const [password, setPassword] = useState('');
   const [step, setStep] = useState(1);
   const [verificationCode, setVerificationCode] = useState('');
@@ -63,6 +64,22 @@ function Signup() {
   const fullName = [firstName.trim(), middleName.trim(), lastName.trim()]
     .filter(Boolean)
     .join(' ');
+
+  // Calculate age based on date of birth
+  useEffect(() => {
+    if (birthYear && birthMonth && birthDay) {
+      const birthDate = new Date(parseInt(birthYear), parseInt(birthMonth) - 1, parseInt(birthDay));
+      const today = new Date();
+      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        calculatedAge--;
+      }
+      setAge(calculatedAge.toString());
+    } else {
+      setAge('');
+    }
+  }, [birthYear, birthMonth, birthDay]);
 
   const resetVerificationState = () => {
     setVerificationCode('');
@@ -176,6 +193,7 @@ function Signup() {
           contactPersonName: contactPersonName,
           contactPersonPhone: contactPersonPhone,
           contactPersonRelationship: contactPersonRelationship,
+          contactPersonEmail: contactPersonEmail,
           parentPhoneNumber: parentPhoneNumber,
           age: age,
           sex: sex,
@@ -187,8 +205,7 @@ function Signup() {
           birthYear: birthYear,
           addressLine1: addressLine1,
           city: city,
-          stateValue: stateValue,
-          zipCode: zipCode
+          stateValue: stateValue
         });
         console.log('✓ Contact person and additional info saved');
       } catch (verifyError) {
@@ -245,17 +262,6 @@ function Signup() {
       return;
     }
 
-    if (!age.trim()) {
-      setError('Please enter your age.');
-      return;
-    }
-
-    const numericAge = Number(age.trim());
-    if (!/^[0-9]+$/.test(age.trim()) || numericAge < 18 || numericAge > 85) {
-      setError('Please enter a valid age 18+.');
-      return;
-    }
-
     if (!sex) {
       setError('Please select your sex.');
       return;
@@ -282,8 +288,24 @@ function Signup() {
       return;
     }
 
+    if (!age.trim()) {
+      setError('Please complete your date of birth to calculate age.');
+      return;
+    }
+
+    const numericAge = Number(age.trim());
+    if (numericAge < 18 || numericAge > 85) {
+      setError('You must be at least 18 years old to register.');
+      return;
+    }
+
     if (!addressLine1.trim()) {
       setError('Please enter your address.');
+      return;
+    }
+
+    if (!city) {
+      setError('Please select your barangay.');
       return;
     }
 
@@ -447,21 +469,11 @@ function Signup() {
                   </div>
 
                   <div className="form-group required">
-                    <label>Age</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Enter your age"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value.replace(/\D/g, ''))}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group required">
                     <label>Sex</label>
                     <select value={sex} onChange={(e) => setSex(e.target.value)} required>
-                      <option value="">Select your sex</option>
+                      <option value="" disabled placeholder>
+                        Select your sex
+                      </option>
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
                       <option value="Other">Other</option>
@@ -470,19 +482,22 @@ function Signup() {
 
                   <div className="form-group required">
                     <label>Citizenship</label>
-                    <input
-                      type="text"
-                      placeholder="Enter your citizenship"
-                      value={citizenship}
-                      onChange={(e) => setCitizenship(e.target.value)}
-                      required
-                    />
+                    <select value={citizenship} onChange={(e) => setCitizenship(e.target.value)} required>
+                      <option value="" disabled placeholder>
+                        Select your citizenship
+                      </option>
+                      <option value="Filipino">Filipino</option>
+                      <option value="Dual Citizen">Dual Citizen</option>
+                      <option value="Foreign National">Foreign National</option>
+                    </select>
                   </div>
 
                   <div className="form-group required">
                     <label>Civil Status</label>
                     <select value={civilStatus} onChange={(e) => setCivilStatus(e.target.value)} required>
-                      <option value="">Select your civil status</option>
+                      <option value="" disabled placeholder>
+                        Select your civil status
+                      </option>
                       <option value="Single">Single</option>
                       <option value="Married">Married</option>
                       <option value="Widowed">Widowed</option>
@@ -536,6 +551,17 @@ function Signup() {
                   </div>
 
                   <div className="form-group required">
+                    <label>Age</label>
+                    <input
+                      type="text"
+                      placeholder="Age will be calculated from date of birth"
+                      value={age}
+                      readOnly
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group required">
                     <label htmlFor="addressLine1">Complete Address</label>
                     <input
                       type="text"
@@ -550,37 +576,38 @@ function Signup() {
 
                   <div className="form-group address-grid-2">
                     <div>
-                      <input
-                        type="text"
-                        placeholder="Enter city"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                      />
-                      <small>City</small>
+                      <select value={city} onChange={(e) => setCity(e.target.value)} required>
+                        <option value="" disabled placeholder>
+                        Select barangay
+                      </option>
+                        <option value="Barretto">Barretto</option>
+                        <option value="East Bajac-bajac">East Bajac-bajac</option>
+                        <option value="East Tapinac">East Tapinac</option>
+                        <option value="Gordon Heights">Gordon Heights</option>
+                        <option value="Kalaklan">Kalaklan</option>
+                        <option value="Mabayuan">Mabayuan</option>
+                        <option value="New Asinan">New Asinan</option>
+                        <option value="New Banicain">New Banicain</option>
+                        <option value="New Cabalan">New Cabalan</option>
+                        <option value="New Ilalim">New Ilalim</option>
+                        <option value="New Kababae">New Kababae</option>
+                        <option value="New Kalalake">New Kalalake</option>
+                        <option value="Old Cabalan">Old Cabalan</option>
+                        <option value="Pag-asa">Pag-asa</option>
+                        <option value="Santa Rita">Santa Rita</option>
+                        <option value="West Bajac-bajac">West Bajac-bajac</option>
+                        <option value="West Tapinac">West Tapinac</option>
+                      </select>
+                      <small>Barangay</small>
                     </div>
                     <div>
-                      <select value={stateValue} onChange={(e) => setStateValue(e.target.value)}>
-                        <option value="Zambales">Zambales</option>
-                        <option value="Olongapo City">Olongapo City</option>
-                        <option value="Bataan">Bataan</option>
-                        <option value="Pampanga">Pampanga</option>
-                        <option value="Tarlac">Tarlac</option>
-                        <option value="Nueva Ecija">Nueva Ecija</option>
-                        <option value="Bulacan">Bulacan</option>
-                      </select>
+                      <div style={{padding: '10px', border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#f9f9f9'}}>
+                        Olongapo City
+                      </div>
                       <small>Province</small>
                     </div>
                   </div>
 
-                  <div className="form-group zip-field">
-                    <input
-                      type="text"
-                      placeholder="Enter zip code"
-                      value={zipCode}
-                      onChange={(e) => setZipCode(e.target.value)}
-                    />
-                    <small>Zip Code</small>
-                  </div>
                 </div>
 
                 <div className="enroll-step-actions">
@@ -620,13 +647,25 @@ function Signup() {
                 </div>
 
                 <div className="form-group">
+                  <label>Contact Person Email</label>
+                  <input
+                    type="email"
+                    placeholder="contact@example.com"
+                    value={contactPersonEmail}
+                    onChange={(e) => setContactPersonEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
                   <label>Relationship *</label>
                   <select
                     value={contactPersonRelationship}
                     onChange={(e) => setContactPersonRelationship(e.target.value)}
                     required
                   >
-                    <option value="">Select relationship</option>
+                    <option value="" disabled placeholder>
+                        Select relationship
+                      </option>
                     <option value="Parent">Parent</option>
                     <option value="Guardian">Guardian</option>
                     <option value="Sibling">Sibling</option>

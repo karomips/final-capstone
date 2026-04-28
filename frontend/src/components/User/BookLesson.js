@@ -255,8 +255,10 @@ function BookLesson() {
       // NEW: For practical lessons, filter by transmission if selected
       if (selectedLesson === 'practical' && transmission) {
         filteredInstructors = filteredInstructors.filter(inst => {
-          if (!inst.transmission) return false; // Only show instructors with transmission set
-          return inst.transmission === transmission;
+          // Check both transmission (for regular vehicles) and motorcycleTransmission (for motorcycles)
+          const instructorTransmission = inst.motorcycleTransmission || inst.transmission;
+          if (!instructorTransmission) return false; // Only show instructors with transmission set
+          return instructorTransmission === transmission;
         });
       }
 
@@ -309,9 +311,13 @@ function BookLesson() {
       );
       
       // NEW: Filter vehicles by transmission if selected
+      // For motorcycles, check motorcycleTransmission; for regular vehicles, check transmission
       let filteredVehicles = response.documents;
       if (transmission) {
-        filteredVehicles = response.documents.filter(veh => veh.transmission === transmission);
+        filteredVehicles = response.documents.filter(veh => {
+          const vehicleTransmission = veh.motorcycleTransmission || veh.transmission;
+          return vehicleTransmission === transmission;
+        });
       }
       
       setVehicles(filteredVehicles);

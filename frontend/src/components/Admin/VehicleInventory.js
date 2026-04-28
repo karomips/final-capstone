@@ -18,6 +18,7 @@ function VehicleInventory() {
     plateNumber: '',
     model: '',
     transmission: 'MT',
+    motorcycleTransmission: 'MT',
     status: 'available',
     engineCapacity: '',
     bikeType: 'Scooter'
@@ -89,6 +90,7 @@ function VehicleInventory() {
       plateNumber: '',
       model: '',
       transmission: 'MT',
+      motorcycleTransmission: 'MT',
       status: 'available',
       engineCapacity: '',
       bikeType: 'Scooter'
@@ -154,9 +156,10 @@ function VehicleInventory() {
         {
           plateNumber: formData.plateNumber.trim(),
           model: formData.model.trim(),
-          transmission: modalType === 'vehicle' ? formData.transmission : undefined,
+          transmission: modalType === 'vehicle' ? formData.transmission : formData.motorcycleTransmission,
+          motorcycleTransmission: modalType === 'motorcycle' ? formData.motorcycleTransmission : undefined,
+          vehicleType: modalType === 'motorcycle' ? 'motorcycle' : 'car',
           status: formData.status,
-          vehicleCategory: modalType,
           engineCapacity: modalType === 'motorcycle' ? formData.engineCapacity.trim() : undefined,
           bikeType: modalType === 'motorcycle' ? formData.bikeType : undefined,
           imageFileId,
@@ -238,8 +241,11 @@ function VehicleInventory() {
                     <h3>Model: {vehicle.model}</h3>
                     <div className="vehicle-details">Plate Number: {vehicle.plateNumber}</div>
                     <div className="vehicle-badges">
-                      <span className={`transmission-badge ${vehicle.transmission.toLowerCase()}`}>
-                        {vehicle.transmission}
+                      <span className={`vehicle-type-badge ${vehicle.vehicleType || 'car'}`}>
+                        {vehicle.vehicleType === 'motorcycle' ? '🏍️ Motorcycle' : '🚗 Car'}
+                      </span>
+                      <span className={`transmission-badge ${(vehicle.transmission || vehicle.motorcycleTransmission || 'MT').toLowerCase()}`}>
+                        {vehicle.transmission || vehicle.motorcycleTransmission || 'MT'}
                       </span>
                     </div>
                     <div className="status-dropdown-container">
@@ -359,6 +365,18 @@ function VehicleInventory() {
                       >
                         <option value="Scooter">Scooter (Automatic)</option>
                         <option value="Barako">Barako (Manual)</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Transmission Type *</label>
+                      <select
+                        name="motorcycleTransmission"
+                        value={formData.motorcycleTransmission}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="MT">MT (Manual Transmission)</option>
+                        <option value="AT">AT (Automatic Transmission)</option>
                       </select>
                     </div>
                   </>

@@ -686,6 +686,27 @@
   display: flex;
   gap: 10px;
   margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.vehicle-type-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vehicle-type-badge.car {
+  background: #3b82f6;
+  color: white;
+}
+
+.vehicle-type-badge.motorcycle {
+  background: #f97316;
+  color: white;
 }
 
 .transmission-badge {

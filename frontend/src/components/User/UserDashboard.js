@@ -101,6 +101,10 @@ function UserDashboard() {
 
   const practicalCourseProgress = getPracticalCourseProgress(bookings);
   const completedCourseCount = practicalCourseProgress.filter((course) => course.status === 'completed').length;
+  const totalCourses = practicalCoursePlan.length;
+  const lessonGoalHours = 9;
+  const hoursLogged = bookings.reduce((sum, booking) => sum + (parseFloat(booking.duration) || 0), 0);
+  const overallProgressPercent = totalCourses > 0 ? Math.round((completedCourseCount / totalCourses) * 100) : 0;
 
   const manilaTodayIso = new Date().toLocaleDateString('en-CA', {
     timeZone: 'Asia/Manila'
@@ -118,6 +122,15 @@ function UserDashboard() {
   const nextLesson = upcomingSchedules.find(
     (booking) => String(booking.status || '').toLowerCase() !== 'cancelled'
   );
+
+  const daysUntilNextLesson = nextLesson
+    ? Math.max(0, Math.ceil((new Date(nextLesson.date) - new Date()) / (1000 * 60 * 60 * 24)))
+    : null;
+  const daysUntilNextText = nextLesson
+    ? daysUntilNextLesson === 0
+      ? 'Today'
+      : `${daysUntilNextLesson} days`
+    : '—';
 
   useEffect(() => {
     const body = document.body;
@@ -176,119 +189,144 @@ function UserDashboard() {
 
   return (
     <div className="user-main-content user-main-content--fit">
-        <h1 className="page-title">Welcome back, {userName}!</h1>
-
-        <div className="dashboard-grid">
-          {/* Next Lesson Card */}
-          <div className="dashboard-card next-lesson-card">
-            <div className="card-header">
-              <h2>Next Lesson</h2>
-              <div className="clock-icon">🕐</div>
-            </div>
-            <div className="next-lesson-info">
-              {loading ? (
-                <div>Loading...</div>
-              ) : nextLesson ? (
-                <>
-                  <div className="lesson-date">
-                    {new Date(nextLesson.date).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric' }).toUpperCase()} | {nextLesson.time}
-                  </div>
-                  <div className="lesson-instructor">Instructor: {nextLesson.instructor}</div>
-                  <div className="lesson-vehicle">Vehicle: {nextLesson.vehicle}</div>
-                </>
-              ) : (
-                <div className="lesson-date">No upcoming lessons</div>
-              )}
-            </div>
-          </div>
-
-          {/* Course Progress Card */}
-          <div className="dashboard-card course-progress-card">
-            <h2>Course Progress</h2>
-            <div className="progress-placeholder practical-progress-list">
-              {practicalCourseProgress.length > 0 && completedCourseCount < 3 ? (
-                <>
-                  <div className="practical-progress-header">
-                    <span>Practical Track</span>
-                    <span>{completedCourseCount}/3 completed</span>
-                  </div>
-                  {practicalCourseProgress.map((course) => (
-                    <div key={course.id} className="practical-course-item">
-                      <div className="practical-course-text">
-                        <span className="practical-course-name">{course.courseName}</span>
-                        <span className="practical-course-date">{course.dateText}</span>
-                      </div>
-                      <span className={`practical-course-status ${course.status}`}>
-                        {course.status === 'completed' ? 'Completed' : course.status === 'scheduled' ? 'Scheduled' : 'Pending'}
-                      </span>
-                    </div>
-                  ))}
-                </>
-              ) : completedCourseCount === 3 ? (
-                <div className="notification-empty-state">🎉 All courses completed!</div>
-              ) : (
-                <div className="notification-empty-state">No practical lessons booked yet.</div>
-              )}
-            </div>
-          </div>
-
-          {/* Recent Notifications Card */}
-          <div className="dashboard-card notifications-card">
-            <h2>RECENT NOTIFICATIONS</h2>
-            <div className="notifications-content">
-              {loading ? (
-                <div className="notification-empty-state">Loading notifications...</div>
-              ) : smsNotifications.length > 0 ? (
-                smsNotifications.map((notification) => (
-                  <div key={notification.id} className="notification-item">
-                    <span className="notification-type">{notification.type}</span>
-                    <p className="notification-message">{notification.message}</p>
-                    <span className="notification-time">
-                      {notification.timestamp
-                        ? new Date(notification.timestamp).toLocaleString('en-PH', {
-                            timeZone: 'Asia/Manila',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                          })
-                        : 'Time unavailable'}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="notification-empty-state">No SMS reminders sent yet.</div>
-              )}
-            </div>
-          </div>
-
-          {/* Upcoming Schedules Card */}
-          <div className="dashboard-card schedules-card">
-            <h2>Upcoming Schedules</h2>
-            <div className="schedule-list">
-              {loading ? (
-                <div>Loading...</div>
-              ) : upcomingSchedules.length > 0 ? (
-                upcomingSchedules.map((booking) => (
-                  <div key={booking.$id} className="schedule-item">
-                    <div className="schedule-info">
-                      <span className="schedule-date">
-                        [{new Date(booking.date).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric' }).toUpperCase()} | {booking.time}]
-                      </span>
-                      <span className="schedule-type">{booking.lessonType === 'practical' ? 'Practical Lesson' : 'Theory Class'}</span>
-                    </div>
-                    <span className={`schedule-status ${booking.status.toLowerCase()}`}>
-                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div>No upcoming schedules</div>
-              )}
-            </div>
+      <div className="dashboard-header">
+        <div className="dashboard-header-top">
+          <div>
+            <h1 className="page-title">Welcome back, {userName}!</h1>
+            <p className="dashboard-subtitle">You’re enrolled in the Practical Track. Keep it up.</p>
           </div>
         </div>
+
+        <div className="dashboard-overview">
+          <div className="overview-card">
+            <h3>Courses done</h3>
+            <div className="overview-value">{completedCourseCount} of {totalCourses}</div>
+            <div className="overview-meta">of {totalCourses} total</div>
+          </div>
+
+          <div className="overview-card">
+            <h3>Hours logged</h3>
+            <div className="overview-value">{hoursLogged.toFixed(1)}h</div>
+            <div className="overview-meta">goal: {lessonGoalHours} hrs</div>
+          </div>
+
+          <div className="overview-card">
+            <h3>Overall progress</h3>
+            <div className="overview-value">{overallProgressPercent}%</div>
+            <div className="overview-meta">practical track completion</div>
+          </div>
+
+          <div className="overview-card">
+            <h3>Days until next</h3>
+            <div className="overview-value">{daysUntilNextText}</div>
+            <div className="overview-meta">{nextLesson ? 'next lesson set' : 'no lesson set'}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="dashboard-grid">
+        <div className="dashboard-card next-lesson-card">
+          <div className="card-header">
+            <h2>Next Lesson</h2>
+            <div className="clock-icon">🕐</div>
+          </div>
+          <div className="next-lesson-info">
+            {loading ? (
+              <div className="lesson-loading">Loading...</div>
+            ) : nextLesson ? (
+              <>
+                <div className="lesson-course">{nextLesson.lessonType === 'practical' ? 'Practical Lesson' : 'Theory Class'}</div>
+                <div className="lesson-title">{nextLesson.instructor ? `Instructor: ${nextLesson.instructor}` : 'Lesson details available soon'}</div>
+                <div className="lesson-date">
+                  {new Date(nextLesson.date).toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric' }).toUpperCase()} | {nextLesson.time || 'TBA'}
+                </div>
+                <div className="lesson-topics">Topics: controls, mirrors, seat adjustment, safety checks</div>
+                <button className="lesson-action-btn" type="button">View lesson details ↗</button>
+              </>
+            ) : (
+              <>
+                <div className="lesson-date">No upcoming lessons</div>
+                <div className="lesson-topics">Book a lesson to start your practical track.</div>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="dashboard-card course-progress-card">
+          <div className="card-header">
+            <h2>Course Progress</h2>
+          </div>
+          <div className="progress-placeholder practical-progress-list">
+            {practicalCourseProgress.length > 0 && completedCourseCount < totalCourses ? (
+              <>
+                <div className="practical-progress-header">
+                  <span>Progress</span>
+                  <span>{completedCourseCount}/{totalCourses} completed</span>
+                </div>
+                {practicalCourseProgress.map((course) => (
+                  <div key={course.id} className="practical-course-item">
+                    <div className="practical-course-text">
+                      <span className="practical-course-name">{course.courseName}</span>
+                      <span className="practical-course-date">{course.dateText}</span>
+                    </div>
+                    <span className={`practical-course-status ${course.status}`}>
+                      {course.status === 'completed' ? 'Completed' : course.status === 'scheduled' ? 'Scheduled' : 'Pending'}
+                    </span>
+                  </div>
+                ))}
+              </>
+            ) : completedCourseCount === totalCourses ? (
+              <div className="notification-empty-state">🎉 All courses completed!</div>
+            ) : (
+              <div className="notification-empty-state">No practical lessons booked yet.</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="dashboard-bottom-grid">
+        <div className="dashboard-card study-tip-card">
+          <div className="card-header">
+            <h2>Study Tip</h2>
+          </div>
+          <div className="study-tip-content">
+            <p className="study-tip-title">Before your first lesson</p>
+            <p>Review the LTO student driver's guide. Familiarize yourself with dashboard symbols and basic car parts — it'll give you a head start in Vehicle Basics.</p>
+          </div>
+        </div>
+
+        <div className="dashboard-card notifications-card">
+          <div className="card-header">
+            <h2>Recent Notifications</h2>
+          </div>
+          <div className="notifications-content">
+            {loading ? (
+              <div className="notification-empty-state">Loading notifications...</div>
+            ) : smsNotifications.length > 0 ? (
+              smsNotifications.map((notification) => (
+                <div key={notification.id} className="notification-item">
+                  <span className="notification-type">{notification.type}</span>
+                  <p className="notification-message">{notification.message}</p>
+                  <span className="notification-time">
+                    {notification.timestamp
+                      ? new Date(notification.timestamp).toLocaleString('en-PH', {
+                          timeZone: 'Asia/Manila',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        })
+                      : 'Time unavailable'}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="notification-empty-state">No SMS reminders sent yet.</div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

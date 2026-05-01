@@ -242,7 +242,7 @@ function AdminDashboard() {
 
   return (
     <div className="admin-main-content">
-        <h1 className="admin-page-title">Welcome, {adminName}</h1>
+        <h1 className="admin-page-title">Welcome back, {adminName}!</h1>
 
         {/* Stats Cards */}
         <div className="dashboard-stats">

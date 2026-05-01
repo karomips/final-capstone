@@ -332,7 +332,7 @@ function InstructorDashboard() {
 
   return (
     <div className="instructor-main-content">
-      <h1 className="instructor-page-title">Welcome, {instructorName}</h1>
+      <h1 className="instructor-page-title">Welcome back, {instructorName}!</h1>
 
       {/* Stats Cards */}
       <div className="dashboard-stats">

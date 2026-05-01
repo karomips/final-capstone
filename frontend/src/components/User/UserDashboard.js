@@ -176,7 +176,7 @@ function UserDashboard() {
 
   return (
     <div className="user-main-content user-main-content--fit">
-        <h1 className="page-title">Welcome, {userName}</h1>
+        <h1 className="page-title">Welcome back, {userName}!</h1>
 
         <div className="dashboard-grid">
           {/* Next Lesson Card */}

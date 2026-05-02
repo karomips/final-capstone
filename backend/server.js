@@ -58,19 +58,17 @@ const getEmailTransporter = (overridePort) => {
   return nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
-    secure: smtpPort === 465,
-    requireTLS: smtpPort === 587,
-    connectionTimeout: 60000,
-    greetingTimeout: 60000,
-    socketTimeout: 90000,
-    tls: {
-      servername: smtpHost,
-      rejectUnauthorized: false
-    },
+    secure: false, // Use STARTTLS instead of TLS for port 587
     auth: {
       user: process.env.SMTP_USER,
       pass: smtpPass
-    }
+    },
+    tls: {
+      rejectUnauthorized: false
+    },
+    connectionTimeout: 120000,
+    socketTimeout: 120000,
+    greetingTimeout: 120000
   });
 };
 

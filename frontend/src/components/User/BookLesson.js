@@ -131,6 +131,28 @@ function BookLesson() {
     ? new Date(`1970-01-01T${time}:00`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
     : 'Select time';
 
+  const stepDefinitions = useMemo(() => {
+    const lessonSelected = Boolean(selectedLesson);
+    const instructorSelected = Boolean(instructor);
+    const transmissionSelected = Boolean(transmission);
+    const vehicleSelected = selectedLesson === 'practical' ? Boolean(vehicle) : true;
+    const step2Completed = instructorSelected && (selectedLesson === 'theory' ? vehicleSelected : (transmissionSelected && vehicleSelected));
+    const step3Completed = selectedDates.length > 0 && Boolean(time);
+
+    return [
+      { id: 1, label: 'Lesson type', status: lessonSelected ? 'completed' : 'active' },
+      { id: 2, label: 'Instructor & vehicle', status: step2Completed ? 'completed' : lessonSelected ? 'active' : 'upcoming' },
+      { id: 3, label: 'Date & time', status: step2Completed ? (step3Completed ? 'completed' : 'active') : 'upcoming' },
+      { id: 4, label: 'Details', status: step3Completed ? 'active' : 'upcoming' },
+      { id: 5, label: 'Confirm', status: 'upcoming' }
+    ];
+  }, [selectedLesson, instructor, vehicle, transmission, selectedDates, time]);
+
+  const progressPercentage = useMemo(() => {
+    const completedSteps = stepDefinitions.filter(step => step.status === 'completed').length;
+    return (completedSteps / stepDefinitions.length) * 100;
+  }, [stepDefinitions]);
+
   const goToPreviousMonth = () => {
     setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
@@ -543,10 +565,35 @@ function BookLesson() {
         {error && <div style={{background: '#fee', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#c00'}}>{error}</div>}
         {success && <div style={{background: '#efe', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#060'}}>{success}</div>}
 
+        <div className="progress-bar-container">
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${progressPercentage}%` }}></div>
+          </div>
+          <div className="booking-steps">
+            {stepDefinitions.map((step) => (
+              <div key={step.id} className={`step ${step.status}`}>
+                <span className="step-number">
+                  {step.status === 'completed' ? '✓' : step.id}
+                </span>
+                <div>
+                  <strong>{step.label}</strong>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="booking-layout">
-          {/* Lesson Type Section */}
-          <div className="booking-section">
-            <h2 className="section-title">Lesson Type</h2>
+          <div className="booking-panel booking-panel--lesson">
+            <div className="promo-card">
+              <div>
+                <div className="promo-badge">Save 15%</div>
+                <h3>Book 5 lessons as a bundle</h3>
+                <p>Reserve five sessions and enjoy a special discount on your driving lessons.</p>
+              </div>
+              <button type="button" className="promo-btn">View packages</button>
+            </div>
+
             <div className="lesson-type-cards">
               <div
                 className={`lesson-card ${selectedLesson === 'practical' ? 'active' : ''}`}
@@ -554,13 +601,16 @@ function BookLesson() {
                   setSelectedLesson('practical');
                   setInstructor('');
                   setSelectedDates([]);
-                  setTransmission(''); // Reset transmission when switching lessons
+                  setTransmission('');
                   setVehicle('');
                 }}
               >
                 <div className="lesson-icon">🚗</div>
-                <h3>Behind-the-Wheel Lesson</h3>
-                <p>2-hour on-road instruction.<br />Vehicle options available.</p>
+                <div>
+                  <h3>Behind-the-Wheel Lesson</h3>
+                  <p>2-hour on-road instruction. Vehicle options available.</p>
+                </div>
+                <div className="lesson-price">₱4,000 / session</div>
               </div>
               <div
                 className={`lesson-card ${selectedLesson === 'theory' ? 'active' : ''}`}
@@ -569,51 +619,67 @@ function BookLesson() {
                   setInstructor('');
                   setVehicle('');
                   setSelectedDates([]);
-                  setTransmission(''); // Reset transmission when switching to theory
+                  setTransmission('');
                 }}
               >
                 <div className="lesson-icon">📖</div>
-                <h3>Theory Class</h3>
-                <p>4-hour classroom instruction.<br />All materials provided.</p>
+                <div>
+                  <h3>Theory Class</h3>
+                  <p>4-hour classroom instruction. All materials provided.</p>
+                </div>
+                <div className="lesson-price lesson-price--secondary">₱1,000 / session</div>
               </div>
+            </div>
+
+            <div className="lesson-detail-card">
+              <h3>What’s included</h3>
+              <ul>
+                <li>Experienced instructors with proven training methods</li>
+                <li>Flexible lesson scheduling in hourly slots</li>
+                <li>Full support for license preparation and testing</li>
+                <li>Vehicle choice available for practical sessions</li>
+              </ul>
             </div>
           </div>
 
-          {/* Instructor & Vehicle Section */}
-          <div className="booking-section">
-            <h2 className="section-title">{selectedLesson === 'theory' ? 'Instructor' : 'Instructor & Vehicle'}</h2>
-            
-            {/* NEW: Transmission Type Selection (for practical lessons only) */}
+          <div className="booking-panel booking-panel--instructor">
+            <div className="panel-header">
+              <div>
+                <h2>Instructor & vehicle</h2>
+                <p>Choose a certified instructor and the right vehicle for your lesson.</p>
+              </div>
+            </div>
+
             {selectedLesson === 'practical' && (
               <div className="form-group">
-                <label>Transmission Type</label>
+                <label>Transmission type</label>
                 <select
                   value={transmission}
                   onChange={(e) => {
                     setTransmission(e.target.value);
-                    setInstructor(''); // Reset instructor when transmission changes
-                    setVehicle(''); // Reset vehicle when transmission changes
+                    setInstructor('');
+                    setVehicle('');
                   }}
                   className="booking-select"
                 >
-                  <option value="">Select Transmission Type</option>
-                  <option value="MT">Manual Transmission (MT)</option>
-                  <option value="AT">Automatic Transmission (AT)</option>
+                  <option value="">Select transmission</option>
+                  <option value="MT">Manual Transmission</option>
+                  <option value="AT">Automatic Transmission</option>
                 </select>
               </div>
             )}
-            
+
             <div className="form-group">
-              <label>Instructor Name</label>
+              <label>{selectedLesson === 'practical' ? 'Select Instructor' : 'Instructor Name'}</label>
               <select
                 value={instructor}
                 onChange={(e) => setInstructor(e.target.value)}
                 className="booking-select"
-                disabled={selectedLesson === 'practical' && !transmission} // NEW: Disable until transmission is selected
+                disabled={selectedLesson === 'practical' && !transmission}
               >
                 <option value="">
-                  {selectedLesson === 'practical' && !transmission 
-                    ? 'Select transmission type first' 
+                  {selectedLesson === 'practical' && !transmission
+                    ? 'Select transmission type first'
                     : 'Select Instructor'}
                 </option>
                 {instructors.length === 0 ? (
@@ -622,26 +688,27 @@ function BookLesson() {
                   instructors.map((inst) => (
                     <option key={inst.$id} value={inst.name}>
                       {selectedLesson === 'theory'
-                        ? `${inst.name} - ${inst.certifications} (${inst.theoryRemainingSlots}/${inst.theoryCapacity} booking slots left)`
+                        ? `${inst.name} - ${inst.certifications} (${inst.theoryRemainingSlots}/${inst.theoryCapacity} slots)`
                         : `${inst.name} - ${inst.certifications}`}
                     </option>
                   ))
                 )}
               </select>
             </div>
+
             {selectedLesson === 'practical' && (
               <div className="form-group">
-                <label>Vehicle Model</label>
+                <label>Vehicle model</label>
                 <select
                   value={vehicle}
                   onChange={(e) => setVehicle(e.target.value)}
                   className="booking-select"
-                  disabled={!transmission} // NEW: Disable until transmission is selected
+                  disabled={!transmission}
                 >
                   <option value="">
-                    {!transmission 
-                      ? 'Select transmission type first' 
-                      : 'Select Vehicle'}
+                    {!transmission
+                      ? 'Select transmission type first'
+                      : 'Select Vehicle Model'}
                   </option>
                   {vehicles.length === 0 ? (
                     <option disabled>No available vehicles</option>
@@ -655,116 +722,150 @@ function BookLesson() {
                 </select>
               </div>
             )}
-          </div>
 
-          {/* Date & Time Section */}
-          <div className="booking-section">
-            <h2 className="section-title">Date & Time</h2>
-            <div className="datetime-inputs">
-              <div className="calendar-shell">
-                <div className="calendar-shell-header">
-                  <div className="calendar-shell-title">
-                    <CalendarDays size={16} />
-                    <span>{calendarMonth.toLocaleDateString([], { month: 'long', year: 'numeric' })}</span>
+            <div className="instructor-cards">
+              {instructors.length > 0 ? (
+                instructors.slice(0, 3).map((inst) => (
+                  <div key={inst.$id} className="instructor-card">
+                    <div>
+                      <strong>{inst.name}</strong>
+                      <p>{inst.certifications || 'Certified driving instructor'}</p>
+                    </div>
+                    <span>{selectedLesson === 'theory' ? `${inst.theoryRemainingSlots} slots left` : 'Top rated'}</span>
                   </div>
-                  <div className="calendar-nav">
-                    <button
-                      type="button"
-                      className="calendar-nav-btn"
-                      onClick={goToPreviousMonth}
-                      aria-label="Previous month"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      className="calendar-nav-btn"
-                      onClick={goToNextMonth}
-                      aria-label="Next month"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
+                ))
+              ) : (
+                <div className="instructor-card instructor-card--placeholder">
+                  <p>No instructors are available right now. Please try another date or transmission type.</p>
                 </div>
-
-                <div className="calendar-weekdays">
-                  {weekLabels.map((weekday) => (
-                    <span key={weekday} className="calendar-weekday-label">{weekday}</span>
-                  ))}
-                </div>
-
-                <div className="calendar-grid">
-                  {calendarDays.map((dayDate, index) => {
-                    if (!dayDate) {
-                      return <div key={`empty-${index}`} className="calendar-day-empty" aria-hidden="true" />;
-                    }
-
-                    const dayIsoValue = toIsoDate(dayDate);
-                    const isDisabled = isPastDate(dayDate);
-                    const isSelected = selectedDates.includes(dayIsoValue);
-                    const isToday = isSameDay(dayDate, today);
-
-                    return (
-                      <button
-                        key={dayIsoValue}
-                        type="button"
-                        className={`calendar-day-btn ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
-                        disabled={isDisabled}
-                        onClick={() => handleDatePick(dayDate)}
-                        aria-label={dayDate.toLocaleDateString([], {
-                          weekday: 'long',
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      >
-                        {dayDate.getDate()}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="booking-section time-picker-section">
-                  <div className="time-picker-header">
-                    <Clock3 size={16} />
-                    <span>Pick a Time Slot</span>
-                </div>
-                <select
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="booking-select time-select"
-                >
-                  <option value="">Select time</option>
-                  {timeOptions.map((slot) => (
-                    <option key={slot.value} value={slot.value}>
-                      {slot.label}
-                    </option>
-                  ))}
-                </select>
-                <small className="time-hint">10-minute interval scheduling</small>
-              </div>
+              )}
             </div>
           </div>
 
-          {/* Booking Summary */}
-          <div className="booking-summary">
-            <h2 className="section-title">Booking Summary</h2>
-            <p className="summary-text">
-              {selectedLesson === 'practical' ? (
-                <>
-                  You selected a <strong>Behind-the-Wheel Track</strong><br />
-                  Dates: {formattedDateSummary} ({selectedDates.length}/3 selected)<br />
-                  @ {formattedTimeSummary}
-                </>
-              ) : (
-                <>
-                  You have selected a<br />
-                  <strong>Theory Class</strong> on {formattedDateSummary}<br />
-                  @ {formattedTimeSummary}
-                </>
+          <div className="booking-panel booking-panel--schedule">
+            <div className="panel-header">
+              <div>
+                <h2>Date & time</h2>
+                <p>Pick the best available dates and time slot for your lesson.</p>
+              </div>
+            </div>
+
+            <div className="calendar-shell">
+              <div className="calendar-shell-header">
+                <div className="calendar-shell-title">
+                  <CalendarDays size={16} />
+                  <span>{calendarMonth.toLocaleDateString([], { month: 'long', year: 'numeric' })}</span>
+                </div>
+                <div className="calendar-nav">
+                  <button
+                    type="button"
+                    className="calendar-nav-btn"
+                    onClick={goToPreviousMonth}
+                    aria-label="Previous month"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="calendar-nav-btn"
+                    onClick={goToNextMonth}
+                    aria-label="Next month"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="calendar-weekdays">
+                {weekLabels.map((weekday) => (
+                  <span key={weekday} className="calendar-weekday-label">{weekday}</span>
+                ))}
+              </div>
+
+              <div className="calendar-grid">
+                {calendarDays.map((dayDate, index) => {
+                  if (!dayDate) {
+                    return <div key={`empty-${index}`} className="calendar-day-empty" aria-hidden="true" />;
+                  }
+
+                  const dayIsoValue = toIsoDate(dayDate);
+                  const isDisabled = isPastDate(dayDate);
+                  const isSelected = selectedDates.includes(dayIsoValue);
+                  const isToday = isSameDay(dayDate, today);
+
+                  return (
+                    <button
+                      key={dayIsoValue}
+                      type="button"
+                      className={`calendar-day-btn ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
+                      disabled={isDisabled}
+                      onClick={() => handleDatePick(dayDate)}
+                      aria-label={dayDate.toLocaleDateString([], {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    >
+                      {dayDate.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="slot-panel">
+              <div className="time-picker-header">
+                <Clock3 size={16} />
+                <span>Available time slots</span>
+              </div>
+              <select
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="booking-select time-select"
+              >
+                <option value="">Select time</option>
+                {timeOptions.map((slot) => (
+                  <option key={slot.value} value={slot.value}>
+                    {slot.label}
+                  </option>
+                ))}
+              </select>
+              <small className="time-hint">10-minute interval scheduling</small>
+            </div>
+          </div>
+
+          <div className="booking-summary booking-summary--wide">
+            <div className="summary-header">
+              <div>
+                <h2>Booking Summary</h2>
+                <p>Review your lesson selection before confirming.</p>
+              </div>
+            </div>
+            <div className={`summary-grid ${selectedLesson === 'theory' ? 'summary-grid--centered' : ''}`}>
+              <div className="summary-card">
+                <span>Lesson type</span>
+                <strong>{selectedLesson === 'practical' ? 'Behind-the-Wheel Lesson' : 'Theory Class'}</strong>
+              </div>
+              <div className="summary-card">
+                <span>Instructor</span>
+                <strong>{instructor || 'Not selected'}</strong>
+              </div>
+              {selectedLesson === 'practical' && (
+                <div className="summary-card">
+                  <span>Vehicle</span>
+                  <strong>{vehicle || 'Not selected'}</strong>
+                </div>
               )}
-            </p>
+              <div className="summary-card">
+                <span>Date</span>
+                <strong>{formattedDateSummary}</strong>
+              </div>
+              <div className="summary-card">
+                <span>Time</span>
+                <strong>{formattedTimeSummary}</strong>
+              </div>
+            </div>
             <button
               className="confirm-booking-btn"
               onClick={handleConfirmBooking}

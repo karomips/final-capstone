@@ -365,6 +365,21 @@ function Profile() {
                 </div>
               </div>
 
+              <div className="profile-summary-grid">
+                <div className="summary-card">
+                  <span className="summary-card-title">Phone</span>
+                  <strong>{userData?.phoneNumber || 'Not set'}</strong>
+                </div>
+                <div className="summary-card">
+                  <span className="summary-card-title">Member Since</span>
+                  <strong>{userData?.$createdAt ? new Date(userData.$createdAt).toLocaleDateString() : 'N/A'}</strong>
+                </div>
+                <div className="summary-card">
+                  <span className="summary-card-title">Account Status</span>
+                  <strong>{userData?.approved ? 'Approved' : 'Pending'}</strong>
+                </div>
+              </div>
+
               <div className="profile-details">
                 {/* Personal Information */}
                 <div className="detail-section">
@@ -583,43 +598,45 @@ function Profile() {
                 </div>
 
                 <div className="profile-form-container">
-  < div className="form-group">
-    <label className="input-label">Full Name</label>
-    <input
-      type="text"
-      name="name"
-      value={formData.name}
-      onChange={handleInputChange}
-      className="profile-input user-typing-color"
-      required
-    />
-  </div>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label className="input-label">Full Name</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className="profile-input user-typing-color"
+                        required
+                      />
+                    </div>
 
-  <div className="form-group">
-    <label className="input-label">Email Address</label>
-    <input
-      type="email"
-      name="email"
-      value={formData.email}
-      onChange={handleInputChange}
-      className="profile-input user-typing-color"
-      required
-    />
-  </div>
+                    <div className="form-group">
+                      <label className="input-label">Email Address</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="profile-input user-typing-color"
+                        required
+                      />
+                    </div>
 
-  <div className="form-group">
-    <label className="input-label">Phone Number</label>
-    <input
-      type="tel"
-      name="phoneNumber"
-      value={formData.phoneNumber}
-      onChange={handlePhoneNumberChange}
-      className="profile-input user-typing-color"
-      placeholder="+63 9XX XXX XXXX"
-      required
-    />
-  </div>
-</div>
+                    <div className="form-group">
+                      <label className="input-label">Phone Number</label>
+                      <input
+                        type="tel"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handlePhoneNumberChange}
+                        className="profile-input user-typing-color"
+                        placeholder="+63 9XX XXX XXXX"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
 
                 <div className="form-actions">
                   <button type="submit" className="submit-btn">

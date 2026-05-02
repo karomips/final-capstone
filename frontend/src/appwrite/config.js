@@ -2,7 +2,7 @@ import { Client, Account, Databases, Storage } from 'appwrite';
 
 // Appwrite configuration
 const appwriteConfig = {
-  endpoint: 'https://sgp.cloud.appwrite.io/v1', // Your Appwrite Endpoint
+  endpoint: 'https://scp.cloud.appwrite.io/v1', // Your Appwrite Endpoint (Singapore Cloud Platform)
   projectId: '69ac803a001c47a4f8c3', // Your Appwrite Project ID
   databaseId: 'main-database', // Your Database ID (create this in Appwrite Console)
   usersCollectionId: 'users', // Users collection ID (create this in Appwrite Console)

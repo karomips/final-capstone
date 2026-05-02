@@ -224,7 +224,7 @@ app.post('/api/auth/send-verification-code', async (req, res) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     await withTimeout(
       sendVerificationCodeEmail(email, code),
-      60000,
+      90000, // 90 seconds for email delivery
       'Email provider timeout. Please try again in a moment.'
     );
 

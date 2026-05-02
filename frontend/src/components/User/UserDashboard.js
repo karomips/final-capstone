@@ -102,8 +102,6 @@ function UserDashboard() {
   const practicalCourseProgress = getPracticalCourseProgress(bookings);
   const completedCourseCount = practicalCourseProgress.filter((course) => course.status === 'completed').length;
   const totalCourses = practicalCoursePlan.length;
-  const lessonGoalHours = 9;
-  const hoursLogged = bookings.reduce((sum, booking) => sum + (parseFloat(booking.duration) || 0), 0);
   const overallProgressPercent = totalCourses > 0 ? Math.round((completedCourseCount / totalCourses) * 100) : 0;
 
   const manilaTodayIso = new Date().toLocaleDateString('en-CA', {
@@ -201,25 +199,19 @@ function UserDashboard() {
           <div className="overview-card">
             <h3>Courses done</h3>
             <div className="overview-value">{completedCourseCount} of {totalCourses}</div>
-            <div className="overview-meta">of {totalCourses} total</div>
-          </div>
-
-          <div className="overview-card">
-            <h3>Hours logged</h3>
-            <div className="overview-value">{hoursLogged.toFixed(1)}h</div>
-            <div className="overview-meta">goal: {lessonGoalHours} hrs</div>
+            <div className="overview-meta">out of {totalCourses} courses</div>
           </div>
 
           <div className="overview-card">
             <h3>Overall progress</h3>
             <div className="overview-value">{overallProgressPercent}%</div>
-            <div className="overview-meta">practical track completion</div>
+            <div className="overview-meta">completion percentage</div>
           </div>
 
           <div className="overview-card">
             <h3>Days until next</h3>
             <div className="overview-value">{daysUntilNextText}</div>
-            <div className="overview-meta">{nextLesson ? 'next lesson set' : 'no lesson set'}</div>
+            <div className="overview-meta">{nextLesson ? 'lesson scheduled' : 'no lesson scheduled'}</div>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const nodemailer = require('nodemailer');
 
 // Load environment variables FIRST before requiring other modules
 dotenv.config();
@@ -50,38 +51,52 @@ const maskEmail = (email) => {
   return `${visible}${'*'.repeat(Math.max(1, local.length - visible.length))}@${domain}`;
 };
 
-// Send verification code email using Brevo REST API
+// Create email transporter using Brevo SMTP relay
+const createBrevoTransporter = () => {
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = String(process.env.SMTP_PASS || '').replace(/\s+/g, ''); // Remove spaces from API key
+  const smtpHost = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
+  const smtpPort = Number(process.env.SMTP_PORT) || 587;
+
+  if (!smtpUser || !smtpPass) {
+    console.error('SMTP credentials not configured');
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: false, // Use TLS (not SSL) for port 587
+    auth: {
+      user: smtpUser,
+      pass: smtpPass
+    },
+    logger: true,
+    debug: true
+  });
+};
+
+// Send verification code email using Brevo SMTP
 const sendVerificationCodeEmail = async (email, code) => {
-  const brevoApiKey = String(process.env.SMTP_PASS || '').replace(/\s+/g, '');
   const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
   const appName = process.env.APP_NAME || 'Easy Drive Driving School';
 
-  if (!brevoApiKey) {
-    throw new Error(
-      'SMTP_PASS (Brevo API Key) is not configured. Set it in your environment variables.'
-    );
-  }
-
   if (!fromEmail) {
-    throw new Error(
-      'SMTP_FROM_EMAIL is not configured. Set it in your environment variables.'
-    );
+    throw new Error('SMTP_FROM_EMAIL is not configured.');
   }
 
-  console.log(`Sending verification code to ${email} via Brevo API...`);
+  const transporter = createBrevoTransporter();
+  if (!transporter) {
+    throw new Error('SMTP is not configured properly.');
+  }
 
-  const emailBody = {
-    sender: {
-      name: appName,
-      email: fromEmail
-    },
-    to: [
-      {
-        email: email
-      }
-    ],
+  console.log(`Sending verification code to ${email} via Brevo SMTP...`);
+
+  const mailOptions = {
+    from: `"${appName}" <${fromEmail}>`,
+    to: email,
     subject: `${appName} Verification Code`,
-    htmlContent: `
+    html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
         <h2 style="margin-bottom: 8px;">Email Verification</h2>
         <p>Use this verification code to complete your registration:</p>
@@ -90,33 +105,16 @@ const sendVerificationCodeEmail = async (email, code) => {
         <p>If you did not request this, you can ignore this email.</p>
       </div>
     `,
-    textContent: `Your verification code is ${code}. This code will expire in 10 minutes.`
+    text: `Your verification code is ${code}. This code will expire in 10 minutes.`
   };
 
   try {
-    console.log('Making request to Brevo API...');
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': brevoApiKey
-      },
-      body: JSON.stringify(emailBody)
-    });
-
-    console.log(`Brevo API response status: ${response.status}`);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error(`Brevo API error: ${response.status}`, errorData);
-      throw new Error(`Brevo API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
-    }
-
-    const result = await response.json();
-    console.log('✓ Brevo API success:', result);
-    return result;
+    console.log('Sending email via SMTP...');
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✓ Email sent successfully:', info.messageId);
+    return info;
   } catch (error) {
-    console.error('Brevo API fetch error:', error.message);
+    console.error('SMTP error:', error);
     throw error;
   }
 };
@@ -132,6 +130,7 @@ const withTimeout = (promise, timeoutMs, timeoutMessage) => {
 
 const classifyVerificationSendError = (error) => {
   const message = String(error?.message || 'Failed to send verification code');
+  const code = String(error?.code || '').toUpperCase();
 
   if (message.includes('not configured')) {
     return {
@@ -141,11 +140,27 @@ const classifyVerificationSendError = (error) => {
     };
   }
 
-  if (message.includes('Brevo API error')) {
+  if (message.includes('timed out') || code === 'ETIMEDOUT') {
+    return {
+      status: 504,
+      error: 'Email service timed out. Please try again.',
+      reason: 'email_timeout'
+    };
+  }
+
+  if (code === 'EAUTH' || message.includes('AUTHENTICATION FAILED')) {
+    return {
+      status: 401,
+      error: 'Email authentication failed. Please check SMTP credentials.',
+      reason: 'email_auth_failed'
+    };
+  }
+
+  if (code === 'ECONNREFUSED' || message.includes('connect')) {
     return {
       status: 502,
-      error: 'Email service encountered an error. Please try again.',
-      reason: 'email_api_error'
+      error: 'Cannot connect to email service. Please try again later.',
+      reason: 'email_connection_failed'
     };
   }
 
@@ -194,7 +209,7 @@ app.post('/api/auth/send-verification-code', async (req, res) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     await withTimeout(
       sendVerificationCodeEmail(email, code),
-      35000,
+      60000,
       'Email service timed out. Please try again in a moment.'
     );
 

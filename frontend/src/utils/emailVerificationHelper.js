@@ -2,7 +2,7 @@ const API_URL = process.env.REACT_APP_API_URL ||
   (window.location.hostname === 'localhost'
     ? 'http://localhost:5000'
     : 'https://final-capstone-3ugp.onrender.com');
-const REQUEST_TIMEOUT_MS = 120000; // 2 minutes for email verification (SMTP can be slow)
+const REQUEST_TIMEOUT_MS = 150000; // 2.5 minutes to allow for Brevo API delays
 
 const parseJsonSafely = async (response) => {
   try {

@@ -56,21 +56,29 @@ const createBrevoTransporter = () => {
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = String(process.env.SMTP_PASS || '').replace(/\s+/g, ''); // Remove spaces from API key
   const smtpHost = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
-  const smtpPort = Number(process.env.SMTP_PORT) || 587;
+  const smtpPort = Number(process.env.SMTP_PORT) || 465; // Try 465 first (more stable than 587)
 
   if (!smtpUser || !smtpPass) {
     console.error('SMTP credentials not configured');
     return null;
   }
 
+  console.log(`Creating SMTP transporter: ${smtpHost}:${smtpPort}`);
+
   return nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
-    secure: false, // Use TLS (not SSL) for port 587
+    secure: smtpPort === 465, // Use SSL for 465, STARTTLS for 587
     auth: {
       user: smtpUser,
       pass: smtpPass
     },
+    tls: {
+      rejectUnauthorized: false // Allow self-signed certificates
+    },
+    connectionTimeout: 30000,
+    socketTimeout: 60000,
+    greetingTimeout: 30000,
     logger: true,
     debug: true
   });

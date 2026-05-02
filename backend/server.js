@@ -59,12 +59,13 @@ const getEmailTransporter = (overridePort) => {
     host: smtpHost,
     port: smtpPort,
     secure: smtpPort === 465,
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 60000,
-    family: 4,
+    requireTLS: smtpPort === 587,
+    connectionTimeout: 60000,
+    greetingTimeout: 60000,
+    socketTimeout: 90000,
     tls: {
-      servername: smtpHost
+      servername: smtpHost,
+      rejectUnauthorized: false
     },
     auth: {
       user: process.env.SMTP_USER,

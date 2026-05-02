@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const nodemailer = require('nodemailer');
 
 // Load environment variables FIRST before requiring other modules
 dotenv.config();
@@ -38,60 +37,36 @@ const maskEmail = (email) => {
   return `${visible}${'*'.repeat(Math.max(1, local.length - visible.length))}@${domain}`;
 };
 
-const isGmailHost = (host) => /gmail\.com$/i.test(String(host || ''));
-
-const getEmailTransporter = (overridePort) => {
-  if (
-    !process.env.SMTP_HOST ||
-    (!process.env.SMTP_PORT && !overridePort) ||
-    !process.env.SMTP_USER ||
-    !process.env.SMTP_PASS
-  ) {
-    return null;
-  }
-
-  // Gmail app passwords are often copied with spaces; normalize before auth.
-  const smtpPass = String(process.env.SMTP_PASS || '').replace(/\s+/g, '');
-  const smtpHost = String(process.env.SMTP_HOST || '').trim();
-  const smtpPort = Number(overridePort || process.env.SMTP_PORT);
-
-  return nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: false, // Use STARTTLS instead of TLS for port 587
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: smtpPass
-    },
-    tls: {
-      rejectUnauthorized: false
-    },
-    connectionTimeout: 120000,
-    socketTimeout: 120000,
-    greetingTimeout: 120000
-  });
-};
-
+// Send verification code email using Brevo REST API
 const sendVerificationCodeEmail = async (email, code) => {
-  const transporter = getEmailTransporter();
-  if (!transporter) {
+  const brevoApiKey = String(process.env.SMTP_PASS || '').replace(/\s+/g, '');
+  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
+  const appName = process.env.APP_NAME || 'Easy Drive Driving School';
+
+  if (!brevoApiKey) {
     throw new Error(
-      'SMTP is not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and SMTP_FROM_EMAIL in backend/.env'
+      'SMTP_PASS (Brevo API Key) is not configured. Set it in your environment variables.'
     );
   }
 
-  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
-  const appName = process.env.APP_NAME || 'Easy Drive Driving School';
-  const smtpHost = String(process.env.SMTP_HOST || '').trim();
-  const configuredPort = Number(process.env.SMTP_PORT);
-  const fallbackPort = configuredPort === 465 ? 587 : 465;
+  if (!fromEmail) {
+    throw new Error(
+      'SMTP_FROM_EMAIL is not configured. Set it in your environment variables.'
+    );
+  }
 
-  const mailOptions = {
-    from: `"${appName}" <${fromEmail}>`,
-    to: email,
+  const emailBody = {
+    sender: {
+      name: appName,
+      email: fromEmail
+    },
+    to: [
+      {
+        email: email
+      }
+    ],
     subject: `${appName} Verification Code`,
-    text: `Your verification code is ${code}. This code will expire in 10 minutes.`,
-    html: `
+    htmlContent: `
       <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
         <h2 style="margin-bottom: 8px;">Email Verification</h2>
         <p>Use this verification code to complete your registration:</p>
@@ -99,38 +74,25 @@ const sendVerificationCodeEmail = async (email, code) => {
         <p>This code expires in <strong>10 minutes</strong>.</p>
         <p>If you did not request this, you can ignore this email.</p>
       </div>
-    `
+    `,
+    textContent: `Your verification code is ${code}. This code will expire in 10 minutes.`
   };
 
-  const ensureAccepted = (info) => {
-    const acceptedRecipients = Array.isArray(info?.accepted)
-      ? info.accepted.map((item) => String(item).toLowerCase())
-      : [];
-    if (!acceptedRecipients.includes(String(email).toLowerCase())) {
-      const rejectedRecipients = Array.isArray(info?.rejected)
-        ? info.rejected.map((item) => String(item)).join(', ')
-        : 'unknown';
-      throw new Error(`Email was not accepted by SMTP for ${email}. Rejected: ${rejectedRecipients}`);
-    }
-  };
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': brevoApiKey
+    },
+    body: JSON.stringify(emailBody)
+  });
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    ensureAccepted(info);
-  } catch (error) {
-    if (isGmailHost(smtpHost) && error?.code === 'ETIMEDOUT') {
-      const fallbackTransporter = getEmailTransporter(fallbackPort);
-      if (!fallbackTransporter) {
-        throw error;
-      }
-
-      const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
-      ensureAccepted(fallbackInfo);
-      return;
-    }
-
-    throw error;
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`Brevo API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
   }
+
+  return await response.json();
 };
 
 const withTimeout = (promise, timeoutMs, timeoutMessage) => {
@@ -144,44 +106,27 @@ const withTimeout = (promise, timeoutMs, timeoutMessage) => {
 
 const classifyVerificationSendError = (error) => {
   const message = String(error?.message || 'Failed to send verification code');
-  const code = String(error?.code || '').toUpperCase();
 
-  if (message.includes('SMTP is not configured')) {
+  if (message.includes('not configured')) {
     return {
       status: 500,
       error: 'Email service is not configured on the server.',
-      reason: 'smtp_not_configured'
+      reason: 'email_not_configured'
     };
   }
 
-  if (message.includes('Email provider timeout') || code === 'ETIMEDOUT') {
-    return {
-      status: 504,
-      error: 'Email service timed out while sending the code. Please try again.',
-      reason: 'smtp_timeout'
-    };
-  }
-
-  if (code === 'EAUTH' || message.toLowerCase().includes('invalid login')) {
-    return {
-      status: 500,
-      error: 'Email login failed. Please verify SMTP credentials.',
-      reason: 'smtp_auth_failed'
-    };
-  }
-
-  if (message.includes('Email was not accepted by SMTP')) {
+  if (message.includes('Brevo API error')) {
     return {
       status: 502,
-      error: 'Email provider rejected the recipient address.',
-      reason: 'smtp_recipient_rejected'
+      error: 'Email service encountered an error. Please try again.',
+      reason: 'email_api_error'
     };
   }
 
   return {
     status: 500,
-    error: 'Failed to send verification code.',
-    reason: 'smtp_unknown_error'
+    error: 'Failed to send verification code. Please try again.',
+    reason: 'email_unknown_error'
   };
 };
 
@@ -223,8 +168,8 @@ app.post('/api/auth/send-verification-code', async (req, res) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     await withTimeout(
       sendVerificationCodeEmail(email, code),
-      90000, // 90 seconds for email delivery
-      'Email provider timeout. Please try again in a moment.'
+      30000,
+      'Email service timed out. Please try again in a moment.'
     );
 
     verificationCodes.set(email, {

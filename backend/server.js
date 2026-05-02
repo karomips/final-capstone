@@ -93,9 +93,6 @@ const sendVerificationCodeEmail = async (email, code) => {
     textContent: `Your verification code is ${code}. This code will expire in 10 minutes.`
   };
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
-
   try {
     console.log('Making request to Brevo API...');
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -104,11 +101,8 @@ const sendVerificationCodeEmail = async (email, code) => {
         'Content-Type': 'application/json',
         'api-key': brevoApiKey
       },
-      body: JSON.stringify(emailBody),
-      signal: controller.signal
+      body: JSON.stringify(emailBody)
     });
-
-    clearTimeout(timeoutId);
 
     console.log(`Brevo API response status: ${response.status}`);
 
@@ -122,10 +116,7 @@ const sendVerificationCodeEmail = async (email, code) => {
     console.log('✓ Brevo API success:', result);
     return result;
   } catch (error) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      throw new Error('Email service request timed out. Please try again.');
-    }
+    console.error('Brevo API fetch error:', error.message);
     throw error;
   }
 };
@@ -489,14 +480,6 @@ app.post('/api/sms/send', async (req, res) => {
 //     res.status(500).json({ error: 'Failed to check balance' });
 //   }
 // });
-
-// Global error handler to ensure CORS headers are sent
-app.use((err, req, res, next) => {
-  console.error('Global error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error'
-  });
-});
 
 // Start server
 app.listen(PORT, () => {

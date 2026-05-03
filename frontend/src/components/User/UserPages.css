@@ -130,8 +130,8 @@
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1.45fr 1fr;
-  gap: 50px;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
   flex: 0 0 auto;
   align-content: start;
 }
@@ -140,7 +140,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
-  margin-top: 18px;
+  margin-top: 40px;
   align-items: stretch;
 }
 
@@ -154,6 +154,11 @@
   flex-direction: column;
   min-height: 280px;
   height: 280px;
+}
+
+.course-progress-card {
+  height: 350px;
+  min-height: 350px;
 }
 
 .study-tip-card,
@@ -198,15 +203,7 @@
   text-transform: uppercase;
 }
 
-.next-lesson-card,
-.notifications-card {
-  grid-column: 1;
-}
-
-.course-progress-card,
-.schedules-card {
-  grid-column: 2;
-}
+/* Grid column rules removed - containers now stack naturally */
 
 .card-header {
   display: flex;

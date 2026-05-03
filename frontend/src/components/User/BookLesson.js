@@ -463,6 +463,43 @@ function BookLesson() {
       }
       console.log('Booking created successfully for dates:', bookingDates);
 
+      // Send SMS confirmation to user
+      try {
+        const API_URL = process.env.REACT_APP_API_URL ||
+          (window.location.hostname === 'localhost'
+            ? 'http://localhost:5000'
+            : 'https://final-capstone-3ugp.onrender.com');
+
+        // Get user's phone number
+        const userDoc = await databases.getDocument(
+          databaseId,
+          usersCollectionId,
+          currentUser.$id
+        );
+        
+        if (userDoc.phone) {
+          await fetch(`${API_URL}/api/sms/appointment-confirmation`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              phoneNumber: userDoc.phone,
+              appointmentData: {
+                instructor: instructor,
+                date: bookingDates[0],
+                time: time,
+                lessonType: selectedLesson
+              }
+            })
+          });
+          console.log('SMS confirmation sent successfully');
+        }
+      } catch (err) {
+        console.warn('Failed to send SMS confirmation:', err);
+        // Don't fail the booking if SMS fails
+      }
+
       try {
         const instructorQuery = await databases.listDocuments(
           databaseId,

@@ -503,8 +503,11 @@ function BookLesson() {
       try {
         const instructorQuery = await databases.listDocuments(
           databaseId,
-          instructorsCollectionId,
-          [Query.equal('name', instructor)]
+          usersCollectionId,
+          [
+            Query.equal('name', instructor),
+            Query.equal('role', 'instructor')
+          ]
         );
 
         if (instructorQuery.documents.length > 0) {
@@ -512,7 +515,7 @@ function BookLesson() {
           if (selectedLesson === 'practical') {
             await databases.updateDocument(
               databaseId,
-              instructorsCollectionId,
+              usersCollectionId,
               instructorDoc.$id,
               { availability: 'booked' }
             );
@@ -521,7 +524,7 @@ function BookLesson() {
             if (shouldMarkUnavailable) {
               await databases.updateDocument(
                 databaseId,
-                instructorsCollectionId,
+                usersCollectionId,
                 instructorDoc.$id,
                 { availability: 'booked' }
               );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { databases, databaseId, bookingsCollectionId, usersCollectionId, instructorsCollectionId, vehiclesCollectionId } from '../../appwrite/config';
+import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import smsHelper from '../../utils/smsHelper';
 import './AdminPages.css';
@@ -220,20 +220,24 @@ function SMSMonitoring() {
       try {
         let instructorDoc = null;
 
-        // Fast path: exact query first.
+        // Query users collection for instructor with matching name
         const instructorQuery = await databases.listDocuments(
           databaseId,
-          instructorsCollectionId,
-          [Query.equal('name', booking.instructor)]
+          usersCollectionId,
+          [
+            Query.equal('name', booking.instructor),
+            Query.equal('role', 'instructor')
+          ]
         );
 
         if (instructorQuery.documents.length > 0) {
           instructorDoc = instructorQuery.documents[0];
         } else {
-          // Fallback: normalize values to tolerate case/spacing differences.
+          // Fallback: normalize values to tolerate case/spacing differences
           const allInstructors = await databases.listDocuments(
             databaseId,
-            instructorsCollectionId
+            usersCollectionId,
+            [Query.equal('role', 'instructor')]
           );
           instructorDoc = allInstructors.documents.find(
             (doc) => normalize(doc.name) === normalize(booking.instructor)
@@ -241,12 +245,18 @@ function SMSMonitoring() {
         }
 
         if (instructorDoc) {
-          await databases.updateDocument(
-            databaseId,
-            instructorsCollectionId,
-            instructorDoc.$id,
-            { availability: 'available' }
-          );
+          // Only update availability if the field exists in the document schema
+          try {
+            await databases.updateDocument(
+              databaseId,
+              usersCollectionId,
+              instructorDoc.$id,
+              { availability: 'available' }
+            );
+          } catch (updateErr) {
+            // Silently ignore if availability field doesn't exist
+            console.warn('Could not update instructor availability:', updateErr);
+          }
         }
       } catch (error) {
         console.error('Error releasing instructor availability:', error);

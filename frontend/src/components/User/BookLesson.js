@@ -501,6 +501,7 @@ function BookLesson() {
       }
 
       try {
+        // Update instructor availability (optional - won't fail booking if this fails)
         const instructorQuery = await databases.listDocuments(
           databaseId,
           usersCollectionId,
@@ -512,23 +513,28 @@ function BookLesson() {
 
         if (instructorQuery.documents.length > 0) {
           const instructorDoc = instructorQuery.documents[0];
-          if (selectedLesson === 'practical') {
-            await databases.updateDocument(
-              databaseId,
-              usersCollectionId,
-              instructorDoc.$id,
-              { availability: 'booked' }
-            );
-          } else {
-            const shouldMarkUnavailable = activeTheoryBookings + 1 >= theoryCapacity;
-            if (shouldMarkUnavailable) {
+          try {
+            if (selectedLesson === 'practical') {
               await databases.updateDocument(
                 databaseId,
                 usersCollectionId,
                 instructorDoc.$id,
                 { availability: 'booked' }
               );
+            } else {
+              const shouldMarkUnavailable = activeTheoryBookings + 1 >= theoryCapacity;
+              if (shouldMarkUnavailable) {
+                await databases.updateDocument(
+                  databaseId,
+                  usersCollectionId,
+                  instructorDoc.$id,
+                  { availability: 'booked' }
+                );
+              }
             }
+          } catch (updateErr) {
+            // Log but don't fail booking if availability update fails
+            console.warn('Could not update instructor availability:', updateErr);
           }
         }
       } catch (err) {

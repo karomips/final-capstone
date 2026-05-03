@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const nodemailer = require('nodemailer');
 
 // Load environment variables FIRST before requiring other modules
 dotenv.config();
@@ -51,60 +50,34 @@ const maskEmail = (email) => {
   return `${visible}${'*'.repeat(Math.max(1, local.length - visible.length))}@${domain}`;
 };
 
-// Create email transporter using Brevo SMTP relay
-const createBrevoTransporter = () => {
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = String(process.env.SMTP_PASS || '').replace(/\s+/g, ''); // Remove spaces from API key
-  const smtpHost = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
-  const smtpPort = Number(process.env.SMTP_PORT) || 465; // Try 465 first (more stable than 587)
-
-  if (!smtpUser || !smtpPass) {
-    console.error('SMTP credentials not configured');
-    return null;
-  }
-
-  console.log(`Creating SMTP transporter: ${smtpHost}:${smtpPort}`);
-
-  return nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465, // Use SSL for 465, STARTTLS for 587
-    auth: {
-      user: smtpUser,
-      pass: smtpPass
-    },
-    tls: {
-      rejectUnauthorized: false // Allow self-signed certificates
-    },
-    connectionTimeout: 30000,
-    socketTimeout: 60000,
-    greetingTimeout: 30000,
-    logger: true,
-    debug: true
-  });
-};
-
-// Send verification code email using Brevo SMTP
+// Send verification code email using Brevo REST API
 const sendVerificationCodeEmail = async (email, code) => {
-  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
+  const apiKey = process.env.BREVO_EMAIL_API_KEY; // Brevo Email API key
+  const fromEmail = process.env.SMTP_FROM_EMAIL;
   const appName = process.env.APP_NAME || 'Easy Drive Driving School';
+
+  if (!apiKey) {
+    throw new Error('BREVO_EMAIL_API_KEY is not configured.');
+  }
 
   if (!fromEmail) {
     throw new Error('SMTP_FROM_EMAIL is not configured.');
   }
 
-  const transporter = createBrevoTransporter();
-  if (!transporter) {
-    throw new Error('SMTP is not configured properly.');
-  }
+  console.log(`Sending verification code to ${email} via Brevo API...`);
 
-  console.log(`Sending verification code to ${email} via Brevo SMTP...`);
-
-  const mailOptions = {
-    from: `"${appName}" <${fromEmail}>`,
-    to: email,
+  const emailData = {
+    sender: {
+      email: fromEmail,
+      name: appName
+    },
+    to: [
+      {
+        email: email
+      }
+    ],
     subject: `${appName} Verification Code`,
-    html: `
+    htmlContent: `
       <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
         <h2 style="margin-bottom: 8px;">Email Verification</h2>
         <p>Use this verification code to complete your registration:</p>
@@ -112,17 +85,30 @@ const sendVerificationCodeEmail = async (email, code) => {
         <p>This code expires in <strong>10 minutes</strong>.</p>
         <p>If you did not request this, you can ignore this email.</p>
       </div>
-    `,
-    text: `Your verification code is ${code}. This code will expire in 10 minutes.`
+    `
   };
 
   try {
-    console.log('Sending email via SMTP...');
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✓ Email sent successfully:', info.messageId);
-    return info;
+    console.log('Sending email via Brevo API...');
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emailData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Brevo API error: ${JSON.stringify(errorData)}`);
+    }
+
+    const result = await response.json();
+    console.log('✓ Email sent successfully via Brevo API:', result.messageId);
+    return result;
   } catch (error) {
-    console.error('SMTP error:', error);
+    console.error('Brevo API error:', error);
     throw error;
   }
 };

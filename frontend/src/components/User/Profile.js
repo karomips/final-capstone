@@ -302,7 +302,6 @@ function Profile() {
 
   return (
     <div className="user-main-content user-main-content--fit">
-        <h1 className="user-page-title">My Profile</h1>
 
         {error && (
           <div className="alert alert-error">
@@ -345,7 +344,7 @@ function Profile() {
           {!editMode ? (
             // View Mode
             <div className="profile-view">
-              <div className="profile-header">
+              <div className="profile-hero">
                 <div className="profile-avatar-large">
                   {userData?.resolvedProfileImageUrl ? (
                     <img src={userData.resolvedProfileImageUrl} alt="Profile" />

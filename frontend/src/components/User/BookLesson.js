@@ -57,6 +57,17 @@ function BookLesson() {
   const [checkingApproval, setCheckingApproval] = useState(true);
   const [instructors, setInstructors] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const [showPackages, setShowPackages] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState('starter');
+  // Package-level selection states (used inside package panel)
+  const [packageTheoryInstructor, setPackageTheoryInstructor] = useState('');
+  const [packagePracticalTransmission, setPackagePracticalTransmission] = useState('');
+  const [packagePracticalInstructor, setPackagePracticalInstructor] = useState('');
+  const [packagePracticalVehicle, setPackagePracticalVehicle] = useState('');
+  const [packageTheoryInstructors, setPackageTheoryInstructors] = useState([]);
+  const [packagePracticalInstructors, setPackagePracticalInstructors] = useState([]);
+  const [packageVehicles, setPackageVehicles] = useState([]);
+  const [appliedPackage, setAppliedPackage] = useState(null);
   const [debounce] = useState(() => createDebounce());
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
@@ -93,10 +104,10 @@ function BookLesson() {
 
   const timeOptions = useMemo(() => {
     const options = [];
-    const startMinutes = 7 * 60;
-    const endMinutes = 19 * 60;
+    const startMinutes = 8 * 60;
+    const endMinutes = 18 * 60;
 
-    for (let totalMinutes = startMinutes; totalMinutes <= endMinutes; totalMinutes += 10) {
+    for (let totalMinutes = startMinutes; totalMinutes <= endMinutes; totalMinutes += 120) {
       const hour = Math.floor(totalMinutes / 60);
       const minute = totalMinutes % 60;
       const value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
@@ -261,6 +272,50 @@ function BookLesson() {
     }
   }, [currentUser]);
 
+  // Fetch instructors/vehicles for package selection panel
+  const fetchPackageResources = useCallback(async (transmissionFilter = '') => {
+    try {
+      const response = await databases.listDocuments(
+        databaseId,
+        instructorsCollectionId,
+        [Query.equal('availability', 'available')]
+      );
+
+      const docs = response.documents || [];
+
+      const theoryList = docs.filter(inst => !inst.lessonType || inst.lessonType === 'theory' || inst.lessonType === 'both');
+      let practicalList = docs.filter(inst => !inst.lessonType || inst.lessonType === 'practical' || inst.lessonType === 'both');
+
+      if (transmissionFilter) {
+        practicalList = practicalList.filter(inst => {
+          const instTrans = inst.motorcycleTransmission || inst.transmission;
+          return instTrans === transmissionFilter;
+        });
+      }
+
+      setPackageTheoryInstructors(theoryList);
+      setPackagePracticalInstructors(practicalList);
+
+      // fetch vehicles
+      const vehResp = await databases.listDocuments(
+        databaseId,
+        vehiclesCollectionId,
+        [Query.equal('status', 'available')]
+      );
+
+      let vehDocs = vehResp.documents || [];
+      if (transmissionFilter) {
+        vehDocs = vehDocs.filter(v => (v.motorcycleTransmission || v.transmission) === transmissionFilter);
+      }
+      setPackageVehicles(vehDocs);
+    } catch (err) {
+      console.error('Error fetching package resources:', err);
+      setPackageTheoryInstructors([]);
+      setPackagePracticalInstructors([]);
+      setPackageVehicles([]);
+    }
+  }, []);
+
   const fetchInstructors = useCallback(async () => {
     try {
       const response = await databases.listDocuments(
@@ -360,6 +415,8 @@ function BookLesson() {
     debounce(() => {
       fetchInstructors();
       fetchVehicles();
+      // also prepare package resources when packages panel may be opened
+      fetchPackageResources(packagePracticalTransmission);
     }, 300);
   }, [currentUser]);
 
@@ -371,6 +428,12 @@ function BookLesson() {
       fetchInstructors();
     }, 300);
   }, [selectedLesson, currentUser, transmission]);
+
+  useEffect(() => {
+    if (!showPackages) return;
+    // whenever package panel opens or transmission filter changes, refresh package resources
+    fetchPackageResources(packagePracticalTransmission);
+  }, [showPackages, packagePracticalTransmission, fetchPackageResources]);
 
   // ✅ Window focus handler
   useEffect(() => {
@@ -629,7 +692,7 @@ function BookLesson() {
           </div>
         </div>
 
-        <div className="booking-layout">
+        <div className={`booking-layout ${showPackages ? 'packages-open' : ''}`}>
           <div className="booking-panel booking-panel--lesson">
             <div className="promo-card">
               <div>
@@ -637,45 +700,249 @@ function BookLesson() {
                 <h3>Book 5 lessons as a bundle</h3>
                 <p>Reserve five sessions and enjoy a special discount on your driving lessons.</p>
               </div>
-              <button type="button" className="promo-btn">View packages</button>
+              <button
+                type="button"
+                className="promo-btn"
+                onClick={() => setShowPackages((prev) => !prev)}
+                aria-expanded={showPackages}
+                aria-controls="package-offers-panel"
+              >
+                {showPackages ? 'Hide packages' : 'View packages'}
+              </button>
             </div>
+            {showPackages && (
+              <div className="package-offers-panel" id="package-offers-panel">
+                <div className="package-offers-header">
+                  <div>
+                    <span className="package-offers-label">Package options</span>
+                    <h3>Choose a bundle that fits your driving goals</h3>
+                    <p>These packages are designed for learners who want a structured driving-school plan.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="package-offers-close"
+                    onClick={() => setShowPackages(false)}
+                  >
+                    Close
+                  </button>
+                </div>
 
-            <div className="lesson-type-cards">
-              <div
-                className={`lesson-card ${selectedLesson === 'practical' ? 'active' : ''}`}
-                onClick={() => {
-                  setSelectedLesson('practical');
-                  setInstructor('');
-                  setSelectedDates([]);
-                  setTransmission('');
-                  setVehicle('');
-                }}
-              >
-                <div className="lesson-icon">🚗</div>
-                <div>
-                  <h3>Behind-the-Wheel Lesson</h3>
-                  <p>2-hour on-road instruction. Vehicle options available.</p>
+                <div className="package-cards">
+                  <div
+                    className={`package-card package-card--featured package-card--interactive ${selectedPackage === 'starter' ? 'package-card--selected' : 'package-card--muted'}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedPackage('starter')}
+                    onKeyDown={(e) => e.key === 'Enter' && setSelectedPackage('starter')}
+                  >
+                    <div className="package-card-header">
+                      <span className="package-badge">Popular</span>
+                      <span className="package-price">₱18,000</span>
+                    </div>
+                    <h3>Starter Driver Package</h3>
+                    <p>Balanced for new students who want practical and classroom support.</p>
+                  </div>
+
+                  <div
+                    className={`package-card package-card--interactive ${selectedPackage === 'license' ? 'package-card--selected' : 'package-card--muted'}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedPackage('license')}
+                    onKeyDown={(e) => e.key === 'Enter' && setSelectedPackage('license')}
+                  >
+                    <div className="package-card-header">
+                      <span className="package-badge package-badge--muted">Best value</span>
+                      <span className="package-price">₱28,000</span>
+                    </div>
+                    <h3>License Prep Package</h3>
+                    <p>Complete driving-school prep for your assessment and road test.</p>
+                  </div>
                 </div>
-                <div className="lesson-price">₱4,000 / session</div>
-              </div>
-              <div
-                className={`lesson-card ${selectedLesson === 'theory' ? 'active' : ''}`}
-                onClick={() => {
-                  setSelectedLesson('theory');
-                  setInstructor('');
-                  setVehicle('');
-                  setSelectedDates([]);
-                  setTransmission('');
-                }}
-              >
-                <div className="lesson-icon">📖</div>
-                <div>
-                  <h3>Theory Class</h3>
-                  <p>4-hour classroom instruction. All materials provided.</p>
+
+                <div className="package-details-panel">
+                  <div className="package-details-header">
+                    <span className="package-details-label">Selected package</span>
+                    <h4>
+                      {selectedPackage === 'starter' ? 'Starter Driver Package' : 'License Prep Package'}
+                    </h4>
+                    <p>
+                      {selectedPackage === 'starter'
+                        ? 'Best for beginners who want a balanced start with both practical and classroom support.'
+                        : 'Best for learners preparing for the licensing process with a stronger theory-to-road-test flow.'}
+                    </p>
+                  </div>
+
+                  <div className="package-details-body">
+                      <div className="package-detail-card">
+                      <h4>{selectedPackage === 'starter' ? 'Starter Driver Package' : 'License Prep Package'}</h4>
+                      <p>
+                        {selectedPackage === 'starter'
+                          ? 'Best for beginners who need a steady mix of practical driving and classroom learning.'
+                          : 'Best for learners who want a complete package focused on passing the assessment and road test.'}
+                      </p>
+                      <ul>
+                        {selectedPackage === 'starter' ? (
+                          <>
+                            <li>3 practical lessons</li>
+                            <li>2 theory classes</li>
+                            <li>Priority scheduling support</li>
+                            <li>Free booking assistance</li>
+                          </>
+                        ) : (
+                          <>
+                            <li>5 practical lessons</li>
+                            <li>3 theory classes</li>
+                            <li>Mock driving evaluation</li>
+                            <li>Testing day checklist</li>
+                          </>
+                        )}
+                      </ul>
+                    </div>
+                    <div className="package-selection-grid">
+                      <div className="package-detail-card">
+                        <h4>Theory Class</h4>
+                        <p>Choose instructor for theory sessions.</p>
+                        <div className="form-group">
+                          <label>Instructor</label>
+                          <select
+                            value={packageTheoryInstructor}
+                            onChange={(e) => setPackageTheoryInstructor(e.target.value)}
+                            className="booking-select"
+                          >
+                            <option value="">Select instructor</option>
+                            {packageTheoryInstructors.length === 0 ? (
+                              <option disabled>No available instructors</option>
+                            ) : (
+                              packageTheoryInstructors.map((inst) => (
+                                <option key={inst.$id} value={inst.name}>{inst.name} {inst.certifications ? ` - ${inst.certifications}` : ''}</option>
+                              ))
+                            )}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="package-detail-card">
+                        <h4>Behind-the-Wheel Lesson</h4>
+                        <p>Choose transmission, instructor and vehicle for practical sessions.</p>
+
+                        <div className="form-group">
+                          <label>Transmission type</label>
+                          <select
+                            value={packagePracticalTransmission}
+                            onChange={(e) => {
+                              setPackagePracticalTransmission(e.target.value);
+                              setPackagePracticalInstructor('');
+                              setPackagePracticalVehicle('');
+                            }}
+                            className="booking-select"
+                          >
+                            <option value="">Select transmission</option>
+                            <option value="MT">Manual Transmission</option>
+                            <option value="AT">Automatic Transmission</option>
+                          </select>
+                        </div>
+
+                        <div className="form-group">
+                          <label>Select Instructor</label>
+                          <select
+                            value={packagePracticalInstructor}
+                            onChange={(e) => setPackagePracticalInstructor(e.target.value)}
+                            className="booking-select"
+                            disabled={!packagePracticalTransmission}
+                          >
+                            <option value="">{!packagePracticalTransmission ? 'Select transmission type first' : 'Select Instructor'}</option>
+                            {packagePracticalInstructors.length === 0 ? (
+                              <option disabled>No available instructors</option>
+                            ) : (
+                              packagePracticalInstructors.map((inst) => (
+                                <option key={inst.$id} value={inst.name}>{inst.name} {inst.certifications ? ` - ${inst.certifications}` : ''}</option>
+                              ))
+                            )}
+                          </select>
+                        </div>
+
+                        <div className="form-group">
+                          <label>Vehicle model</label>
+                          <select
+                            value={packagePracticalVehicle}
+                            onChange={(e) => setPackagePracticalVehicle(e.target.value)}
+                            className="booking-select"
+                            disabled={!packagePracticalTransmission}
+                          >
+                            <option value="">{!packagePracticalTransmission ? 'Select transmission type first' : 'Select Vehicle Model'}</option>
+                            {packageVehicles.length === 0 ? (
+                              <option disabled>No available vehicles</option>
+                            ) : (
+                              packageVehicles.map((veh) => (
+                                <option key={veh.$id} value={`${veh.model} (${veh.transmission})`}>{veh.model} ({veh.transmission}) - {veh.plateNumber}</option>
+                              ))
+                            )}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 16 }}>
+                      <button
+                        type="button"
+                        className="lesson-action-btn"
+                        onClick={() => {
+                          // Apply package selections to booking context and close panel
+                          // Practical lesson is the main booking target for package
+                          setTransmission(packagePracticalTransmission || transmission);
+                          setInstructor(packagePracticalInstructor || packageTheoryInstructor || instructor);
+                          setVehicle(packagePracticalVehicle || vehicle);
+                          setSelectedLesson('practical');
+                          setAppliedPackage(selectedPackage);
+                          setShowPackages(false);
+                        }}
+                      >
+                        Select package
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="lesson-price lesson-price--secondary">₱1,000 / session</div>
               </div>
-            </div>
+            )}
+
+            {!showPackages && (
+              <div className="lesson-type-cards">
+                <div
+                  className={`lesson-card ${selectedLesson === 'practical' ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedLesson('practical');
+                    setInstructor('');
+                    setSelectedDates([]);
+                    setTransmission('');
+                    setVehicle('');
+                  }}
+                >
+                  <div className="lesson-icon">🚗</div>
+                  <div>
+                    <h3>Behind-the-Wheel Lesson</h3>
+                    <p>2-hour on-road instruction. Vehicle options available.</p>
+                  </div>
+                  <div className="lesson-price">₱4,000 / session</div>
+                </div>
+                <div
+                  className={`lesson-card ${selectedLesson === 'theory' ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedLesson('theory');
+                    setInstructor('');
+                    setVehicle('');
+                    setSelectedDates([]);
+                    setTransmission('');
+                  }}
+                >
+                  <div className="lesson-icon">📖</div>
+                  <div>
+                    <h3>Theory Class</h3>
+                    <p>4-hour classroom instruction. All materials provided.</p>
+                  </div>
+                  <div className="lesson-price lesson-price--secondary">₱1,000 / session</div>
+                </div>
+              </div>
+            )}
 
             <div className="lesson-detail-card">
               <h3>What’s included</h3>
@@ -688,7 +955,8 @@ function BookLesson() {
             </div>
           </div>
 
-          <div className="booking-panel booking-panel--instructor">
+          {!showPackages && (
+            <div className="booking-panel booking-panel--instructor">
             <div className="panel-header">
               <div>
                 <h2>Instructor & vehicle</h2>
@@ -787,6 +1055,7 @@ function BookLesson() {
               )}
             </div>
           </div>
+          )}
 
           <div className="booking-panel booking-panel--schedule">
             <div className="panel-header">
@@ -877,7 +1146,7 @@ function BookLesson() {
                   </option>
                 ))}
               </select>
-              <small className="time-hint">10-minute interval scheduling</small>
+              <small className="time-hint">2-hour interval scheduling from 8:00 AM to 6:00 PM</small>
             </div>
           </div>
 
@@ -891,22 +1160,35 @@ function BookLesson() {
             <div className={`summary-grid ${selectedLesson === 'theory' ? 'summary-grid--centered' : ''}`}>
               <div className="summary-card">
                 <span>Lesson type</span>
-                <strong>{selectedLesson === 'practical' ? 'Behind-the-Wheel Lesson' : 'Theory Class'}</strong>
+                <strong>
+                  {appliedPackage
+                    ? `Package: ${appliedPackage === 'starter' ? 'Starter Driver Package' : 'License Prep Package'}`
+                    : (selectedLesson === 'practical' ? 'Behind-the-Wheel Lesson' : 'Theory Class')}
+                </strong>
               </div>
+
               <div className="summary-card">
-                <span>Instructor</span>
-                <strong>{instructor || 'Not selected'}</strong>
+                <span>Instructor{appliedPackage ? 's' : ''}</span>
+                {appliedPackage ? (
+                  <div>
+                    <strong style={{ display: 'block' }}>{packagePracticalInstructor || 'Practical: Not selected'}</strong>
+                    <small style={{ display: 'block', color: '#64748b' }}>{packageTheoryInstructor ? `Theory: ${packageTheoryInstructor}` : 'Theory: Not selected'}</small>
+                  </div>
+                ) : (
+                  <strong>{instructor || 'Not selected'}</strong>
+                )}
               </div>
-              {selectedLesson === 'practical' && (
-                <div className="summary-card">
-                  <span>Vehicle</span>
-                  <strong>{vehicle || 'Not selected'}</strong>
-                </div>
-              )}
+
+              <div className="summary-card">
+                <span>Vehicle</span>
+                <strong>{appliedPackage ? (packagePracticalVehicle || 'Not selected') : (vehicle || 'Not selected')}</strong>
+              </div>
+
               <div className="summary-card">
                 <span>Date</span>
                 <strong>{formattedDateSummary}</strong>
               </div>
+
               <div className="summary-card">
                 <span>Time</span>
                 <strong>{formattedTimeSummary}</strong>

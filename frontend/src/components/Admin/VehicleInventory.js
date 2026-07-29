@@ -291,7 +291,7 @@ function VehicleInventory() {
         {/* Add Vehicle Modal */}
         {showModal && (
           <div className="modal-overlay" onClick={() => { resetVehicleForm(); setShowModal(false); }}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>{modalType === 'motorcycle' ? 'Add New Motorcycle' : 'Add New Vehicle'}</h2>
                 <button className="modal-close" onClick={() => { resetVehicleForm(); setShowModal(false); }}>×</button>

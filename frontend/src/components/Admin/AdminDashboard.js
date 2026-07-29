@@ -23,13 +23,6 @@ function AdminDashboard() {
   const [newEnrollees, setNewEnrollees] = useState(0);
   const [adminName, setAdminName] = useState('Admin');
 
-  // Debug: Log whenever bookings state changes
-  useEffect(() => {
-    console.log('=== Bookings state updated ===');
-    console.log('Bookings count:', bookings.length);
-    console.log('Bookings:', bookings);
-  }, [bookings]);
-
   useEffect(() => {
     // Load initial data on component mount
     const loadInitialData = async () => {
@@ -160,13 +153,10 @@ function AdminDashboard() {
 
   const fetchBookings = async () => {
     try {
-      console.log('Fetching bookings...');
       const response = await databases.listDocuments(
         databaseId,
         bookingsCollectionId
       );
-      
-      console.log('Fetched bookings count:', response.documents.length);
       
       // Ensure all booking fields are properly formatted
       const formattedBookings = response.documents.map(booking => ({
@@ -178,8 +168,6 @@ function AdminDashboard() {
         status: booking.status || 'pending',
         date: booking.date || ''
       }));
-      
-      console.log('Setting bookings state with', formattedBookings.length, 'bookings');
       setBookings(formattedBookings);
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -198,19 +186,10 @@ function AdminDashboard() {
     const day = String(today.getDate()).padStart(2, '0');
     const localToday = `${year}-${month}-${day}`;
     
-    console.log('Recalculating today\'s bookings...');
-    console.log('Today\'s date:', localToday);
-    console.log('Total bookings:', bookings.length);
-    console.log('All bookings:', bookings.map(b => ({ date: b.date, name: b.userName })));
-    
     const filtered = bookings.filter(booking => {
       const bookingDate = String(booking.date || '').trim();
-      const match = bookingDate === localToday;
-      console.log(`Comparing: "${bookingDate}" with "${localToday}" = ${match}`);
-      return match;
+      return bookingDate === localToday;
     });
-    
-    console.log('Today\'s bookings found:', filtered.length);
     return filtered;
   }, [bookings]);
 
@@ -231,6 +210,13 @@ function AdminDashboard() {
       .slice(0, 12);
   }, [bookings]);
 
+    const refreshOverview = () => {
+      fetchBookings();
+      loadSMSHistory();
+      fetchInstructorCount();
+      fetchEnrolleeCount();
+    };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -242,7 +228,23 @@ function AdminDashboard() {
 
   return (
     <div className="admin-main-content">
-        <h1 className="admin-page-title">Welcome back, {adminName}!</h1>
+        <div className="admin-hero">
+          <div className="admin-hero-copy">
+            <span className="admin-hero-eyebrow">Admin overview</span>
+            <h1 className="admin-page-title">Welcome back, {adminName}!</h1>
+            <p>
+              Keep lessons moving, review new enrollments, and manage instructor and vehicle operations from one calm workspace.
+            </p>
+          </div>
+          <div className="admin-hero-actions">
+            <button className="admin-secondary-btn" onClick={refreshOverview} title="Refresh dashboard data">
+              Refresh data
+            </button>
+            <button className="admin-primary-btn" onClick={() => navigate('/admin/students')}>
+              Review students
+            </button>
+          </div>
+        </div>
 
         {/* Stats Cards */}
         <div className="dashboard-stats">
@@ -270,27 +272,11 @@ function AdminDashboard() {
         </div>
         <div className="dashboard-bottom">
           <div className="schedule-section">
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
+            <div className="section-toolbar">
               <h2 className="section-title" style={{margin: 0}}>TODAY'S SCHEDULE ({new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '/')})</h2>
               <button 
-                onClick={() => {
-                  fetchBookings();
-                  fetchInstructorCount();
-                }} 
-                style={{
-                  padding: '8px 16px',
-                  background: '#111f33',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontFamily: 'Poppins',
-                  fontSize: '15px',
-                  fontWeight: '500',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
+                className="admin-secondary-btn admin-secondary-btn--compact"
+                onClick={refreshOverview}
                 title="Refresh bookings"
               >
                  Refresh
@@ -402,7 +388,7 @@ function AdminDashboard() {
           </div>
 
           <div className="sms-section">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div className="section-toolbar">
               <h2 className="section-title" style={{ margin: 0 }}>RECENT SMS ACTIVITY</h2>
               <button
                 className="clear-sms-btn"

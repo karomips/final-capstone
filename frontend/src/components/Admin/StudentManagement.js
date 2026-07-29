@@ -184,26 +184,10 @@ function StudentManagement() {
 
   return (
     <div className="admin-main-content admin-main-content--fit">
-        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
+        <div className="page-header">
           <h1 className="admin-page-title">Student Management</h1>
-          <button 
-            onClick={fetchStudents} 
-            style={{
-              padding: '10px 20px',
-              background: '#111f33',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontFamily: 'Poppins',
-              fontSize: '14px',
-              fontWeight: '500',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-             Refresh List
+          <button onClick={fetchStudents} className="admin-secondary-btn admin-secondary-btn--compact">
+            Refresh List
           </button>
         </div>
 

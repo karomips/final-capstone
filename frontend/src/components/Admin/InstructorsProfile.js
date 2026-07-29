@@ -17,6 +17,7 @@ function InstructorsProfile() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
+  const [editingInstructorId, setEditingInstructorId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -229,13 +230,14 @@ function InstructorsProfile() {
     setImageFile(null);
     setImagePreview('');
     setError('');
+    setEditingInstructorId(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.name.trim() || !formData.certifications.trim() || !formData.email.trim() || !formData.password.trim()) {
+    if (!formData.name.trim() || !formData.certifications.trim() || !formData.email.trim() || (!editingInstructorId && !formData.password.trim())) {
       setError('Please fill in all required fields (Name, Email, Password, Certifications)');
       return;
     }
@@ -254,6 +256,61 @@ function InstructorsProfile() {
     }
 
     try {
+      // If editing an existing instructor
+      if (editingInstructorId) {
+        // Update instructor record
+        const updateData = {
+          name: formData.name.trim(),
+          certifications: formData.certifications.trim(),
+          availability: formData.availability,
+          lessonType: formData.lessonType,
+          updatedAt: new Date().toISOString()
+        };
+
+        // Upload image if provided
+        if (imageFile && storageBucketId) {
+          try {
+            const uploaded = await storage.createFile(
+              storageBucketId,
+              ID.unique(),
+              imageFile
+            );
+            updateData.imageFileId = uploaded.$id;
+            updateData.imageUrl = buildStorageFileUrl(storageBucketId, uploaded.$id);
+          } catch (uploadError) {
+            console.error('Error uploading instructor image during update:', uploadError);
+          }
+        }
+
+        try {
+          await databases.updateDocument(
+            databaseId,
+            instructorsCollectionId,
+            editingInstructorId,
+            updateData
+          );
+        } catch (err) {
+          // If the instructor is an account-only entry, update the users collection instead
+          try {
+            await databases.updateDocument(
+              databaseId,
+              usersCollectionId,
+              editingInstructorId,
+              { name: formData.name.trim(), lessonType: formData.lessonType }
+            );
+          } catch (uErr) {
+            console.error('Failed to update instructor or user document:', err, uErr);
+            throw err;
+          }
+        }
+
+        // Refresh and close modal
+        await fetchInstructors();
+        resetInstructorForm();
+        setShowModal(false);
+        return;
+      }
+
       let imageUrl = '';
       let imageFileId = '';
 
@@ -363,6 +420,46 @@ function InstructorsProfile() {
     }
   };
 
+    const openEditModal = (instructor) => {
+      setEditingInstructorId(instructor.$id);
+      setFormData({
+        name: instructor.name || '',
+        email: instructor.email || '',
+        password: '',
+        certifications: instructor.certifications || '',
+        availability: instructor.availability || 'available',
+        lessonType: instructor.lessonType || 'practical'
+      });
+      setImagePreview(instructor.resolvedImageUrl || '');
+      setShowModal(true);
+    };
+
+    const deleteInstructor = async (instructor) => {
+      if (!window.confirm(`Delete instructor "${instructor.name}"? This cannot be undone.`)) return;
+      try {
+        if (instructor.isAccountOnly) {
+          // Remove user document
+          await databases.deleteDocument(databaseId, usersCollectionId, instructor.$id);
+        } else {
+          await databases.deleteDocument(databaseId, instructorsCollectionId, instructor.$id);
+          // Also try to remove linked user document if exists by email
+          try {
+            const users = await databases.listDocuments(databaseId, usersCollectionId, [Query.equal('email', instructor.email)]);
+            for (const u of users.documents) {
+              await databases.deleteDocument(databaseId, usersCollectionId, u.$id);
+            }
+          } catch (uErr) {
+            // ignore
+            console.warn('Failed to remove linked user documents:', uErr);
+          }
+        }
+        setInstructors(prev => prev.filter(i => i.$id !== instructor.$id));
+      } catch (error) {
+        console.error('Error deleting instructor:', error);
+        setError('Failed to delete instructor.');
+      }
+    };
+
 
 
   const totalPages = Math.max(1, Math.ceil(instructors.length / INSTRUCTORS_PER_PAGE));
@@ -379,9 +476,10 @@ function InstructorsProfile() {
     <div className="admin-main-content admin-main-content--fit">
         <div className="page-header">
           <h1 className="admin-page-title">Instructors' Profile</h1>
-          <button className="add-btn" onClick={() => setShowModal(true)}>
+          <button className="add-btn" onClick={() => { resetInstructorForm(); setShowModal(true); }}>
             + Add Instructor
           </button>
+          
         </div>
 
         {loading ? (
@@ -478,6 +576,12 @@ function InstructorsProfile() {
                         )}
                       </div>
                     )}
+                    <div className="card-actions">
+                      <div className="action-buttons">
+                        <button className="action-btn edit-btn" onClick={() => openEditModal(instructor)}>Edit</button>
+                        <button className="action-btn delete-btn" onClick={() => deleteInstructor(instructor)}>Delete</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -502,9 +606,9 @@ function InstructorsProfile() {
         {/* Add Instructor Modal */}
         {showModal && (
           <div className="modal-overlay" onClick={() => { resetInstructorForm(); setShowModal(false); }}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>Add New Instructor</h2>
+                <h2>{editingInstructorId ? 'Edit Instructor' : 'Add New Instructor'}</h2>
                 <button className="modal-close" onClick={() => { resetInstructorForm(); setShowModal(false); }}>×</button>
               </div>
               
@@ -549,7 +653,7 @@ function InstructorsProfile() {
                   <small style={{color: '#6b7280', marginTop: '4px', display: 'block'}}>Share this password with the instructor so they can login</small>
                 </div>
 
-                <div className="form-group">
+                <div className="form-group full">
                   <label>Certifications *</label>
                   <textarea
                     name="certifications"
@@ -588,7 +692,7 @@ function InstructorsProfile() {
                   <small>Note: Instructors are automatically set to "Booked" when a user books them</small>
                 </div>
 
-                <div className="form-group">
+                <div className="form-group full">
                   <label>Upload Image (Optional)</label>
                   <input
                     type="file"
@@ -602,12 +706,12 @@ function InstructorsProfile() {
                   )}
                 </div>
 
-                <div className="modal-actions">
+                <div className="modal-actions full">
                   <button type="button" className="btn-cancel" onClick={() => { resetInstructorForm(); setShowModal(false); }}>
                     Cancel
                   </button>
                   <button type="submit" className="btn-submit">
-                    Add Instructor
+                    {editingInstructorId ? 'Update Instructor' : 'Add Instructor'}
                   </button>
                 </div>
               </form>
@@ -618,7 +722,7 @@ function InstructorsProfile() {
         {/* Password Display Modal */}
         {showPasswordDisplay && (
           <div className="modal-overlay" onClick={() => setShowPasswordDisplay(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{maxWidth: '500px'}}>
+            <div className="modal-content admin-info-modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>✅ Instructor Account Created</h2>
                 <button className="modal-close" onClick={() => setShowPasswordDisplay(false)}>×</button>

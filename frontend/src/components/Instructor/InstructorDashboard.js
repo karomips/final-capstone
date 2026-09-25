@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, instructorSchedulesCollectionId, instructorsCollectionId, account } from '../../appwrite/config';
 import { Query, ID } from 'appwrite';
@@ -8,6 +8,7 @@ import './InstructorPages.css';
 function InstructorDashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { theme } = useOutletContext() || {};
   const [instructorName, setInstructorName] = useState('Instructor');
   const [loading, setLoading] = useState(true);
@@ -47,7 +48,12 @@ function InstructorDashboard() {
   const [showSaveSettingsModal, setShowSaveSettingsModal] = useState(false);
 
   // Tab State
-  const [activeTab, setActiveTab] = useState('schedule');
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'schedule');
+
+  useEffect(() => {
+    const requestedTab = searchParams.get('tab');
+    setActiveTab(requestedTab || 'schedule');
+  }, [searchParams]);
 
   useEffect(() => {
     if (currentUser) {
@@ -362,46 +368,6 @@ function InstructorDashboard() {
             <div className="stat-number">{cancelledNotifications.length}</div>
           </div>
         </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="instructor-tabs">
-        <button
-          className={`tab-button ${activeTab === 'schedule' ? 'active' : ''}`}
-          onClick={() => setActiveTab('schedule')}
-        >
-          My Schedule
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'hours' ? 'active' : ''}`}
-          onClick={() => setActiveTab('hours')}
-        >
-          Working Hours
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'breaks' ? 'active' : ''}`}
-          onClick={() => setActiveTab('breaks')}
-        >
-          Breaks
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'leaves' ? 'active' : ''}`}
-          onClick={() => setActiveTab('leaves')}
-        >
-          Leaves
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'notifications' ? 'active' : ''}`}
-          onClick={() => setActiveTab('notifications')}
-        >
-          Slot Alerts
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('settings')}
-        >
-          Settings
-        </button>
       </div>
 
       {/* Tab Content */}

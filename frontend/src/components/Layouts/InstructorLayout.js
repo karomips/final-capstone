@@ -5,6 +5,10 @@ import Sidebar from '../Shared/Sidebar';
 import '../Instructor/InstructorPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 import DashboardIcon from '../../assets/icons/dashboard-white.png';
+import CalendarIcon from '../../assets/icons/calendar-white.png';
+import LessonsIcon from '../../assets/icons/lessons-white.png';
+import ProfileIcon from '../../assets/icons/profile-white.png';
+import SMSIcon from '../../assets/icons/sms-icon.png';
 
 function InstructorLayout() {
   const { currentUser, logout } = useAuth();
@@ -70,8 +74,50 @@ function InstructorLayout() {
             id: 'dashboard',
             label: 'My Dashboard',
             icon: DashboardIcon,
-            active: window.location.pathname === '/instructor',
+            active: window.location.pathname === '/instructor' && !window.location.search,
             onClick: () => navigate('/instructor')
+          },
+          {
+            id: 'schedule',
+            label: 'My Schedule',
+            icon: CalendarIcon,
+            active: window.location.search === '?tab=schedule',
+            onClick: () => navigate('/instructor?tab=schedule')
+          },
+          {
+            id: 'hours',
+            label: 'Working Hours',
+            icon: LessonsIcon,
+            active: window.location.search === '?tab=hours',
+            onClick: () => navigate('/instructor?tab=hours')
+          },
+          {
+            id: 'breaks',
+            label: 'Breaks',
+            icon: CalendarIcon,
+            active: window.location.search === '?tab=breaks',
+            onClick: () => navigate('/instructor?tab=breaks')
+          },
+          {
+            id: 'leaves',
+            label: 'Leaves',
+            icon: CalendarIcon,
+            active: window.location.search === '?tab=leaves',
+            onClick: () => navigate('/instructor?tab=leaves')
+          },
+          {
+            id: 'notifications',
+            label: 'Slot Alerts',
+            icon: SMSIcon,
+            active: window.location.search === '?tab=notifications',
+            onClick: () => navigate('/instructor?tab=notifications')
+          },
+          {
+            id: 'settings',
+            label: 'Settings',
+            icon: ProfileIcon,
+            active: window.location.search === '?tab=settings',
+            onClick: () => navigate('/instructor?tab=settings')
           }
         ]}
         currentUser={currentUser}

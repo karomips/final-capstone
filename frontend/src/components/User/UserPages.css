@@ -57,6 +57,90 @@
   margin-bottom: 18px;
 }
 
+.user-dashboard-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  padding: 24px 26px;
+  margin-bottom: 22px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 28%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.94));
+  color: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+}
+
+.user-dashboard-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 720px;
+}
+
+.user-dashboard-hero-eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.user-dashboard-hero-title {
+  color: #ffffff;
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.user-dashboard-hero-copy p {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.9);
+  max-width: 62ch;
+  line-height: 1.65;
+}
+
+.user-dashboard-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.user-dashboard-primary-btn,
+.user-dashboard-secondary-btn {
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.user-dashboard-primary-btn {
+  border: 1px solid #2694e8;
+  background: linear-gradient(135deg, #2eb5f5, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.24);
+}
+
+.user-dashboard-secondary-btn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.user-dashboard-primary-btn:hover,
+.user-dashboard-secondary-btn:hover {
+  transform: translateY(-1px);
+}
+
 .dashboard-header-top {
   display: flex;
   justify-content: space-between;
@@ -1254,6 +1338,15 @@
 }
 
 @media (max-width: 760px) {
+  .user-dashboard-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .user-dashboard-hero-actions {
+    justify-content: flex-start;
+  }
+
   .dashboard-header-top {
     flex-direction: column;
     align-items: stretch;

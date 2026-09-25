@@ -187,14 +187,19 @@ function UserDashboard() {
 
   return (
     <div className="user-main-content user-main-content--fit">
-      <div className="dashboard-header">
-        <div className="dashboard-header-top">
-          <div>
-            <h1 className="page-title">Welcome back, {userName}!</h1>
-            <p className="dashboard-subtitle">You’re enrolled in the Practical Track. Keep it up.</p>
-          </div>
+      <div className="user-dashboard-hero">
+        <div className="user-dashboard-hero-copy">
+          <span className="user-dashboard-hero-eyebrow">Student overview</span>
+          <h1 className="user-dashboard-hero-title">Welcome back, {userName}!</h1>
+          <p>You’re enrolled in the Practical Track. Keep it up.</p>
         </div>
+        <div className="user-dashboard-hero-actions">
+          <button className="user-dashboard-secondary-btn" type="button" onClick={() => navigate('/profile')}>View profile</button>
+          <button className="user-dashboard-primary-btn" type="button" onClick={() => navigate('/book-lesson')}>Book a lesson</button>
+        </div>
+      </div>
 
+      <div className="dashboard-header">
         <div className="dashboard-overview">
           <div className="overview-card">
             <h3>Courses done</h3>

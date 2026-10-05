@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
-import { Eye, EyeOff } from "lucide-react";
+import { ArrowRight, CalendarClock, Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -105,118 +105,141 @@ function Login() {
     setLoading(false);
   };
 
+  const togglePasswordVisibility = () => {
+    const input = document.getElementById('password');
+    let saved = null;
+    if (input) {
+      saved = {
+        scroll: input.scrollLeft,
+        selStart: input.selectionStart,
+        selEnd: input.selectionEnd,
+      };
+    }
+
+    const newShow = !showPassword;
+    setShowPassword(newShow);
+
+    // fallback to type change if text-security isn't supported
+    if (input && input.style.webkitTextSecurity === undefined) {
+      input.type = newShow ? 'text' : 'password';
+    }
+
+    // restore position after DOM updates
+    setTimeout(() => {
+      if (input && saved) {
+        input.scrollLeft = saved.scroll;
+        try {
+          input.setSelectionRange(saved.selStart, saved.selEnd);
+        } catch {}
+      }
+    }, 0);
+  };
+
   return (
-    <div className="auth-container">
-      <div className="auth-split-left">
-  <div className="auth-logo-section">
-    <div className="auth-logo">
-      <img src={EasyDriveLogo} alt="Easy Drive Driving School Logo" />
-    </div>
+    <div className="auth-container login-page">
+      <div className="login-stage">
+        <div className="login-panel">
+          <aside className="login-brand">
+            <p className="login-brand-kicker">Easy Drive Driving School</p>
+            <div className="login-logo">
+              <img src={EasyDriveLogo} alt="Easy Drive Driving School Logo" />
+            </div>
+            <h2>Ready when you are.</h2>
+            <p className="login-brand-copy">
+              Book lessons, track progress, and stay connected with your instructor — all from one place.
+            </p>
+            <ul className="login-highlights">
+              <li>
+                <CalendarClock size={18} />
+                Flexible lesson scheduling
+              </li>
+              <li>
+                <ShieldCheck size={18} />
+                Licensed professional instructors
+              </li>
+            </ul>
+          </aside>
 
-    <div className="auth-tagline">
-      Drive Smart. Drive Safe.<br />
-      <span style={{ fontWeight: '600' }}>Professional Driving Education</span>
-    </div>
-  </div>
-</div>
+          <section className="login-form-wrap">
+            <div className="login-header">
+              <p className="login-eyebrow">Welcome back</p>
+              <h1>Sign in</h1>
+              <p className="login-subtitle">Use your Easy Drive account to continue.</p>
+            </div>
 
-      <div className="auth-split-right">
-        <div className="auth-card">
-          <div className="auth-header">
-            <h1>Log In</h1>
-          </div>
+            <form onSubmit={handleSubmit} className="auth-form login-form">
+              {successMessage && <div className="success-message">{successMessage}</div>}
+              {error && <div className="error-message">{error}</div>}
 
-          <form onSubmit={handleSubmit} className="auth-form">
-            {successMessage && <div className="success-message">{successMessage}</div>}
-            {error && <div className="error-message">{error}</div>}
-            
-            <div className="form-group">
-              <label htmlFor="email">Email Address</label>
-              <div className="input-with-icon">
-                <span className="input-icon"></span>
-                <input
-                  type="email"
-                  id="email"
-                  placeholder=""
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+              <div className="form-group">
+                <label htmlFor="email">Email Address</label>
+                <div className="input-with-icon login-input">
+                  <span className="login-input-icon" aria-hidden="true">
+                    <Mail size={18} />
+                  </span>
+                  <input
+                    type="email"
+                    id="email"
+                    placeholder="you@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="input-with-icon">
-                <span className="input-icon"></span>
-                <input
-                  type="text" /* remain text for stable layout */
-                  className={showPassword ? '' : 'password-hidden'}
-                  id="password"
-                  placeholder=""
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => {
-                    const input = document.getElementById('password');
-                    let saved = null;
-                    if (input) {
-                      saved = {
-                        scroll: input.scrollLeft,
-                        selStart: input.selectionStart,
-                        selEnd: input.selectionEnd,
-                      };
-                    }
-
-                    const newShow = !showPassword;
-                    setShowPassword(newShow);
-
-                    // fallback to type change if text-security isn't supported
-                    if (input && input.style.webkitTextSecurity === undefined) {
-                      input.type = newShow ? 'text' : 'password';
-                    }
-
-                    // restore position after DOM updates
-                    setTimeout(() => {
-                      if (input && saved) {
-                        input.scrollLeft = saved.scroll;
-                        try {
-                          input.setSelectionRange(saved.selStart, saved.selEnd);
-                        } catch {}
-                      }
-                    }, 0);
-                  }}
-                  onMouseDown={(e) => e.preventDefault()}
-                >
-                  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                </button>
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <div className="input-with-icon login-input">
+                  <span className="login-input-icon" aria-hidden="true">
+                    <Lock size={18} />
+                  </span>
+                  <input
+                    type="text" /* remain text for stable layout */
+                    className={showPassword ? '' : 'password-hidden'}
+                    id="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={togglePasswordVisibility}
+                    onMouseDown={(e) => e.preventDefault()}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="remember-me">
-              <input
-                type="checkbox"
-                id="remember"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <label htmlFor="remember">Remember me</label>
-            </div>
+              <div className="remember-me login-remember">
+                <input
+                  type="checkbox"
+                  id="remember"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <label htmlFor="remember">Keep me signed in</label>
+              </div>
 
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Signing In...' : 'Log In'}
-            </button>
+              <button type="submit" className="btn-primary login-submit" disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign in'}
+                {!loading && <ArrowRight size={18} />}
+              </button>
 
-            <div className="auth-footer">
-              <Link to="/signup" onClick={(e) => handleAuthPageSwitch(e, '/signup')}>
-                Register →
-              </Link>
-            </div>
-          </form>
+              <div className="auth-footer login-footer">
+                <span>New student?</span>
+                <Link to="/signup" onClick={(e) => handleAuthPageSwitch(e, '/signup')}>
+                  Create an account
+                </Link>
+              </div>
+            </form>
+          </section>
         </div>
       </div>
     </div>

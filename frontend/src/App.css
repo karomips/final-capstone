@@ -14,5 +14,134 @@
 }
 
 .App.app-shell-gradient {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #eef3f9;
+}
+
+/* Shared application palette: the login screen's navy becomes the product language. */
+:root {
+  --app-navy-950: #07162e;
+  --app-navy-900: #0b2545;
+  --app-navy-800: #0d2b52;
+  --app-navy-700: #123f73;
+  --app-blue-600: #164a85;
+  --app-blue-100: #dbe8f7;
+  --app-page: #eef3f9;
+  --app-surface: #ffffff;
+  --app-border: #d6e0ec;
+  --app-text: #0b2545;
+  --app-muted: #52657c;
+  --login-background: #16587b;
+  --login-container: #84b3ce;
+}
+
+.user-page-container,
+.admin-page-container,
+.instructor-page-container,
+.user-main-content,
+.admin-main-content,
+.instructor-main-content {
+  background: var(--app-page) !important;
+  color: var(--app-text);
+}
+
+.app-sidebar {
+  background: var(--login-background) !important;
+  border-right-color: rgba(191, 219, 254, 0.2) !important;
+}
+
+.app-sidebar::before {
+  background: transparent !important;
+}
+
+.app-nav-btn.active,
+.app-nav-btn:hover {
+  background: var(--login-container) !important;
+  border-color: rgba(191, 219, 254, 0.26) !important;
+}
+
+.admin-hero,
+.user-dashboard-hero {
+  background: var(--login-container) !important;
+  color: #000000 !important;
+}
+
+.admin-hero .admin-page-title,
+.admin-hero-copy p,
+.user-dashboard-hero-title,
+.user-dashboard-hero-copy p {
+  color: #000000 !important;
+}
+
+.instructor-main-content > .instructor-page-title {
+  margin: -6px 0 24px;
+  padding: 24px 26px;
+  border-radius: 24px;
+  background: var(--login-container) !important;
+  color: #000000 !important;
+}
+
+.stat-card,
+.schedule-section,
+.sms-section,
+.instructor-card,
+.overview-card,
+.profile-card,
+.book-lesson-card,
+.lesson-card,
+.user-card {
+  background: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
+}
+
+.admin-page-title,
+.instructor-page-title,
+.page-title,
+.section-title,
+.stat-number,
+.overview-value {
+  color: var(--app-text) !important;
+}
+
+.stat-content h3,
+.dashboard-subtitle,
+.overview-card h3,
+.overview-meta,
+.login-footer,
+.table-empty {
+  color: var(--app-muted) !important;
+}
+
+.admin-primary-btn,
+.user-dashboard-primary-btn,
+.confirm-booking-btn,
+.submit-btn,
+.btn-submit,
+.save-button,
+.add-button,
+.add-btn,
+.approve-btn {
+  background: var(--login-background) !important;
+  border-color: var(--app-blue-600) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 22px rgba(11, 37, 69, 0.2) !important;
+}
+
+.admin-secondary-btn,
+.user-dashboard-secondary-btn,
+.cancel-btn,
+.btn-cancel {
+  border-color: var(--app-border) !important;
+  color: var(--app-navy-900) !important;
+  background: #f8fbff !important;
+}
+
+.tab-button.active,
+.tab-button:hover,
+.time-cell,
+.login-footer a {
+  color: var(--app-blue-600) !important;
+}
+
+.tab-button.active {
+  border-bottom-color: var(--app-blue-600) !important;
 }

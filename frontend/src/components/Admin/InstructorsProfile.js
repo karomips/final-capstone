@@ -24,7 +24,8 @@ function InstructorsProfile() {
     password: '',
     certifications: '',
     availability: 'available',
-    lessonType: 'practical'
+    lessonType: 'practical',
+    transmission: 'MT'
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -181,6 +182,17 @@ function InstructorsProfile() {
   useEffect(() => {
     fetchInstructors();
     fetchInstructorSchedules();
+
+    const refreshSchedules = () => {
+      if (!document.hidden) fetchInstructorSchedules();
+    };
+    const interval = setInterval(refreshSchedules, 30000);
+    document.addEventListener('visibilitychange', refreshSchedules);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', refreshSchedules);
+    };
   }, [fetchInstructors, fetchInstructorSchedules]);
 
   useEffect(() => {
@@ -225,7 +237,8 @@ function InstructorsProfile() {
       password: '',
       certifications: '',
       availability: 'available',
-      lessonType: 'practical'
+      lessonType: 'practical',
+      transmission: 'MT'
     });
     setImageFile(null);
     setImagePreview('');
@@ -237,8 +250,8 @@ function InstructorsProfile() {
     e.preventDefault();
     setError('');
 
-    if (!formData.name.trim() || !formData.certifications.trim() || !formData.email.trim() || (!editingInstructorId && !formData.password.trim())) {
-      setError('Please fill in all required fields (Name, Email, Password, Certifications)');
+    if (!formData.name.trim() || !formData.email.trim() || (!editingInstructorId && !formData.password.trim())) {
+      setError('Please fill in all required fields (Name, Email, Password)');
       return;
     }
 
@@ -261,9 +274,9 @@ function InstructorsProfile() {
         // Update instructor record
         const updateData = {
           name: formData.name.trim(),
-          certifications: formData.certifications.trim(),
           availability: formData.availability,
           lessonType: formData.lessonType,
+          transmission: formData.transmission,
           updatedAt: new Date().toISOString()
         };
 
@@ -331,27 +344,36 @@ function InstructorsProfile() {
         setError('Image upload is disabled: storage bucket is not configured.');
       }
 
-      // Create Appwrite Auth account for instructor
-      const authUserId = ID.unique();
-      try {
-        await account.create(
-          authUserId,
-          formData.email.trim(),
-          formData.password.trim(),
-          formData.name.trim()
-        );
-        console.log('Instructor auth account created:', formData.email);
-      } catch (authError) {
-        console.error('Error creating auth account:', authError);
-        if (authError.code === 409) {
-          setError('Email already exists. Please use a different email.');
-          return;
+      // Reuse an account created by a previous partial save, if present.
+      const existingUsers = await databases.listDocuments(
+        databaseId,
+        usersCollectionId,
+        [Query.equal('email', formData.email.trim())]
+      );
+      let authUserId = existingUsers.documents[0]?.$id;
+
+      if (!authUserId) {
+        authUserId = ID.unique();
+        try {
+          await account.create(
+            authUserId,
+            formData.email.trim(),
+            formData.password.trim(),
+            formData.name.trim()
+          );
+          console.log('Instructor auth account created:', formData.email);
+        } catch (authError) {
+          console.error('Error creating auth account:', authError);
+          if (authError.code === 409) {
+            setError('This email already belongs to an account. Remove the incomplete instructor account or use another email.');
+            return;
+          }
+          throw new Error('Failed to create instructor auth account: ' + authError.message);
         }
-        throw new Error('Failed to create instructor auth account: ' + authError.message);
       }
 
       // Create user document
-      try {
+      if (!existingUsers.documents.length) {
         await databases.createDocument(
           databaseId,
           usersCollectionId,
@@ -365,9 +387,6 @@ function InstructorsProfile() {
           }
         );
         console.log('Instructor user document created');
-      } catch (userError) {
-        console.error('Error creating user document:', userError);
-        throw new Error('Failed to create instructor user document: ' + userError.message);
       }
 
       // Create instructor record
@@ -378,9 +397,10 @@ function InstructorsProfile() {
         {
           name: formData.name.trim(),
           email: formData.email.trim(),
-          certifications: formData.certifications.trim(),
+          certifications: formData.transmission === 'AT' ? 'Automatic Transmission' : 'Manual Transmission',
           availability: formData.availability,
           lessonType: formData.lessonType,
+          transmission: formData.transmission,
           imageFileId,
           imageUrl,
           createdAt: new Date().toISOString()
@@ -428,7 +448,8 @@ function InstructorsProfile() {
         password: '',
         certifications: instructor.certifications || '',
         availability: instructor.availability || 'available',
-        lessonType: instructor.lessonType || 'practical'
+        lessonType: instructor.lessonType || 'practical',
+        transmission: instructor.transmission || 'MT'
       });
       setImagePreview(instructor.resolvedImageUrl || '');
       setShowModal(true);
@@ -508,16 +529,11 @@ function InstructorsProfile() {
                       </p>
                     )}
                     <div className="instructor-cert">
-                      <strong>Teaches:</strong> {instructor.lessonType === 'both' ? 'Theory & Practical' : instructor.lessonType === 'theory' ? 'Theory Class' : 'Practical Lesson'}<br />
+                      <strong>Teaches:</strong> {instructor.lessonType === 'both' ? 'Theoretical & Driving' : instructor.lessonType === 'theory' ? 'Theoretical Class' : 'Driving Class'}<br />
+                      <strong>Transmission:</strong> {instructor.transmission || 'Not set'}<br />
                       {(instructor.lessonType === 'theory' || instructor.lessonType === 'both') && !instructor.isAccountOnly && (
                         <>
                           <strong>Booking Slots:</strong> {instructor.theoryRemainingSlots}/{instructor.theoryCapacity} available<br />
-                        </>
-                      )}
-                      {!instructor.isAccountOnly && (
-                        <>
-                          <strong>Certifications:</strong><br />
-                          {instructor.certifications}
                         </>
                       )}
                     </div>
@@ -552,6 +568,22 @@ function InstructorsProfile() {
                           <span key={idx} style={{color: '#0369a1'}}>
                             {brk.day}: {brk.start} - {brk.end}
                             <br />
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {instructorSchedules[instructor.name]?.workingHours && (
+                      <div className="instructor-working-hours" style={{
+                        background: '#eef3f9',
+                        padding: '8px',
+                        borderRadius: '6px',
+                        marginTop: '8px',
+                        fontSize: '12px'
+                      }}>
+                        <strong style={{color: '#0b2545'}}>Working hours:</strong><br />
+                        {Object.entries(instructorSchedules[instructor.name].workingHours).map(([day, hours]) => (
+                          <span key={day} style={{color: '#52657c'}}>
+                            {day}: {hours.off ? 'Day off' : `${hours.start || 'N/A'} - ${hours.end || 'N/A'}`}<br />
                           </span>
                         ))}
                       </div>
@@ -653,28 +685,16 @@ function InstructorsProfile() {
                   <small style={{color: '#6b7280', marginTop: '4px', display: 'block'}}>Share this password with the instructor so they can login</small>
                 </div>
 
-                <div className="form-group full">
-                  <label>Certifications *</label>
-                  <textarea
-                    name="certifications"
-                    value={formData.certifications}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Manual Transmission, Automatic Transmission, Defensive Driving"
-                    rows="4"
-                    required
-                  />
-                </div>
-
                 <div className="form-group">
-                  <label>Teaches *</label>
+                  <label>Lesson Type *</label>
                   <select
                     name="lessonType"
                     value={formData.lessonType}
                     onChange={handleInputChange}
                     required
                   >
-                    <option value="practical">Practical Lesson</option>
-                    <option value="theory">Theory Class</option>
+                    <option value="practical">Driving Class</option>
+                    <option value="theory">Theoretical Class</option>
                   </select>
                 </div>
 
@@ -690,6 +710,19 @@ function InstructorsProfile() {
                     <option value="on-leave">On Leave</option>
                   </select>
                   <small>Note: Instructors are automatically set to "Booked" when a user books them</small>
+                </div>
+
+                <div className="form-group">
+                  <label>Transmission *</label>
+                  <select
+                    name="transmission"
+                    value={formData.transmission}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="MT">Manual Transmission</option>
+                    <option value="AT">Automatic Transmission</option>
+                  </select>
                 </div>
 
                 <div className="form-group full">

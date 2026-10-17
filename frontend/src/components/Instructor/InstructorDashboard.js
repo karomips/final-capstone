@@ -57,10 +57,16 @@ function InstructorDashboard() {
 
   useEffect(() => {
     if (currentUser) {
-      fetchInstructorData();
-      fetchBookings();
-      fetchScheduleSettings();
-      loadCancelledNotifications();
+      const loadInstructorDashboard = async () => {
+        const resolvedName = await fetchInstructorData();
+        await Promise.all([
+          fetchBookings(resolvedName),
+          fetchScheduleSettings()
+        ]);
+        loadCancelledNotifications();
+      };
+
+      loadInstructorDashboard();
     }
   }, [currentUser]);
 
@@ -69,28 +75,34 @@ function InstructorDashboard() {
       const response = await databases.listDocuments(
         databaseId,
         instructorsCollectionId,
-        [Query.equal('userId', currentUser.$id)]
+        [Query.equal('email', currentUser.email)]
       );
 
       if (response.documents.length > 0) {
-        setInstructorName(response.documents[0].name || 'Instructor');
+        const name = response.documents[0].name || 'Instructor';
+        setInstructorName(name);
+        return name;
       } else {
         // For instructor accounts created via signup, use email
-        setInstructorName(currentUser.email.split('@')[0] || 'Instructor');
+        const name = currentUser.email.split('@')[0] || 'Instructor';
+        setInstructorName(name);
+        return name;
       }
     } catch (error) {
       console.error('Error fetching instructor data:', error);
       // Fallback to email prefix if error occurs
-      setInstructorName(currentUser.email.split('@')[0] || 'Instructor');
+      const name = currentUser.email.split('@')[0] || 'Instructor';
+      setInstructorName(name);
+      return name;
     }
   };
 
-  const fetchBookings = async () => {
+  const fetchBookings = async (name = instructorName) => {
     try {
       const response = await databases.listDocuments(
         databaseId,
         bookingsCollectionId,
-        [Query.equal('instructor', instructorName)]
+        [Query.equal('instructor', name)]
       );
       setBookings(response.documents);
     } catch (error) {
@@ -138,6 +150,7 @@ function InstructorDashboard() {
   const saveScheduleSettings = async () => {
     try {
       const settingsData = {
+        instructorId: currentUser.$id,
         instructorName: instructorName,
         workingHours: JSON.stringify(workingHours),
         breaks: JSON.stringify(breaks),

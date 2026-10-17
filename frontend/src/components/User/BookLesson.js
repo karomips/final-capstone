@@ -20,6 +20,43 @@ const parseIsoDate = (value) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
+const parseScheduleValue = (value, fallback) => {
+  if (!value) return fallback;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return fallback;
+  }
+};
+
+const scheduleDayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+const normalizeTransmission = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'mt' || normalized.includes('manual')) return 'MT';
+  if (normalized === 'at' || normalized.includes('automatic')) return 'AT';
+  return normalized.toUpperCase();
+};
+
+const scheduleBlocksDate = (schedule, dateValue) => {
+  if (!schedule) return false;
+  const date = parseIsoDate(dateValue);
+  if (!date) return false;
+
+  const leaves = parseScheduleValue(schedule.leaves, []);
+  if (Array.isArray(leaves) && leaves.some((leave) => {
+    const start = parseIsoDate(leave.startDate);
+    const end = parseIsoDate(leave.endDate);
+    return start && end && date >= start && date <= end;
+  })) {
+    return true;
+  }
+
+  const workingHours = parseScheduleValue(schedule.workingHours, {});
+  return Boolean(workingHours[scheduleDayNames[date.getDay()]]?.off);
+};
+
 // ✅ Moved outside component — no need for useCallback
 const addDays = (isoValue, numberOfDays) => {
   const parsed = parseIsoDate(isoValue);
@@ -56,6 +93,7 @@ function BookLesson() {
   const [isApproved, setIsApproved] = useState(false);
   const [checkingApproval, setCheckingApproval] = useState(true);
   const [instructors, setInstructors] = useState([]);
+  const [instructorSchedules, setInstructorSchedules] = useState({});
   const [vehicles, setVehicles] = useState([]);
   const [showPackages, setShowPackages] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState('starter');
@@ -123,6 +161,11 @@ function BookLesson() {
 
   const isPastDate = (dateObject) => dateObject < today;
 
+  const isUnavailableDate = (dateObject) => {
+    if (!instructor) return false;
+    return scheduleBlocksDate(instructorSchedules[instructor], toIsoDate(dateObject));
+  };
+
   const isSameDay = (dateA, dateB) => (
     dateA.getFullYear() === dateB.getFullYear() &&
     dateA.getMonth() === dateB.getMonth() &&
@@ -173,7 +216,7 @@ function BookLesson() {
   };
 
   const handleDatePick = (dayDate) => {
-    if (!dayDate || isPastDate(dayDate)) return;
+    if (!dayDate || isPastDate(dayDate) || isUnavailableDate(dayDate)) return;
     
     const dayIsoValue = toIsoDate(dayDate);
     
@@ -239,16 +282,68 @@ function BookLesson() {
       if (scheduleResponse.documents.length === 0) return false;
 
       const schedule = scheduleResponse.documents[0];
-      if (!schedule.leaves || !Array.isArray(schedule.leaves)) return false;
+      const leaves = parseScheduleValue(schedule.leaves, []);
+      if (!Array.isArray(leaves)) return false;
 
       const checkDate = new Date(dateToCheck);
-      return schedule.leaves.some(leave => {
+      checkDate.setHours(0, 0, 0, 0);
+      return leaves.some(leave => {
         const leaveStart = new Date(leave.startDate);
         const leaveEnd = new Date(leave.endDate);
+        leaveStart.setHours(0, 0, 0, 0);
+        leaveEnd.setHours(23, 59, 59, 999);
         return checkDate >= leaveStart && checkDate <= leaveEnd;
       });
     } catch (err) {
       console.error('Error checking instructor leave:', err);
+      return false;
+    }
+  };
+
+  const fetchInstructorSchedules = useCallback(async () => {
+    try {
+      const response = await databases.listDocuments(
+        databaseId,
+        instructorSchedulesCollectionId
+      );
+      const schedules = {};
+      response.documents.forEach((schedule) => {
+        if (schedule.instructorName) schedules[schedule.instructorName] = schedule;
+      });
+      setInstructorSchedules(schedules);
+    } catch (error) {
+      console.error('Error fetching instructor schedules:', error);
+    }
+  }, []);
+
+  const isInstructorUnavailableAtTime = async (instructorName, dateToCheck, timeToCheck) => {
+    try {
+      const response = await databases.listDocuments(
+        databaseId,
+        instructorSchedulesCollectionId,
+        [Query.equal('instructorName', instructorName)]
+      );
+      if (response.documents.length === 0) return false;
+
+      const schedule = response.documents[0];
+      const workingHours = parseScheduleValue(schedule.workingHours, {});
+      const breaks = parseScheduleValue(schedule.breaks, []);
+      const date = parseIsoDate(dateToCheck);
+      if (!date) return false;
+
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const daySchedule = workingHours[dayNames[date.getDay()]];
+      if (daySchedule?.off) return true;
+      if (daySchedule?.start && timeToCheck < daySchedule.start) return true;
+      if (daySchedule?.end && timeToCheck > daySchedule.end) return true;
+
+      return Array.isArray(breaks) && breaks.some((breakItem) => (
+        breakItem.day === dayNames[date.getDay()] &&
+        timeToCheck >= breakItem.start &&
+        timeToCheck < breakItem.end
+      ));
+    } catch (error) {
+      console.error('Error checking instructor working hours:', error);
       return false;
     }
   };
@@ -289,7 +384,7 @@ function BookLesson() {
       if (transmissionFilter) {
         practicalList = practicalList.filter(inst => {
           const instTrans = inst.motorcycleTransmission || inst.transmission;
-          return instTrans === transmissionFilter;
+          return normalizeTransmission(instTrans) === transmissionFilter;
         });
       }
 
@@ -335,7 +430,7 @@ function BookLesson() {
           // Check both transmission (for regular vehicles) and motorcycleTransmission (for motorcycles)
           const instructorTransmission = inst.motorcycleTransmission || inst.transmission;
           if (!instructorTransmission) return false; // Only show instructors with transmission set
-          return instructorTransmission === transmission;
+          return normalizeTransmission(instructorTransmission) === transmission;
         });
       }
 
@@ -343,13 +438,16 @@ function BookLesson() {
       let instructorsAfterLeaveCheck = filteredInstructors;
       if (selectedDates.length > 0) {
         const leaveCheckPromises = filteredInstructors.map(async (inst) => {
-          const onLeave = await isInstructorOnLeave(inst.name, selectedDates[0]);
-          return { inst, onLeave };
+          const unavailable = await Promise.all(selectedDates.map(async (date) => (
+            await isInstructorOnLeave(inst.name, date) ||
+            (time ? await isInstructorUnavailableAtTime(inst.name, date, time) : false)
+          )));
+          return { inst, unavailable: unavailable.some(Boolean) };
         });
         
         const leaveCheckResults = await Promise.all(leaveCheckPromises);
         instructorsAfterLeaveCheck = leaveCheckResults
-          .filter(result => !result.onLeave)
+          .filter(result => !result.unavailable)
           .map(result => result.inst);
       }
 
@@ -377,7 +475,7 @@ function BookLesson() {
       console.error('Error fetching instructors:', err);
       setInstructors([]);
     }
-  }, [selectedLesson, selectedDates, transmission]); // Updated: added transmission dependency
+  }, [selectedLesson, selectedDates, transmission, time]); // Refresh availability when date or time changes
 
   const fetchVehicles = useCallback(async () => {
     try {
@@ -410,6 +508,16 @@ function BookLesson() {
     
     // Check approval on mount
     checkUserApproval();
+    fetchInstructorSchedules();
+
+    const refreshInstructorAvailability = () => {
+      if (!document.hidden) {
+        fetchInstructorSchedules();
+        fetchInstructors();
+      }
+    };
+    const interval = setInterval(refreshInstructorAvailability, 30000);
+    document.addEventListener('visibilitychange', refreshInstructorAvailability);
     
     // Debounce instructor and vehicle fetches
     debounce(() => {
@@ -418,7 +526,11 @@ function BookLesson() {
       // also prepare package resources when packages panel may be opened
       fetchPackageResources(packagePracticalTransmission);
     }, 300);
-  }, [currentUser]);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', refreshInstructorAvailability);
+    };
+  }, [currentUser, fetchInstructorSchedules, fetchInstructors]);
 
   // ✅ Separate effect for lesson type changes (requires debouncing)
   useEffect(() => {
@@ -427,7 +539,7 @@ function BookLesson() {
     debounce(() => {
       fetchInstructors();
     }, 300);
-  }, [selectedLesson, currentUser, transmission]);
+  }, [selectedLesson, selectedDates, currentUser, transmission]);
 
   useEffect(() => {
     if (!showPackages) return;
@@ -478,6 +590,18 @@ function BookLesson() {
         setError('Please select exactly 3 dates for the practical lesson');
         return;
       }
+    }
+
+    const unavailableDates = [];
+    for (const bookingDate of selectedDates) {
+      if (await isInstructorOnLeave(instructor, bookingDate) ||
+          await isInstructorUnavailableAtTime(instructor, bookingDate, time)) {
+        unavailableDates.push(bookingDate);
+      }
+    }
+    if (unavailableDates.length > 0) {
+      setError('The instructor is unavailable during the selected date or time. Please choose another slot.');
+      return;
     }
 
     setIsSubmitting(true);
@@ -1104,7 +1228,7 @@ function BookLesson() {
                   }
 
                   const dayIsoValue = toIsoDate(dayDate);
-                  const isDisabled = isPastDate(dayDate);
+                  const isDisabled = isPastDate(dayDate) || isUnavailableDate(dayDate);
                   const isSelected = selectedDates.includes(dayIsoValue);
                   const isToday = isSameDay(dayDate, today);
 

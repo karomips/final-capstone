@@ -59,13 +59,6 @@ const scheduleBlocksDate = (schedule, dateValue) => {
 };
 
 // ✅ Moved outside component — no need for useCallback
-const addDays = (isoValue, numberOfDays) => {
-  const parsed = parseIsoDate(isoValue);
-  if (!parsed) return '';
-  parsed.setDate(parsed.getDate() + numberOfDays);
-  return toIsoDate(parsed);
-};
-
 // ✅ Debounce utility to prevent excessive database calls
 const createDebounce = () => {
   let timeoutId = null;
@@ -79,7 +72,7 @@ function BookLesson() {
   const THEORY_MIN_CAPACITY = 15;
   const THEORY_MAX_CAPACITY = 20;
 
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [selectedLesson, setSelectedLesson] = useState('practical');
   const [transmission, setTransmission] = useState(''); // New: transmission type selection
@@ -176,8 +169,6 @@ function BookLesson() {
     dateA.getMonth() === dateB.getMonth() &&
     dateA.getDate() === dateB.getDate()
   );
-
-  const selectedDateObject = selectedDates.length > 0 ? parseIsoDate(selectedDates[0]) : null;
 
   // For practical: show all selected dates, for theory: show the single date
   const formattedDateSummary = selectedDates.length > 0

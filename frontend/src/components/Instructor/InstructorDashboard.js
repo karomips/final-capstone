@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, instructorSchedulesCollectionId, account } from '../../appwrite/config';
 import { Query, ID } from 'appwrite';
@@ -10,7 +10,6 @@ function InstructorDashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { theme } = useOutletContext() || {};
   const [instructorName, setInstructorName] = useState('Instructor');
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
@@ -357,15 +356,6 @@ function InstructorDashboard() {
         return String(a.time || '').localeCompare(String(b.time || ''));
       });
   }, [bookings]);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
 
   return (
     <div className="instructor-main-content">

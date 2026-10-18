@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, usersCollectionId } from '../../appwrite/config';
 import './AdminPages.css';
 
 function StudentManagement() {
   const STUDENTS_PER_PAGE = 10;
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);

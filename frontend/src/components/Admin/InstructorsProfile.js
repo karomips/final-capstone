@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, instructorsCollectionId, usersCollectionId, bookingsCollectionId, instructorSchedulesCollectionId, storage, storageBucketId, buildStorageFileUrl, account } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import './AdminPages.css';
@@ -9,9 +7,6 @@ function InstructorsProfile() {
   const INSTRUCTORS_PER_PAGE = 8;
   const THEORY_MIN_CAPACITY = 15;
   const THEORY_MAX_CAPACITY = 20;
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-
   const [instructors, setInstructors] = useState([]);
   const [instructorSchedules, setInstructorSchedules] = useState({});
   const [loading, setLoading] = useState(true);

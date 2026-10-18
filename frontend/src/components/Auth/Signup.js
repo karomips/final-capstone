@@ -5,21 +5,20 @@ import './Auth.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
 import { Eye, EyeOff } from 'lucide-react';
 import emailVerificationHelper from '../../utils/emailVerificationHelper';
-import { formatPhoneNumber, getFullPhoneNumber, isValidPhoneNumber, formatLtoClientId, isValidLtoClientId } from '../../utils/phoneNumberFormatter';
+import { formatPhoneNumber, isValidPhoneNumber, formatLtoClientId, isValidLtoClientId } from '../../utils/phoneNumberFormatter';
 
 
 function Signup() {
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [parentPhoneNumber, setParentPhoneNumber] = useState('');
+  const [parentPhoneNumber] = useState('');
   const [birthMonth, setBirthMonth] = useState('');
   const [birthDay, setBirthDay] = useState('');
   const [birthYear, setBirthYear] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
   const [city, setCity] = useState('');
-  const [stateValue, setStateValue] = useState('Olongapo City');
-  const [zipCode, setZipCode] = useState('');
+  const [stateValue] = useState('Olongapo City');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [age, setAge] = useState('');

@@ -128,7 +128,7 @@ export const isValidLtoClientId = (value) => {
   return /^[0-9]{2}-[0-9]{6}-[0-9]{7}$/.test(value);
 };
 
-export default {
+const phoneNumberFormatter = {
   formatPhoneNumber,
   extractPhoneDigits,
   getFullPhoneNumber,
@@ -136,3 +136,5 @@ export default {
   formatLtoClientId,
   isValidLtoClientId
 };
+
+export default phoneNumberFormatter;

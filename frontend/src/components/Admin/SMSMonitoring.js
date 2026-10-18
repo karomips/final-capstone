@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import smsHelper from '../../utils/smsHelper';
@@ -27,8 +25,6 @@ const formatPhilippineTime = (timestamp) => {
 };
 
 function SMSMonitoring() {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingStatus, setSendingStatus] = useState({});

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, usersCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../../appwrite/config';
 import { ID } from 'appwrite';
@@ -8,8 +7,7 @@ import './Profile.css';
 import { formatPhoneNumber, isValidPhoneNumber } from '../../utils/phoneNumberFormatter';
 
 function Profile() {
-  const { currentUser, logout } = useAuth();
-  const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Sidebar.css';
 import SignoutIcon from '../../assets/icons/signout-white.png';
-import SunIcon from '../../assets/icons/sun-white.png';
-import MoonIcon from '../../assets/icons/moon-white.png';
 
 function Sidebar({ 
   isOpen, 
@@ -68,8 +66,7 @@ function Sidebar({
           >
             {item.icon && (
               <span className="app-nav-icon">
-                {typeof item.icon === 'string' && item.icon.includes('.') ||
-                typeof item.icon === 'string' && item.icon.includes('/') ? (
+                {typeof item.icon === 'string' && (item.icon.includes('.') || item.icon.includes('/')) ? (
                   <img src={item.icon} alt={item.label} className="app-nav-icon-img" />
                 ) : (
                   item.icon

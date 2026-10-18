@@ -1,21 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, instructorsCollectionId, usersCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import './AdminPages.css';
-import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
-import DashboardIcon from '../../assets/icons/dashboard-white.png';
-import StudentsIcon from '../../assets/icons/students-white.png';
-import InstructorIcon from '../../assets/icons/instructor-white.png';
-import VehicleIcon from '../../assets/icons/vehicle-white.png';
-import SMSIcon from '../../assets/icons/sms-icon.png';
-
-
 function AdminDashboard() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const { theme } = useOutletContext() || {};
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [smsHistory, setSmsHistory] = useState([]);
@@ -216,15 +207,6 @@ function AdminDashboard() {
       fetchInstructorCount();
       fetchEnrolleeCount();
     };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
 
   return (
     <div className="admin-main-content">

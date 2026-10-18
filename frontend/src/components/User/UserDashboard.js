@@ -7,7 +7,7 @@ import { fetchMyInstructorAssignment } from '../../utils/instructorAssignmentApi
 import './UserPages.css';
 
 function UserDashboard() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { theme } = useOutletContext();
   const [bookings, setBookings] = useState([]);
@@ -190,15 +190,6 @@ function UserDashboard() {
 
     fetchUserData();
   }, [currentUser, getSmsNotifications]);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (err) {
-      console.error('Logout error:', err);
-    }
-  };
 
   return (
     <div className="user-main-content user-main-content--fit">

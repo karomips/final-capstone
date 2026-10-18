@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { databases, databaseId, usersCollectionId } from '../../appwrite/config';
 import Sidebar from '../Shared/Sidebar';
 import '../Admin/AdminPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';

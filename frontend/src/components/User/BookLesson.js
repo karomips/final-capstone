@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId, instructorsCollectionId, instructorSchedulesCollectionId } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import { CalendarDays, Clock3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { fetchMyInstructorAssignment, saveMyInstructorAssignment } from '../../utils/instructorAssignmentApi';
 import './UserPages.css';
 
 // ✅ Moved outside component — pure utility functions, never change
@@ -83,6 +84,10 @@ function BookLesson() {
   const [selectedLesson, setSelectedLesson] = useState('practical');
   const [transmission, setTransmission] = useState(''); // New: transmission type selection
   const [instructor, setInstructor] = useState('');
+  const [selectedInstructorId, setSelectedInstructorId] = useState('');
+  const [assignedInstructor, setAssignedInstructor] = useState(null);
+  const [assignmentMessage, setAssignmentMessage] = useState({ type: '', text: '' });
+  const [isSavingInstructorAssignment, setIsSavingInstructorAssignment] = useState(false);
   const [vehicle, setVehicle] = useState('');
   const [selectedDates, setSelectedDates] = useState([]); // Array of ISO date strings
   const [time, setTime] = useState('');
@@ -502,9 +507,57 @@ function BookLesson() {
     }
   }, [transmission]); // Updated: added transmission dependency
 
+  const handleInstructorSelection = async (instructorId) => {
+    const selected = instructors.find((item) => item.$id === instructorId);
+    if (!selected || isSavingInstructorAssignment) return;
+
+    const previousAssignment = assignedInstructor;
+    const previousInstructorId = selectedInstructorId;
+    const previousInstructorName = instructor;
+    setSelectedInstructorId(selected.$id);
+    setInstructor(selected.name);
+    setAssignmentMessage({ type: 'loading', text: 'Saving instructor assignment...' });
+    setIsSavingInstructorAssignment(true);
+
+    try {
+      const savedAssignment = await saveMyInstructorAssignment(selected.$id);
+      setAssignedInstructor(savedAssignment);
+      setAssignmentMessage({ type: 'success', text: `You are assigned to ${savedAssignment.instructorName}.` });
+      return true;
+    } catch (assignmentError) {
+      setSelectedInstructorId(previousInstructorId);
+      setInstructor(previousInstructorName);
+      setAssignedInstructor(previousAssignment);
+      setAssignmentMessage({
+        type: 'error',
+        text: assignmentError.message || 'Could not save your instructor assignment. Please try again.'
+      });
+      return false;
+    } finally {
+      setIsSavingInstructorAssignment(false);
+    }
+  };
+
   // ✅ Consolidated useEffect: runs on mount and when critical props change
   useEffect(() => {
     if (!currentUser) return;
+
+    let cancelled = false;
+    fetchMyInstructorAssignment()
+      .then((assignment) => {
+        if (cancelled || !assignment) return;
+        setAssignedInstructor(assignment);
+        setSelectedInstructorId(assignment.instructorId);
+        setInstructor(assignment.instructorName);
+      })
+      .catch((assignmentError) => {
+        if (!cancelled) {
+          setAssignmentMessage({
+            type: 'error',
+            text: assignmentError.message || 'Could not load your saved instructor assignment.'
+          });
+        }
+      });
     
     // Check approval on mount
     checkUserApproval();
@@ -527,10 +580,20 @@ function BookLesson() {
       fetchPackageResources(packagePracticalTransmission);
     }, 300);
     return () => {
+      cancelled = true;
       clearInterval(interval);
       document.removeEventListener('visibilitychange', refreshInstructorAvailability);
     };
-  }, [currentUser, fetchInstructorSchedules, fetchInstructors]);
+  }, [
+    currentUser,
+    checkUserApproval,
+    debounce,
+    fetchInstructorSchedules,
+    fetchInstructors,
+    fetchVehicles,
+    fetchPackageResources,
+    packagePracticalTransmission
+  ]);
 
   // ✅ Separate effect for lesson type changes (requires debouncing)
   useEffect(() => {
@@ -539,7 +602,7 @@ function BookLesson() {
     debounce(() => {
       fetchInstructors();
     }, 300);
-  }, [selectedLesson, selectedDates, currentUser, transmission]);
+  }, [selectedLesson, selectedDates, currentUser, transmission, debounce, fetchInstructors]);
 
   useEffect(() => {
     if (!showPackages) return;
@@ -613,7 +676,7 @@ function BookLesson() {
       let activeTheoryBookings = 0;
 
       if (selectedLesson === 'theory') {
-        selectedInstructorDoc = instructors.find((inst) => inst.name === instructor) || null;
+        selectedInstructorDoc = instructors.find((inst) => inst.$id === selectedInstructorId) || null;
         theoryCapacity = getTheoryCapacity(selectedInstructorDoc);
         activeTheoryBookings = await countActiveTheoryBookings(instructor);
 
@@ -752,7 +815,6 @@ function BookLesson() {
       }
 
       setSuccess('Booking confirmed successfully!');
-      setInstructor('');
       setVehicle('');
       setTransmission(''); // NEW: Reset transmission after booking
       setSelectedDates([]);
@@ -1010,9 +1072,14 @@ function BookLesson() {
                       <button
                         type="button"
                         className="lesson-action-btn"
-                        onClick={() => {
+                        onClick={async () => {
                           // Apply package selections to booking context and close panel
                           // Practical lesson is the main booking target for package
+                          const primaryInstructor = packagePracticalInstructor
+                            ? packagePracticalInstructors.find((item) => item.name === packagePracticalInstructor)
+                            : packageTheoryInstructors.find((item) => item.name === packageTheoryInstructor);
+                          if (primaryInstructor && !(await handleInstructorSelection(primaryInstructor.$id))) return;
+
                           setTransmission(packagePracticalTransmission || transmission);
                           setInstructor(packagePracticalInstructor || packageTheoryInstructor || instructor);
                           setVehicle(packagePracticalVehicle || vehicle);
@@ -1020,9 +1087,15 @@ function BookLesson() {
                           setAppliedPackage(selectedPackage);
                           setShowPackages(false);
                         }}
+                        disabled={isSavingInstructorAssignment}
                       >
-                        Select package
+                        {isSavingInstructorAssignment ? 'Saving instructor...' : 'Select package'}
                       </button>
+                      {assignmentMessage.text && (
+                        <small role={assignmentMessage.type === 'error' ? 'alert' : 'status'} style={{ display: 'block', marginTop: '8px' }}>
+                          {assignmentMessage.text}
+                        </small>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1110,10 +1183,10 @@ function BookLesson() {
             <div className="form-group">
               <label>{selectedLesson === 'practical' ? 'Select Instructor' : 'Instructor Name'}</label>
               <select
-                value={instructor}
-                onChange={(e) => setInstructor(e.target.value)}
+                value={selectedInstructorId}
+                onChange={(e) => handleInstructorSelection(e.target.value)}
                 className="booking-select"
-                disabled={selectedLesson === 'practical' && !transmission}
+                disabled={isSavingInstructorAssignment || (selectedLesson === 'practical' && !transmission)}
               >
                 <option value="">
                   {selectedLesson === 'practical' && !transmission
@@ -1121,17 +1194,33 @@ function BookLesson() {
                     : 'Select Instructor'}
                 </option>
                 {instructors.length === 0 ? (
-                  <option disabled>No available instructors</option>
+                  <option value="" disabled>No available instructors</option>
                 ) : (
                   instructors.map((inst) => (
-                    <option key={inst.$id} value={inst.name}>
+                    <option key={inst.$id} value={inst.$id}>
                       {selectedLesson === 'theory'
                         ? `${inst.name} - ${inst.certifications} (${inst.theoryRemainingSlots}/${inst.theoryCapacity} slots)`
                         : `${inst.name} - ${inst.certifications}`}
                     </option>
                   ))
                 )}
+                {assignedInstructor?.instructorId === selectedInstructorId &&
+                  !instructors.some((inst) => inst.$id === selectedInstructorId) && (
+                    <option value={selectedInstructorId}>{assignedInstructor.instructorName} (currently assigned)</option>
+                  )}
               </select>
+              {assignmentMessage.text && (
+                <small
+                  role={assignmentMessage.type === 'error' ? 'alert' : 'status'}
+                  style={{
+                    display: 'block',
+                    marginTop: '8px',
+                    color: assignmentMessage.type === 'error' ? '#b91c1c' : assignmentMessage.type === 'success' ? '#15803d' : '#475569'
+                  }}
+                >
+                  {assignmentMessage.text}
+                </small>
+              )}
             </div>
 
             {selectedLesson === 'practical' && (

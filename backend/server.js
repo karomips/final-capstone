@@ -5,13 +5,165 @@ const dotenv = require('dotenv');
 // Load environment variables FIRST before requiring other modules
 dotenv.config();
 
-const { databases, users, databaseId, usersCollectionId, appointmentsCollectionId, bookingsCollectionId } = require('./config/appwrite');
+const {
+  databases,
+  users,
+  databaseId,
+  usersCollectionId,
+  instructorsCollectionId,
+  instructorAssignmentsCollectionId,
+  appointmentsCollectionId,
+  bookingsCollectionId,
+  endpoint,
+  projectId
+} = require('./config/appwrite');
+const { Client: AppwriteClient, Account, Query } = require('node-appwrite');
 const smsService = require('./services/smsService');
 const { startAutomaticSMSScheduler } = require('./services/smsScheduler');
 
 // Initialize Express
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+const getAuthenticatedAccount = async (req) => {
+  const authorization = String(req.headers.authorization || '');
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  if (!match) {
+    const error = new Error('Sign in to continue.');
+    error.status = 401;
+    throw error;
+  }
+
+  const sessionClient = new AppwriteClient()
+    .setEndpoint(endpoint)
+    .setProject(projectId)
+    .setJWT(match[1]);
+  const account = new Account(sessionClient);
+  return account.get();
+};
+
+const getAccountUserDocument = async (authAccount) => {
+  try {
+    return await databases.getDocument(databaseId, usersCollectionId, authAccount.$id);
+  } catch (error) {
+    if (Number(error.code) !== 404 || !authAccount.email) throw error;
+
+    const response = await databases.listDocuments(databaseId, usersCollectionId, [
+      Query.equal('email', authAccount.email),
+      Query.limit(10)
+    ]);
+    const normalizedEmail = String(authAccount.email).trim().toLowerCase();
+    const userDocument = response.documents.find(
+      (document) => String(document.email || '').trim().toLowerCase() === normalizedEmail
+    );
+    if (!userDocument) {
+      const notFound = new Error('Your user profile could not be found.');
+      notFound.status = 404;
+      throw notFound;
+    }
+    return userDocument;
+  }
+};
+
+const requireAccountRole = async (authAccount, allowedRole) => {
+  const userDocument = await getAccountUserDocument(authAccount);
+  if (userDocument.role !== allowedRole) {
+    const error = new Error('You are not allowed to perform this action.');
+    error.status = 403;
+    throw error;
+  }
+  return userDocument;
+};
+
+const getInstructorProfileForAccount = async (authAccount, accountUserDocument, createIfMissing = false) => {
+  const accountId = String(authAccount.$id || '').trim();
+
+  // Profiles created by the admin UI may use a separate document ID. New/self-provisioned
+  // profiles use the authenticated account ID, which remains a stable identity link.
+  if (accountId) {
+    try {
+      return await databases.getDocument(databaseId, instructorsCollectionId, accountId);
+    } catch (error) {
+      if (Number(error.code) !== 404) throw error;
+    }
+  }
+
+  const emails = [...new Set([authAccount.email, accountUserDocument?.email]
+    .map((email) => String(email || '').trim())
+    .filter(Boolean))];
+  const normalizedEmails = new Set(emails.map((email) => email.toLowerCase()));
+
+  for (const email of emails) {
+    const response = await databases.listDocuments(databaseId, instructorsCollectionId, [
+      Query.equal('email', email),
+      Query.limit(100)
+    ]);
+    const match = response.documents.find(
+      (document) => normalizedEmails.has(String(document.email || '').trim().toLowerCase())
+    );
+    if (match) return match;
+  }
+
+  // Email equality is case-sensitive in Appwrite. Scan all pages so profiles with older
+  // capitalization or whitespace still resolve to the authenticated account.
+  let offset = 0;
+  let total = 0;
+  do {
+    const response = await databases.listDocuments(databaseId, instructorsCollectionId, [
+      Query.limit(100),
+      Query.offset(offset)
+    ]);
+    const match = response.documents.find(
+      (document) => normalizedEmails.has(String(document.email || '').trim().toLowerCase())
+    );
+    if (match) return match;
+
+    total = response.total;
+    offset += response.documents.length;
+    if (response.documents.length === 0) break;
+  } while (offset < total);
+
+  if (!createIfMissing) {
+    const error = new Error('Your instructor profile could not be found.');
+    error.status = 404;
+    throw error;
+  }
+
+  const email = emails[0] || '';
+  if (!accountId || !email) {
+    const error = new Error('Your instructor account must have an email address before a profile can be created.');
+    error.status = 400;
+    throw error;
+  }
+
+  const name = String(accountUserDocument?.name || authAccount.name || email.split('@')[0] || 'Instructor').trim();
+  try {
+    return await databases.createDocument(databaseId, instructorsCollectionId, accountId, {
+      name,
+      email,
+      certifications: 'Not provided',
+      lessonType: 'practical',
+      transmission: 'MT',
+      availability: 'available',
+      createdAt: new Date().toISOString()
+    });
+  } catch (error) {
+    // A simultaneous dashboard request may have created this same profile first.
+    if (Number(error.code) === 409) {
+      return databases.getDocument(databaseId, instructorsCollectionId, accountId);
+    }
+    throw error;
+  }
+};
+
+const handleAssignmentApiError = (res, error, message) => {
+  const code = Number(error.code);
+  const status = Number(error.status) || (code === 401 || code === 403 || code === 404 ? code : 500);
+  if (status >= 500) console.error(message, error);
+  return res.status(status).json({
+    error: status === 500 ? message : error.message
+  });
+};
 
 // Middleware
 app.use(cors({
@@ -309,6 +461,188 @@ app.post('/api/auth/consume-verification', (req, res) => {
 // Test route
 app.get('/api', (req, res) => {
   res.json({ message: 'Backend API is running with Appwrite!' });
+});
+
+// A signed-in user may assign only their own account to an existing instructor.
+app.put('/api/users/me/instructor-assignment', async (req, res) => {
+  try {
+    const authAccount = await getAuthenticatedAccount(req);
+    const userDocument = await requireAccountRole(authAccount, 'user');
+    const instructorId = String(req.body?.instructorId || '').trim();
+    if (!instructorId || instructorId.length > 255) {
+      return res.status(400).json({ error: 'A valid instructor is required.' });
+    }
+
+    const instructor = await databases.getDocument(databaseId, instructorsCollectionId, instructorId);
+    let existingAssignment = null;
+    try {
+      existingAssignment = await databases.getDocument(
+        databaseId,
+        instructorAssignmentsCollectionId,
+        authAccount.$id
+      );
+    } catch (error) {
+      if (Number(error.code) !== 404) throw error;
+    }
+
+    const alreadyAssigned = existingAssignment?.instructorId === instructor.$id;
+    let assignment = existingAssignment;
+    if (!alreadyAssigned) {
+      const assignmentData = {
+        userId: userDocument.$id,
+        instructorId: instructor.$id,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (existingAssignment) {
+        assignment = await databases.updateDocument(
+          databaseId,
+          instructorAssignmentsCollectionId,
+          existingAssignment.$id,
+          assignmentData
+        );
+      } else {
+        try {
+          assignment = await databases.createDocument(
+            databaseId,
+            instructorAssignmentsCollectionId,
+            authAccount.$id,
+            { ...assignmentData, createdAt: new Date().toISOString() }
+          );
+        } catch (error) {
+          // A concurrent duplicate selection can race the initial create. Update the same account record.
+          if (Number(error.code) !== 409) throw error;
+          assignment = await databases.updateDocument(
+            databaseId,
+            instructorAssignmentsCollectionId,
+            authAccount.$id,
+            assignmentData
+          );
+        }
+      }
+    }
+
+    return res.json({
+      success: true,
+      alreadyAssigned,
+      assignment: {
+        instructorId: assignment.instructorId,
+        instructorName: instructor.name
+      }
+    });
+  } catch (error) {
+    return handleAssignmentApiError(res, error, 'Failed to save instructor assignment.');
+  }
+});
+
+// Restore the signed-in user's saved instructor after refresh or a new session.
+app.get('/api/users/me/instructor-assignment', async (req, res) => {
+  try {
+    const authAccount = await getAuthenticatedAccount(req);
+    const userDocument = await requireAccountRole(authAccount, 'user');
+    let savedAssignment;
+    try {
+      savedAssignment = await databases.getDocument(
+        databaseId,
+        instructorAssignmentsCollectionId,
+        authAccount.$id
+      );
+    } catch (error) {
+      if (Number(error.code) === 404) return res.json({ assignment: null });
+      throw error;
+    }
+
+    if (!savedAssignment.instructorId) {
+      return res.json({ assignment: null });
+    }
+
+    try {
+      const instructor = await databases.getDocument(
+        databaseId,
+        instructorsCollectionId,
+        savedAssignment.instructorId
+      );
+      return res.json({
+        assignment: {
+          instructorId: instructor.$id,
+          instructorName: instructor.name,
+          instructorEmail: instructor.email || '',
+          profileImageUrl: instructor.imageUrl || ''
+        }
+      });
+    } catch (error) {
+      if (Number(error.code) !== 404) throw error;
+      return res.json({ assignment: null });
+    }
+  } catch (error) {
+    return handleAssignmentApiError(res, error, 'Failed to load instructor assignment.');
+  }
+});
+
+// Return only the users assigned to the instructor authenticated by this session.
+app.put('/api/instructors/me/profile', async (req, res) => {
+  try {
+    const authAccount = await getAuthenticatedAccount(req);
+    const accountUserDocument = await requireAccountRole(authAccount, 'instructor');
+    const instructor = await getInstructorProfileForAccount(authAccount, accountUserDocument, true);
+    return res.json({
+      instructor: {
+        id: instructor.$id,
+        name: instructor.name || 'Instructor',
+        email: instructor.email || authAccount.email || ''
+      }
+    });
+  } catch (error) {
+    return handleAssignmentApiError(res, error, 'Failed to prepare instructor profile.');
+  }
+});
+
+app.get('/api/instructors/me/assigned-users', async (req, res) => {
+  try {
+    const authAccount = await getAuthenticatedAccount(req);
+    const accountUserDocument = await requireAccountRole(authAccount, 'instructor');
+    const instructor = await getInstructorProfileForAccount(authAccount, accountUserDocument);
+    const assignments = [];
+    const pageSize = 100;
+    let offset = 0;
+    let total = 0;
+
+    do {
+      const response = await databases.listDocuments(databaseId, instructorAssignmentsCollectionId, [
+        Query.equal('instructorId', instructor.$id),
+        Query.limit(pageSize),
+        Query.offset(offset)
+      ]);
+      total = response.total;
+      assignments.push(...response.documents);
+      offset += response.documents.length;
+      if (response.documents.length === 0) break;
+    } while (offset < total && offset > 0);
+
+    const userDocuments = await Promise.all(assignments.map(async (assignment) => {
+      try {
+        return await databases.getDocument(databaseId, usersCollectionId, assignment.userId);
+      } catch (error) {
+        if (Number(error.code) === 404) return null;
+        throw error;
+      }
+    }));
+    const assignedUsers = userDocuments
+      .filter((document) => document && document.role === 'user')
+      .map((document) => ({
+        id: document.$id,
+        name: document.name || 'User',
+        email: document.email || '',
+        phoneNumber: document.phoneNumber || '',
+        profileImageUrl: document.profileImageUrl || '',
+        profileImageFileId: document.profileImageFileId || '',
+        createdAt: document.createdAt || ''
+      }));
+
+    return res.json({ instructorId: instructor.$id, users: assignedUsers });
+  } catch (error) {
+    return handleAssignmentApiError(res, error, 'Failed to load assigned users.');
+  }
 });
 
 // Example: Get user data

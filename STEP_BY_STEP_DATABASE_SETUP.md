@@ -1,4 +1,4 @@
-# Step-by-Step Appwrite Database Setup (NEW DATABASE)
+﻿# Step-by-Step Appwrite Database Setup (NEW DATABASE)
 
 Follow these steps exactly in order. The images in NEW_DATABASE_SETUP_GUIDE.md will help if you get stuck.
 
@@ -15,7 +15,7 @@ Follow these steps exactly in order. The images in NEW_DATABASE_SETUP_GUIDE.md w
 5. **WAIT** for the database to be created (you'll see a loading indicator)
 6. Once created, you'll see `main-database` in the list
 
-✅ **Done with Step 1**
+??**Done with Step 1**
 
 ---
 
@@ -36,40 +36,40 @@ You'll see an empty collection. Click **"+ Create Attribute"** for each:
 - Name: `name`
 - Type: String
 - Size: 255
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 2: email**
 - Name: `email`
 - Type: String
 - Size: 255
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 3: phoneNumber**
 - Name: `phoneNumber`
 - Type: String
 - Size: 20
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 4: role**
 - Name: `role`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Default Value: `user`
 - Click **Create Attribute**
 
 **Attribute 5: approved**
 - Name: `approved`
 - Type: Boolean
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Default Value: `false`
 - Click **Create Attribute**
 
@@ -77,40 +77,40 @@ You'll see an empty collection. Click **"+ Create Attribute"** for each:
 - Name: `profileImageFileId`
 - Type: String
 - Size: 255
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 7: profileImageUrl**
 - Name: `profileImageUrl`
 - Type: String
 - Size: 500
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 8: transmission**
 - Name: `transmission`
 - Type: String
 - Size: 20
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 9: theoryCapacity**
 - Name: `theoryCapacity`
 - Type: String
 - Size: 20
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 10: createdAt**
 - Name: `createdAt`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 ### 2.3 Set Permissions
@@ -121,16 +121,16 @@ You'll see an empty collection. Click **"+ Create Attribute"** for each:
 4. Configure:
    - Select: `Role`
    - Role: `Any`
-   - Permissions: ✅ Read
+   - Permissions: ??Read
    - Click **Update**
 5. Click **"+ Add Permission"** again
 6. Configure:
    - Select: `Role`
    - Role: `Users`
-   - Permissions: ✅ Create, ✅ Update, ✅ Read, ✅ Delete
+   - Permissions: ??Create, ??Update, ??Read, ??Delete
    - Click **Update**
 
-✅ **Done with Step 2 - Users Collection Created**
+??**Done with Step 2 - Users Collection Created**
 
 ---
 
@@ -153,32 +153,32 @@ Click **"+ Create Attribute"** for each:
 - Name: `userId`
 - Type: String
 - Size: 255
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 2: userName**
 - Name: `userName`
 - Type: String
 - Size: 255
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 3: userEmail**
 - Name: `userEmail`
 - Type: String
 - Size: 255
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 4: lessonType**
 - Name: `lessonType`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Default Value: `practical`
 - Click **Create Attribute**
 
@@ -186,48 +186,48 @@ Click **"+ Create Attribute"** for each:
 - Name: `instructor`
 - Type: String
 - Size: 255
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 6: vehicle**
 - Name: `vehicle`
 - Type: String
 - Size: 255
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 7: transmission**
 - Name: `transmission`
 - Type: String
 - Size: 20
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 8: date**
 - Name: `date`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 9: time**
 - Name: `time`
 - Type: String
 - Size: 20
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 10: status**
 - Name: `status`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Default Value: `pending`
 - Click **Create Attribute**
 
@@ -235,8 +235,8 @@ Click **"+ Create Attribute"** for each:
 - Name: `createdAt`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 ### 3.3 Set Permissions (same as Users)
@@ -247,7 +247,7 @@ Click **"+ Create Attribute"** for each:
    - Role `Any` with `Read`
    - Role `Users` with `Create`, `Update`, `Read`, `Delete`
 
-✅ **Done with Step 3 - Bookings Collection Created**
+??**Done with Step 3 - Bookings Collection Created**
 
 ---
 
@@ -268,24 +268,24 @@ Click **"+ Create Collection"**
 - Name: `name`
 - Type: String
 - Size: 255
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 2: certifications**
 - Name: `certifications`
 - Type: String
 - Size: 500
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 3: lessonType**
 - Name: `lessonType`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Default Value: `practical`
 - Click **Create Attribute**
 
@@ -293,8 +293,8 @@ Click **"+ Create Collection"**
 - Name: `transmission`
 - Type: String
 - Size: 20
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Default Value: `MT`
 - Click **Create Attribute**
 
@@ -302,8 +302,8 @@ Click **"+ Create Collection"**
 - Name: `availability`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Default Value: `available`
 - Click **Create Attribute**
 
@@ -311,32 +311,41 @@ Click **"+ Create Collection"**
 - Name: `theoryCapacity`
 - Type: String
 - Size: 20
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 7: experience**
 - Name: `experience`
 - Type: String
 - Size: 500
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 8: contactNumber**
 - Name: `contactNumber`
 - Type: String
 - Size: 20
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 9: createdAt**
 - Name: `createdAt`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
+- Click **Create Attribute**
+
+**Attribute 10: email**
+- Name: `email`
+- Type: String
+- Size: 255
+- Required: ??No
+- Array: ??No
+- Purpose: links this profile to the instructor's signed-in account
 - Click **Create Attribute**
 
 ### 4.3 Set Permissions
@@ -345,7 +354,7 @@ Same as before:
 - Role `Any` with `Read`
 - Role `Users` with `Create`, `Update`, `Read`, `Delete`
 
-✅ **Done with Step 4 - Instructors Collection Created**
+??**Done with Step 4 - Instructors Collection Created**
 
 ---
 
@@ -366,63 +375,63 @@ Click **"+ Create Collection"**
 - Name: `instructorName`
 - Type: String
 - Size: 255
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 2: workingDays**
 - Name: `workingDays`
 - Type: String
 - Size: 500
-- Required: ❌ No
-- Array: ✅ YES
+- Required: ??No
+- Array: ??YES
 - Click **Create Attribute**
 
 **Attribute 3: startTime**
 - Name: `startTime`
 - Type: String
 - Size: 20
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 4: endTime**
 - Name: `endTime`
 - Type: String
 - Size: 20
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 5: leaves**
 - Name: `leaves`
 - Type: String
 - Size: 2000
-- Required: ❌ No
-- Array: ✅ YES
+- Required: ??No
+- Array: ??YES
 - Click **Create Attribute**
 
 **Attribute 6: createdAt**
 - Name: `createdAt`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 7: updatedAt**
 - Name: `updatedAt`
 - Type: String
 - Size: 50
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 ### 5.3 Set Permissions
 
 Same as before
 
-✅ **Done with Step 5 - Instructor Schedules Created**
+??**Done with Step 5 - Instructor Schedules Created**
 
 ---
 
@@ -443,24 +452,24 @@ Click **"+ Create Collection"**
 - Name: `plateNumber`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 2: model**
 - Name: `model`
 - Type: String
 - Size: 100
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 3: transmission**
 - Name: `transmission`
 - Type: String
 - Size: 20
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Default Value: `MT`
 - Click **Create Attribute**
 
@@ -468,8 +477,8 @@ Click **"+ Create Collection"**
 - Name: `status`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Default Value: `available`
 - Click **Create Attribute**
 
@@ -477,63 +486,63 @@ Click **"+ Create Collection"**
 - Name: `imageUrl`
 - Type: String
 - Size: 500
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 6: mileage**
 - Name: `mileage`
 - Type: String
 - Size: 50
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 7: lastService**
 - Name: `lastService`
 - Type: String
 - Size: 50
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 8: nextServiceDue**
 - Name: `nextServiceDue`
 - Type: String
 - Size: 50
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 9: color**
 - Name: `color`
 - Type: String
 - Size: 50
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 10: year**
 - Name: `year`
 - Type: String
 - Size: 10
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 11: createdAt**
 - Name: `createdAt`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 ### 6.3 Set Permissions
 
 Same as before
 
-✅ **Done with Step 6 - Vehicles Created**
+??**Done with Step 6 - Vehicles Created**
 
 ---
 
@@ -554,56 +563,56 @@ Click **"+ Create Collection"**
 - Name: `userId`
 - Type: String
 - Size: 255
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 2: title**
 - Name: `title`
 - Type: String
 - Size: 255
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 3: description**
 - Name: `description`
 - Type: String
 - Size: 1000
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 4: date**
 - Name: `date`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 5: time**
 - Name: `time`
 - Type: String
 - Size: 20
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 6: location**
 - Name: `location`
 - Type: String
 - Size: 500
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 7: status**
 - Name: `status`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Default Value: `pending`
 - Click **Create Attribute**
 
@@ -611,31 +620,31 @@ Click **"+ Create Collection"**
 - Name: `createdAt`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 9: updatedAt**
 - Name: `updatedAt`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 10: completedDate**
 - Name: `completedDate`
 - Type: String
 - Size: 50
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 ### 7.3 Set Permissions
 
 Same as before
 
-✅ **Done with Step 7 - Appointments Created**
+??**Done with Step 7 - Appointments Created**
 
 ---
 
@@ -656,32 +665,32 @@ Click **"+ Create Collection"**
 - Name: `phoneNumber`
 - Type: String
 - Size: 20
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 2: message**
 - Name: `message`
 - Type: String
 - Size: 1000
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 3: type**
 - Name: `type`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 4: status**
 - Name: `status`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Default Value: `pending`
 - Click **Create Attribute**
 
@@ -689,27 +698,46 @@ Click **"+ Create Collection"**
 - Name: `sentAt`
 - Type: String
 - Size: 50
-- Required: ❌ No
-- Array: ❌ No
+- Required: ??No
+- Array: ??No
 - Click **Create Attribute**
 
 **Attribute 6: createdAt**
 - Name: `createdAt`
 - Type: String
 - Size: 50
-- Required: ✅ Yes
-- Array: ❌ No
+- Required: ??Yes
+- Array: ??No
 - Click **Create Attribute**
 
 ### 8.3 Set Permissions
 
 Same as before
 
-✅ **Done with Step 8 - SMS History Created**
+??**Done with Step 8 - SMS History Created**
 
 ---
 
-## STEP 9: Create Indexes for Performance (OPTIONAL but RECOMMENDED)
+## STEP 9: Create Collection 8 - USER-INSTRUCTOR-ASSIGNMENTS
+
+This collection stores the current user-to-instructor relationship. The backend uses the authenticated Appwrite account ID as the document ID, so each account has only one assignment.
+
+### 9.1 Create Collection
+- **Collection ID**: `user-instructor-assignments`
+- **Collection Name**: User Instructor Assignments
+
+### 9.2 Add Attributes
+- `userId`: String, 255 characters, required, not an array (user profile document ID)
+- `instructorId`: String, 255 characters, required, not an array (instructor profile document ID)
+- `createdAt`: String, 50 characters, required, not an array
+- `updatedAt`: String, 50 characters, required, not an array
+
+### 9.3 Set Permissions
+- Do not grant `Any` or `Users` client permissions. The backend API key is the only reader and writer.
+
+---
+
+## STEP 10: Create Indexes for Performance (OPTIONAL but RECOMMENDED)
 
 These make queries faster. Go to each collection and add:
 
@@ -728,15 +756,20 @@ These make queries faster. Go to each collection and add:
    - Keys: `role`
    - Click **Create**
 
+### In User Instructor Assignments Collection:
+1. Create a key index on `instructorId` (ascending) for assigned-user lookups
+2. Create a unique key index on `userId`
+
 ### In Instructors Collection:
 1. Click **Indexes** tab
 2. Click **"+ Create Index"**
    - Keys: `availability`
    - Click **Create**
+3. Create a key index on `email` for account-to-instructor profile lookup
 
 ---
 
-## STEP 10: Test Your Database
+## STEP 11: Test Your Database
 
 Let's verify everything works:
 
@@ -751,11 +784,11 @@ Let's verify everything works:
 4. Click **Create Document**
 5. You should see the document appear in the collection
 
-✅ **If this works, your database is set up correctly!**
+??**If this works, your database is set up correctly!**
 
 ---
 
-## STEP 11: Get Your Project ID & API Key
+## STEP 12: Get Your Project ID & API Key
 
 You'll need these to update your code:
 
@@ -770,7 +803,7 @@ You'll need these to update your code:
 
 ---
 
-## STEP 12: Update Your Code
+## STEP 13: Update Your Code
 
 Update these files with your new credentials:
 
@@ -778,7 +811,7 @@ Update these files with your new credentials:
 ```javascript
 const appwriteConfig = {
   endpoint: 'https://sgp.cloud.appwrite.io/v1',
-  projectId: 'YOUR_PROJECT_ID', // Paste from Step 11
+  projectId: 'YOUR_PROJECT_ID', // Paste from Step 12
   databaseId: 'main-database',
   usersCollectionId: 'users',
   appointmentsCollectionId: 'appointments',
@@ -794,10 +827,11 @@ const appwriteConfig = {
 ```javascript
 const appwriteConfig = {
   endpoint: 'https://sgp.cloud.appwrite.io/v1',
-  projectId: 'YOUR_PROJECT_ID', // Paste from Step 11
-  apiKey: 'YOUR_API_KEY', // Paste from Step 11
+  projectId: 'YOUR_PROJECT_ID', // Paste from Step 12
+  apiKey: 'YOUR_API_KEY', // Paste from Step 12
   databaseId: 'main-database',
   usersCollectionId: 'users',
+  instructorAssignmentsCollectionId: 'user-instructor-assignments',
   appointmentsCollectionId: 'appointments',
   bookingsCollectionId: 'bookings'
 };
@@ -805,14 +839,14 @@ const appwriteConfig = {
 
 ---
 
-## ✅ ALL DONE!
+## ??ALL DONE!
 
 Your database is now set up with:
-- ✅ 7 Collections created
-- ✅ All attributes added
-- ✅ Permissions set
-- ✅ Tested with sample data
-- ✅ Code updated with credentials
+- ??8 Collections created
+- ??All attributes added
+- ??Permissions set
+- ??Tested with sample data
+- ??Code updated with credentials
 
 **Next:** Start your application and test it!
 
@@ -826,4 +860,4 @@ cd frontend
 npm start
 ```
 
-You're ready to go! 🚀
+You're ready to go! ??

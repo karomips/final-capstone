@@ -18,7 +18,7 @@ New user accounts are now pending by default (except admin email):
 ## Deploy Steps
 
 1. In Appwrite Console, create a new function.
-2. Runtime: Node.js.
+2. Runtime: Node.js 22 (`node-22` in Appwrite Cloud).
 3. Entrypoint: `src/main.js`.
 4. Upload the folder `appwrite-functions/user-approved-email`.
 5. Set environment variables from function README.

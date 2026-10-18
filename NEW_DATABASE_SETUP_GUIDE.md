@@ -8,7 +8,7 @@ This guide contains everything you need to replicate your current database struc
 
 Your application uses the following structure:
 - **Database ID**: `main-database`
-- **7 Collections** with specific attributes
+- **8 Collections** with specific attributes
 - **Relationships** between collections
 
 ### Collections Summary
@@ -19,6 +19,7 @@ Your application uses the following structure:
 5. **vehicles** - Driving school vehicles
 6. **appointments** - General appointments (backup/legacy)
 7. **smsHistory** (optional) - SMS delivery history
+8. **user-instructor-assignments** - Private current instructor assignment per user
 
 ---
 
@@ -107,6 +108,7 @@ Your application uses the following structure:
 | Attribute Name | Type | Size | Required | Array | Default | Notes |
 |---|---|---|---|---|---|---|
 | name | String | 255 | Yes | No | - | Instructor full name |
+| email | String | 255 | No | No | - | Instructor login email, used to resolve the authenticated instructor profile |
 | certifications | String | 500 | Yes | No | - | Certifications/qualifications |
 | lessonType | String | 50 | Yes | No | "practical" | Values: "practical", "theory", "both" |
 | transmission | String | 20 | Yes | No | "MT" | Values: "MT" (Manual), "AT" (Automatic) |
@@ -252,6 +254,27 @@ Since Appwrite stores JSON as strings, the `leaves` array should be stored as a 
 
 ---
 
+### Collection 8: User Instructor Assignments
+
+**Collection ID**: `user-instructor-assignments`  
+**Name**: User Instructor Assignments
+
+Use the authenticated Appwrite account ID as each document ID so one account has one assignment record.
+
+**Attributes:**
+
+| Attribute Name | Type | Size | Required | Array | Default | Notes |
+|---|---|---|---|---|---|---|
+| userId | String | 255 | Yes | No | - | User profile document ID |
+| instructorId | String | 255 | Yes | No | - | Instructor profile document ID |
+| createdAt | String | 50 | Yes | No | - | Assignment creation time |
+| updatedAt | String | 50 | Yes | No | - | Most recent assignment change |
+
+**Permissions:**
+- Do not grant client roles any collection or document permissions. The backend API key manages assignment records.
+
+---
+
 ## Step 3: Create Indexes for Performance
 
 For better query performance, create these indexes:
@@ -266,10 +289,15 @@ For better query performance, create these indexes:
 - **Index 2**: `role`
 - **Index 3**: `approved`
 
+### In User Instructor Assignments Collection:
+- **Index 1**: `instructorId` (key index, ascending)
+- **Index 2**: `userId` (unique key index)
+
 ### In Instructors Collection:
 - **Index 1**: `availability`
 - **Index 2**: `transmission`
 - **Index 3**: `name`
+- **Index 4**: `email` (used to bind the instructor profile to its signed-in account)
 
 ---
 
@@ -321,6 +349,7 @@ const appwriteConfig = {
   apiKey: 'YOUR_NEW_API_KEY', // Generate from Appwrite Console
   databaseId: 'main-database',
   usersCollectionId: 'users',
+  instructorAssignmentsCollectionId: 'user-instructor-assignments',
   appointmentsCollectionId: 'appointments',
   bookingsCollectionId: 'bookings'
 };

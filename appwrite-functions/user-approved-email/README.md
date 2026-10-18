@@ -22,7 +22,7 @@ Add these attributes to `users` collection in Appwrite:
 
 ## Function Configuration
 
-- Runtime: Node.js
+- Runtime: Node.js 22 (`node-22` in Appwrite Cloud)
 - Entrypoint: `src/main.js`
 - Execute as: Appwrite API key with permission to update the users collection
 

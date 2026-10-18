@@ -3,6 +3,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, usersCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
+import { fetchMyInstructorAssignment } from '../../utils/instructorAssignmentApi';
 import './UserPages.css';
 
 function UserDashboard() {
@@ -13,6 +14,9 @@ function UserDashboard() {
   const [smsNotifications, setSmsNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('User');
+  const [assignedInstructor, setAssignedInstructor] = useState(null);
+  const [assignmentLoading, setAssignmentLoading] = useState(true);
+  const [assignmentError, setAssignmentError] = useState('');
 
   const practicalCoursePlan = [
     'Course 1: Vehicle Basics',
@@ -142,6 +146,17 @@ function UserDashboard() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (currentUser) {
+        fetchMyInstructorAssignment()
+          .then((assignment) => {
+            setAssignedInstructor(assignment);
+            setAssignmentError('');
+          })
+          .catch((error) => {
+            console.error('Error fetching instructor assignment:', error);
+            setAssignmentError(error.message || 'Could not load your instructor assignment.');
+          })
+          .finally(() => setAssignmentLoading(false));
+
         try {
           const usersResponse = await databases.listDocuments(
             databaseId,
@@ -198,6 +213,35 @@ function UserDashboard() {
           <button className="user-dashboard-primary-btn" type="button" onClick={() => navigate('/book-lesson')}>Book a lesson</button>
         </div>
       </div>
+
+        <div className="dashboard-card" style={{ marginBottom: '24px' }}>
+          <div className="card-header">
+            <h2>My Instructor</h2>
+          </div>
+          {assignmentLoading ? (
+            <div className="notification-empty-state">Loading instructor assignment...</div>
+          ) : assignmentError ? (
+            <div className="notification-empty-state" role="alert">{assignmentError}</div>
+          ) : assignedInstructor ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              {assignedInstructor.profileImageUrl && (
+                <img
+                  src={assignedInstructor.profileImageUrl}
+                  alt=""
+                  style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              )}
+              <div>
+                <strong>{assignedInstructor.instructorName}</strong>
+                {assignedInstructor.instructorEmail && <div>{assignedInstructor.instructorEmail}</div>}
+              </div>
+            </div>
+          ) : (
+            <div className="notification-empty-state">
+              No instructor selected yet. Choose one when you book a lesson.
+            </div>
+          )}
+        </div>
 
       <div className="dashboard-header">
         <div className="dashboard-overview">

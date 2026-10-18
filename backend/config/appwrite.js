@@ -7,6 +7,8 @@ const appwriteConfig = {
   apiKey: 'standard_f6753095e67988e07974c53727df08b4db07cdc936dddd0061e05d49e774c82274aa26eb231043d9fefe8230ae834b3b05ceb0f15667eade89d5361382d71ddc16f5e9c409bf404ee99852f50cec9fc736f24b5021128dbdc13aba8813cf6e1d33dba99b112c0951eb7b9e20373d48b1d833eae7d061db2597c96224abbeaceb', // Your Appwrite API Key
   databaseId: 'main-database', // Your Database ID (create this in Appwrite Console)
   usersCollectionId: 'users', // Users collection ID
+  instructorsCollectionId: 'instructors', // Instructors collection ID
+  instructorAssignmentsCollectionId: 'user-instructor-assignments', // Private user-to-instructor assignments
   appointmentsCollectionId: 'appointments', // Appointments collection ID
   bookingsCollectionId: 'bookings' // Bookings collection ID
 };
@@ -29,6 +31,10 @@ module.exports = {
   users,
   databaseId: appwriteConfig.databaseId,
   usersCollectionId: appwriteConfig.usersCollectionId,
+  instructorsCollectionId: appwriteConfig.instructorsCollectionId,
+  instructorAssignmentsCollectionId: appwriteConfig.instructorAssignmentsCollectionId,
+  endpoint: appwriteConfig.endpoint,
+  projectId: appwriteConfig.projectId,
   appointmentsCollectionId: appwriteConfig.appointmentsCollectionId,
   bookingsCollectionId: appwriteConfig.bookingsCollectionId
 };

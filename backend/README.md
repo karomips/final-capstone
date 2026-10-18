@@ -7,7 +7,7 @@ Node.js/Express backend with Appwrite integration.
 1. Install dependencies:
 ```bash
 cd backend
-npm install
+npm ci
 ```
 
 2. Configure environment:
@@ -16,7 +16,7 @@ npm install
 
 3. Start the server:
 ```bash
-npm run dev    # Development with auto-reload
+npm run dev    # Development with Node.js watch mode
 npm start      # Production
 ```
 
@@ -57,6 +57,12 @@ Setup guide:
 ### Users
 - `GET /api/users/:uid` - Get user profile by UID
 - `POST /api/users/:uid` - Create/Update user profile
+- `GET /api/users/me/instructor-assignment` - Get the signed-in user's selected instructor
+- `PUT /api/users/me/instructor-assignment` - Save or change the signed-in user's selected instructor
+- `PUT /api/instructors/me/profile` - Resolve or create the signed-in instructor's profile
+- `GET /api/instructors/me/assigned-users` - List users assigned to the signed-in instructor
+
+The instructor-assignment routes require `Authorization: Bearer <Appwrite JWT>`. The backend resolves the account from that JWT and never accepts a user ID or instructor ID as an authorization identity. The profile endpoint creates a minimal instructor record if the authenticated instructor has no matching record. New admin-created instructor records use the Auth account ID as their document ID. The assigned-users API needs a private `user-instructor-assignments` collection with `userId` and `instructorId` String attributes (255 characters), `createdAt` and `updatedAt` String attributes (50 characters), and an ascending index on `instructorId`. From this directory, run `npm run setup:assigned-users` to create the collection and missing schema. The setup keeps the collection private with no client permissions. The existing `instructors` collection also needs its `email` attribute and an index on `email`; email remains the fallback link for older instructor records.
 
 ### Auth (Email Verification)
 - `POST /api/auth/send-verification-code` - Send a 6-digit code to the user's email
@@ -66,6 +72,6 @@ Setup guide:
 
 ## Technologies
 - Express.js
-- Firebase Admin SDK
+- Appwrite Node.js SDK
 - CORS
 - dotenv

@@ -393,7 +393,7 @@ function InstructorsProfile() {
       await databases.createDocument(
         databaseId,
         instructorsCollectionId,
-        ID.unique(),
+        authUserId,
         {
           name: formData.name.trim(),
           email: formData.email.trim(),

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { databases, databaseId, bookingsCollectionId, instructorSchedulesCollectionId, instructorsCollectionId, account } from '../../appwrite/config';
+import { databases, databaseId, bookingsCollectionId, instructorSchedulesCollectionId, account } from '../../appwrite/config';
 import { Query, ID } from 'appwrite';
+import { ensureMyInstructorProfile, fetchMyAssignedUsers } from '../../utils/instructorAssignmentApi';
 import './InstructorPages.css';
 
 function InstructorDashboard() {
@@ -13,6 +14,10 @@ function InstructorDashboard() {
   const [instructorName, setInstructorName] = useState('Instructor');
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
+  const [assignedUsers, setAssignedUsers] = useState([]);
+  const [assignedUsersLoading, setAssignedUsersLoading] = useState(true);
+  const [assignedUsersRefreshing, setAssignedUsersRefreshing] = useState(false);
+  const [assignedUsersError, setAssignedUsersError] = useState('');
   const [scheduleSettings, setScheduleSettings] = useState(null);
   const [cancelledNotifications, setCancelledNotifications] = useState([]);
 
@@ -56,44 +61,44 @@ function InstructorDashboard() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (currentUser) {
-      const loadInstructorDashboard = async () => {
-        const resolvedName = await fetchInstructorData();
-        await Promise.all([
-          fetchBookings(resolvedName),
-          fetchScheduleSettings()
-        ]);
-        loadCancelledNotifications();
-      };
+    if (!currentUser) return undefined;
 
-      loadInstructorDashboard();
-    }
+    let cancelled = false;
+    const loadDashboard = async () => {
+      setLoading(true);
+      const instructor = await fetchInstructorData();
+      if (cancelled) return;
+      await Promise.all([fetchBookings(instructor.name), fetchScheduleSettings(), fetchAssignedUsers()]);
+      if (!cancelled) setLoading(false);
+    };
+
+    loadDashboard();
+    loadCancelledNotifications();
+
+    const refreshAssignedUsers = () => fetchAssignedUsers();
+    const refreshInterval = window.setInterval(refreshAssignedUsers, 30000);
+    window.addEventListener('focus', refreshAssignedUsers);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshInterval);
+      window.removeEventListener('focus', refreshAssignedUsers);
+    };
+    // Dashboard data is loaded once per authenticated account; callbacks intentionally capture that account.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
   const fetchInstructorData = async () => {
     try {
-      const response = await databases.listDocuments(
-        databaseId,
-        instructorsCollectionId,
-        [Query.equal('email', currentUser.email)]
-      );
-
-      if (response.documents.length > 0) {
-        const name = response.documents[0].name || 'Instructor';
-        setInstructorName(name);
-        return name;
-      } else {
-        // For instructor accounts created via signup, use email
-        const name = currentUser.email.split('@')[0] || 'Instructor';
-        setInstructorName(name);
-        return name;
-      }
+      const instructor = await ensureMyInstructorProfile();
+      const name = instructor?.name || currentUser.name || currentUser.email?.split('@')[0] || 'Instructor';
+      setInstructorName(name);
+      return { id: instructor?.id || '', name };
     } catch (error) {
       console.error('Error fetching instructor data:', error);
-      // Fallback to email prefix if error occurs
-      const name = currentUser.email.split('@')[0] || 'Instructor';
+      const name = currentUser.name || currentUser.email?.split('@')[0] || 'Instructor';
       setInstructorName(name);
-      return name;
+      return { id: '', name };
     }
   };
 
@@ -108,6 +113,21 @@ function InstructorDashboard() {
     } catch (error) {
       console.error('Error fetching bookings:', error);
       setBookings([]);
+    }
+  };
+
+  const fetchAssignedUsers = async () => {
+    setAssignedUsersRefreshing(true);
+    try {
+      const users = await fetchMyAssignedUsers();
+      setAssignedUsers(users);
+      setAssignedUsersError('');
+    } catch (error) {
+      console.error('Error fetching assigned users:', error);
+      setAssignedUsersError(error.message || 'Could not load assigned users.');
+    } finally {
+      setAssignedUsersLoading(false);
+      setAssignedUsersRefreshing(false);
     }
   };
 
@@ -128,8 +148,6 @@ function InstructorDashboard() {
       }
     } catch (error) {
       console.error('Error fetching schedule settings:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -380,6 +398,47 @@ function InstructorDashboard() {
             <h3>Slot Notifications</h3>
             <div className="stat-number">{cancelledNotifications.length}</div>
           </div>
+        </div>
+      </div>
+
+      <div className="instructor-card" style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+          <h2 className="section-title" style={{ margin: 0 }}>My Assigned Users</h2>
+          <button type="button" className="action-btn" onClick={fetchAssignedUsers} disabled={assignedUsersRefreshing}>
+            {assignedUsersRefreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+        <div style={{ marginTop: '16px' }}>
+          {assignedUsersLoading ? (
+            <div className="loading-state">Loading assigned users...</div>
+          ) : assignedUsersError ? (
+            <div className="empty-state" role="alert">
+              <p>{assignedUsersError}</p>
+            </div>
+          ) : assignedUsers.length === 0 ? (
+            <div className="empty-state">
+              <p>No users are assigned to you yet.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+              {assignedUsers.map((student) => (
+                <div key={student.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', border: '1px solid #e5e7eb', borderRadius: '10px' }}>
+                  {student.profileImageUrl ? (
+                    <img src={student.profileImageUrl} alt="" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <div aria-hidden="true" style={{ width: '44px', height: '44px', borderRadius: '50%', display: 'grid', placeItems: 'center', background: '#e8eef8', color: '#17417a', fontWeight: 700 }}>
+                      {(student.name || 'U').trim().charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <strong>{student.name}</strong>
+                    <div>{student.email}</div>
+                    {student.phoneNumber && <div>{student.phoneNumber}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { AlertCircle, ArrowRight, ArrowUpRight, Bell, BookOpen, CalendarDays, CalendarOff, CalendarPlus, CarFront, Check, ChevronRight, Clock3, Coffee, Info, LoaderCircle, LockKeyhole, Mail, Plus, RefreshCw, Save, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { ConfirmationDialog, EmptyState, SectionHeading } from './InstructorUI';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, instructorSchedulesCollectionId, account } from '../../appwrite/config';
 import { Query, ID } from 'appwrite';
@@ -7,9 +9,8 @@ import { ensureMyInstructorProfile, fetchMyAssignedUsers } from '../../utils/ins
 import './InstructorPages.css';
 
 function InstructorDashboard() {
-  const { currentUser, logout } = useAuth();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const { currentUser } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [instructorName, setInstructorName] = useState('Instructor');
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
@@ -45,19 +46,12 @@ function InstructorDashboard() {
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
 
   // Confirmation Modals
-  const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [showSaveBreaksModal, setShowSaveBreaksModal] = useState(false);
   const [showSaveLeavesModal, setShowSaveLeavesModal] = useState(false);
   const [showSaveHoursModal, setShowSaveHoursModal] = useState(false);
   const [showSaveSettingsModal, setShowSaveSettingsModal] = useState(false);
 
-  // Tab State
-  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'schedule');
-
-  useEffect(() => {
-    const requestedTab = searchParams.get('tab');
-    setActiveTab(requestedTab || 'schedule');
-  }, [searchParams]);
+  const activeTab = searchParams.get('tab') || 'dashboard';
 
   useEffect(() => {
     if (!currentUser) return undefined;
@@ -300,15 +294,6 @@ function InstructorDashboard() {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
   const handleSaveBreaks = () => {
     setShowSaveBreaksModal(true);
   };
@@ -357,679 +342,176 @@ function InstructorDashboard() {
       });
   }, [bookings]);
 
-  return (
-    <div className="instructor-main-content">
-      <h1 className="instructor-page-title">Welcome back, {instructorName}!</h1>
+  const goToTab = (tab) => setSearchParams(tab === 'dashboard' ? {} : { tab });
+  const pageDetails = {
+    dashboard: ['My dashboard', 'A clear view of your lessons, students, and availability.'],
+    schedule: ['My schedule', 'Stay on top of your upcoming lessons and student bookings.'],
+    hours: ['Working hours', 'Set your weekly availability for driving lessons.'],
+    breaks: ['Breaks', 'Make room in your schedule to pause and recharge.'],
+    leaves: ['Leaves', 'Plan your time away and manage your leave dates.'],
+    notifications: ['Slot alerts', 'Keep track of lesson slots opened by cancellations.'],
+    settings: ['Account settings', 'Manage your instructor account and keep it secure.']
+  };
+  const currentTab = pageDetails[activeTab] ? activeTab : 'dashboard';
+  const [pageTitle, pageDescription] = pageDetails[currentTab];
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+  const todayCount = bookings.filter((booking) => booking.date === today).length;
+  const activeDays = Object.values(workingHours).filter((hours) => !hours.off).length;
+  const formatDate = (date) => new Date(`${String(date).slice(0, 10)}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const formatTime = (time) => {
+    if (!time) return '--';
+    const [hours, minutes] = time.split(':');
+    return `${Number(hours) % 12 || 12}:${minutes} ${Number(hours) >= 12 ? 'PM' : 'AM'}`;
+  };
 
-      {/* Stats Cards */}
-      <div className="dashboard-stats">
-        <div className="stat-card">
-          <div className="stat-icon">📅</div>
-          <div className="stat-content">
-            <h3>Today's Bookings</h3>
-            <div className="stat-number">
-              {bookings.filter(b => {
-                const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
-                return b.date === today;
-              }).length}
-            </div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">📍</div>
-          <div className="stat-content">
-            <h3>Upcoming Lessons</h3>
-            <div className="stat-number">{upcomingSchedule.length}</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">🔔</div>
-          <div className="stat-content">
-            <h3>Slot Notifications</h3>
-            <div className="stat-number">{cancelledNotifications.length}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="instructor-card" style={{ marginBottom: '24px' }}>
-        <div className="assigned-users-header">
-          <h2 className="section-title" style={{ margin: 0 }}>My Assigned Users</h2>
-          <button type="button" className="action-btn" onClick={fetchAssignedUsers} disabled={assignedUsersRefreshing}>
-            {assignedUsersRefreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
-        <div style={{ marginTop: '16px' }}>
-          {assignedUsersLoading ? (
-            <div className="loading-state">Loading assigned users...</div>
-          ) : assignedUsersError ? (
-            <div className="empty-state" role="alert">
-              <p>{assignedUsersError}</p>
-            </div>
-          ) : assignedUsers.length === 0 ? (
-            <div className="empty-state">
-              <p>No users are assigned to you yet.</p>
-            </div>
-          ) : (
-            <div className="assigned-users-grid">
-              {assignedUsers.map((student) => (
-                <div key={student.id} className="assigned-user-card">
-                  {student.profileImageUrl ? (
-                    <img src={student.profileImageUrl} alt="" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }} />
-                  ) : (
-                    <div aria-hidden="true" style={{ width: '44px', height: '44px', borderRadius: '50%', display: 'grid', placeItems: 'center', background: '#e8eef8', color: '#17417a', fontWeight: 700 }}>
-                      {(student.name || 'U').trim().charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div style={{ minWidth: 0 }}>
-                    <strong>{student.name}</strong>
-                    <div>{student.email}</div>
-                    {student.phoneNumber && <div>{student.phoneNumber}</div>}
-                  </div>
-                </div>
+  const lessonTable = (preview = false) => (
+    <section className="ins-card">
+      <SectionHeading
+        icon={CalendarDays}
+        title="Upcoming lessons"
+        description={preview ? 'Your next lessons, all in one place.' : 'Your scheduled lessons, ordered by date and time.'}
+        action={preview ? <button type="button" className="ins-text-button" onClick={() => goToTab('schedule')}>View schedule <ArrowUpRight size={16} aria-hidden="true" /></button> : <span className="ins-count">{upcomingSchedule.length} lessons</span>}
+      />
+      {loading ? (
+        <div className="ins-loading" role="status"><LoaderCircle className="ins-spin" size={22} aria-hidden="true" />Loading your schedule...</div>
+      ) : upcomingSchedule.length === 0 ? (
+        <EmptyState icon={CalendarDays} title="Your schedule is clear" description="Upcoming lessons will appear here when a student books a session with you." />
+      ) : (
+        <div className="ins-table-scroll" tabIndex={0} role="region" aria-label="Upcoming lessons">
+          <table className="ins-table">
+            <thead><tr><th scope="col">Date & time</th><th scope="col">Student</th><th scope="col">Lesson</th>{!preview && <th scope="col">Vehicle</th>}<th scope="col">Status</th></tr></thead>
+            <tbody>
+              {(preview ? upcomingSchedule.slice(0, 5) : upcomingSchedule).map((booking) => (
+                <tr key={booking.$id}>
+                  <td><strong>{formatDate(booking.date)}</strong><span className="ins-cell-sub"><Clock3 size={12} aria-hidden="true" />{booking.time}</span></td>
+                  <td><span className="ins-student-cell"><span className="ins-small-avatar" aria-hidden="true">{(booking.userName || 'S').trim().charAt(0).toUpperCase()}</span><strong>{booking.userName || 'Student'}</strong></span></td>
+                  <td><span className="ins-lesson-type">{booking.lessonType === 'practical' ? <CarFront size={15} aria-hidden="true" /> : <BookOpen size={15} aria-hidden="true" />}{booking.lessonType === 'practical' ? 'Behind-the-wheel' : 'Theory'}</span></td>
+                  {!preview && <td>{booking.vehicle || 'Not assigned'}</td>}
+                  <td><span className={`ins-status ins-status--${String(booking.status || 'pending').toLowerCase()}`}><span aria-hidden="true" />{booking.status || 'Pending'}</span></td>
+                </tr>
               ))}
-            </div>
-          )}
+            </tbody>
+          </table>
         </div>
-      </div>
+      )}
+      {preview && upcomingSchedule.length > 5 && <div className="ins-card-footnote">Showing 5 of {upcomingSchedule.length} upcoming lessons</div>}
+    </section>
+  );
 
-      {/* Tab Content */}
-      <div className="instructor-tabs-content">
-        {/* My Schedule Tab */}
-        {activeTab === 'schedule' && (
-          <div className="tab-panel">
-            <div className="instructor-card">
-              <h2 className="section-title">📅 Upcoming Lessons</h2>
-              <div className="schedule-list table-scroll-region" tabIndex={0} role="region" aria-label="Upcoming lessons">
-                {loading ? (
-                  <div className="loading-state">Loading schedule...</div>
-                ) : upcomingSchedule.length === 0 ? (
-                  <div className="empty-state">
-                    <div className="empty-icon">📭</div>
-                    <p>No upcoming lessons scheduled</p>
-                  </div>
-                ) : (
-                  <table className="schedule-table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Student</th>
-                        <th>Lesson Type</th>
-                        <th>Vehicle</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {upcomingSchedule.map(booking => (
-                        <tr key={booking.$id}>
-                          <td>
-                            {new Date(`${booking.date}T00:00:00`).toLocaleDateString('en-US', {
-                              timeZone: 'Asia/Manila',
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                          </td>
-                          <td>{booking.time}</td>
-                          <td>{booking.userName}</td>
-                          <td>{booking.lessonType === 'practical' ? 'Behind-the-Wheel' : 'Theory'}</td>
-                          <td>{booking.vehicle}</td>
-                          <td>
-                            <span className={`status-badge ${booking.status.toLowerCase()}`}>
-                              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+  const assignedStudents = (
+    <section className="ins-card">
+      <SectionHeading icon={Users} title="Assigned students" description="The students learning with you."
+        action={<button type="button" className="ins-button ins-button--secondary ins-button--small" onClick={fetchAssignedUsers} disabled={assignedUsersRefreshing}><RefreshCw size={14} className={assignedUsersRefreshing ? 'ins-spin' : ''} aria-hidden="true" />{assignedUsersRefreshing ? 'Refreshing...' : 'Refresh'}</button>}
+      />
+      {assignedUsersLoading ? (
+        <div className="ins-loading" role="status"><LoaderCircle className="ins-spin" size={22} aria-hidden="true" />Loading your students...</div>
+      ) : assignedUsersError ? (
+        <div className="ins-feedback ins-feedback--error" role="alert"><AlertCircle size={18} aria-hidden="true" /><span>{assignedUsersError}</span></div>
+      ) : assignedUsers.length === 0 ? (
+        <EmptyState icon={Users} compact title="Ready for your next student" description="Students will appear here once they're assigned to you." />
+      ) : (
+        <div className="ins-students-grid">
+          {assignedUsers.map((student) => (
+            <article key={student.id} className="ins-student-card">
+              {student.profileImageUrl ? <img className="ins-avatar" src={student.profileImageUrl} alt="" /> : <span className="ins-avatar" aria-hidden="true">{(student.name || 'S').trim().charAt(0).toUpperCase()}</span>}
+              <div><h3>{student.name}</h3><p>{student.email}</p>{student.phoneNumber && <p>{student.phoneNumber}</p>}</div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+
+  return (
+    <main className={`instructor-main-content ins-workspace${currentTab === 'dashboard' ? ' ins-workspace--dashboard' : ''}`} id="instructor-main">
+      <header className="ins-page-header">
+        <div><div className="ins-breadcrumb">Instructor portal <ChevronRight size={13} aria-hidden="true" /><span>{pageTitle}</span></div><h1>{pageTitle}</h1><p>{pageDescription}</p></div>
+        <div className="ins-date"><CalendarDays size={17} strokeWidth={1.7} aria-hidden="true" /><span>{new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span></div>
+      </header>
+
+      {currentTab === 'dashboard' && (
+        <>
+          <section className="ins-welcome">
+            <div className="ins-welcome-copy"><span className="ins-eyebrow">YOUR INSTRUCTOR WORKSPACE</span><h2>Welcome back, {instructorName.split(' ')[0]}.</h2><p>{todayCount > 0 ? `You have ${todayCount} ${todayCount === 1 ? 'lesson' : 'lessons'} booked for today. Let's make every session count.` : 'A little planning goes a long way. Get ready for the road ahead.'}</p><button type="button" className="ins-button ins-button--white" onClick={() => goToTab('schedule')}>View my schedule <ArrowRight size={16} aria-hidden="true" /></button></div>
+            <div className="ins-welcome-art" aria-hidden="true"><div className="ins-art-orbit ins-art-orbit--outer" /><div className="ins-art-orbit ins-art-orbit--inner" /><div className="ins-art-icon"><CarFront size={56} strokeWidth={1.2} /></div><span className="ins-art-dot" /><span className="ins-art-label"><Check size={14} />Ready for the road</span></div>
+          </section>
+          <div className="ins-stats">
+            {[
+              { label: "Today's lessons", value: todayCount, detail: 'Booked for today', icon: CalendarDays, color: 'blue' },
+              { label: 'Upcoming lessons', value: upcomingSchedule.length, detail: 'On your schedule', icon: BookOpen, color: 'teal' },
+              { label: 'Assigned students', value: assignedUsers.length, detail: 'Learning with you', icon: Users, color: 'violet', pending: assignedUsersLoading },
+              { label: 'Slot alerts', value: cancelledNotifications.length, detail: 'From cancellations', icon: Bell, color: 'amber' }
+            ].map(({ label, value, detail, icon: Icon, color, pending }) => (
+              <article className="ins-stat" key={label}><div className="ins-stat-top"><h3>{label}</h3><span className={`ins-stat-icon ins-stat-icon--${color}`}><Icon size={19} strokeWidth={1.8} aria-hidden="true" /></span></div><strong className="ins-stat-value">{loading || pending ? <span className="ins-skeleton" aria-label="Loading" /> : String(value).padStart(2, '0')}</strong><p>{detail}</p></article>
+            ))}
+          </div>
+          <div className="ins-dashboard-grid">
+            <div className="ins-stack">{lessonTable(true)}{assignedStudents}</div>
+            <aside className="ins-stack" aria-label="Availability and quick links">
+              <section className="ins-card ins-week-card">
+                <SectionHeading icon={Clock3} title="Your availability" description="Your regular teaching week" />
+                <div className="ins-week-strip">{Object.entries(workingHours).map(([day, hours]) => <span key={day} className={hours.off ? 'ins-week-day ins-week-day--off' : 'ins-week-day'} title={`${day}: ${hours.off ? 'Day off' : `${formatTime(hours.start)} to ${formatTime(hours.end)}`}`}><span>{day.slice(0, 1).toUpperCase()}</span>{hours.off ? <span className="ins-day-dash">–</span> : <Check size={13} aria-hidden="true" />}</span>)}</div>
+                <p className="ins-availability-copy"><strong>{activeDays} teaching days</strong> per week<span>Times follow your saved working hours.</span></p>
+                <button type="button" className="ins-button ins-button--secondary ins-button--full" onClick={() => goToTab('hours')}>Manage working hours <ArrowRight size={15} aria-hidden="true" /></button>
+              </section>
+              <section className="ins-card ins-quick-card"><h2>Quick access</h2><p>Keep your week running smoothly.</p>{[{ tab: 'breaks', icon: Coffee, title: 'Manage breaks', text: 'Plan time between lessons' }, { tab: 'leaves', icon: CalendarOff, title: 'Plan time off', text: 'Manage your leave dates' }, { tab: 'notifications', icon: Bell, title: 'View slot alerts', text: 'Check available lesson slots' }].map(({ tab, icon: Icon, title, text }) => <button type="button" className="ins-quick-link" key={tab} onClick={() => goToTab(tab)}><span className="ins-quick-icon"><Icon size={18} strokeWidth={1.7} aria-hidden="true" /></span><span><strong>{title}</strong><small>{text}</small></span><ChevronRight size={16} aria-hidden="true" /></button>)}</section>
+              <div className="ins-note"><ShieldCheck size={20} strokeWidth={1.6} aria-hidden="true" /><p>Great lessons start with a clear plan. Keep your availability up to date.</p></div>
+            </aside>
+          </div>
+        </>
+      )}
+
+      {currentTab === 'schedule' && <div className="ins-stack">{lessonTable()}{assignedStudents}</div>}
+
+      {currentTab === 'hours' && (
+        <section className="ins-card">
+          <SectionHeading icon={Clock3} title="Weekly availability" description="Choose the days and times you're available to teach." action={<span className="ins-count">{activeDays} active days</span>} />
+          <div className="ins-info"><Info size={17} aria-hidden="true" /><p>All times are in Philippine Time (GMT+8). Turn off a day when you're unavailable.</p></div>
+          <div className="ins-hours-list">
+            {Object.entries(workingHours).map(([day, hours], index) => (
+              <div key={day} className={`ins-hours-row ${hours.off ? 'ins-hours-row--off' : ''}`}>
+                <div className="ins-day-name"><span className="ins-day-abbr">{day.slice(0, 3)}</span><strong>{day.charAt(0).toUpperCase() + day.slice(1)}</strong></div>
+                <label className="ins-toggle"><input type="checkbox" checked={!hours.off} onChange={() => handleDayOffToggle(day)} aria-label={`${day} availability`} /><span className="ins-toggle-track" aria-hidden="true" /><span>{hours.off ? 'Day off' : 'Available'}</span></label>
+                {hours.off ? <p className="ins-day-off"><CalendarOff size={16} aria-hidden="true" />No lessons on this day</p> : <div className="ins-hours-times"><label htmlFor={`start-${index}`}><span>Start time</span><input id={`start-${index}`} aria-label={`${day} start time`} type="time" value={hours.start} onChange={(event) => handleWorkingHourChange(day, 'start', event.target.value)} /></label><ArrowRight size={16} aria-hidden="true" /><label htmlFor={`end-${index}`}><span>End time</span><input id={`end-${index}`} aria-label={`${day} end time`} type="time" value={hours.end} onChange={(event) => handleWorkingHourChange(day, 'end', event.target.value)} /></label></div>}
               </div>
-            </div>
+            ))}
           </div>
-        )}
+          <div className="ins-card-actions"><p>Changes apply after you save.</p><button type="button" className="ins-button ins-button--primary" onClick={handleSaveHours}><Save size={16} aria-hidden="true" />Save working hours</button></div>
+        </section>
+      )}
 
-        {/* Working Hours Tab */}
-        {activeTab === 'hours' && (
-          <div className="tab-panel">
-            <div className="instructor-card">
-              <h2 className="section-title">Set Your Working Hours</h2>
-              <div className="working-hours-grid">
-                {Object.entries(workingHours).map(([day, hours]) => (
-                  <div key={day} className="working-hours-item">
-                    <div className="day-header">
-                      <label className="day-label">{day.charAt(0).toUpperCase() + day.slice(1)}</label>
-                      <label className="day-off-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={hours.off}
-                          onChange={() => handleDayOffToggle(day)}
-                        />
-                        <span>Day Off</span>
-                      </label>
-                    </div>
-                    {!hours.off && (
-                      <div className="time-inputs">
-                        <div className="time-field">
-                          <label>Start</label>
-                          <input
-                            type="time"
-                            value={hours.start}
-                            onChange={(e) => handleWorkingHourChange(day, 'start', e.target.value)}
-                          />
-                        </div>
-                        <div className="time-field">
-                          <label>End</label>
-                          <input
-                            type="time"
-                            value={hours.end}
-                            onChange={(e) => handleWorkingHourChange(day, 'end', e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <button className="save-button" onClick={handleSaveHours}>
-                Save Working Hours
-              </button>
-            </div>
-          </div>
-        )}
+      {currentTab === 'breaks' && (
+        <section className="ins-card">
+          <SectionHeading icon={Coffee} title="Scheduled breaks" description="Set aside recurring time during your teaching week." action={<span className="ins-count">{breaks.length} {breaks.length === 1 ? 'break' : 'breaks'}</span>} />
+          <div className="ins-info"><Info size={17} aria-hidden="true" /><p>Add a day, start time, and end time for each break. All times are in Philippine Time.</p></div>
+          {breaks.length === 0 ? <EmptyState icon={Coffee} title="Room for a breather" description="Add your lunch break or a regular pause between lessons." /> : <div className="ins-breaks-list">{breaks.map((breakItem, index) => (
+            <div key={breakItem.id} className="ins-break-row"><span className="ins-row-number">{String(index + 1).padStart(2, '0')}</span><div className="ins-break-fields"><label htmlFor={`break-day-${breakItem.id}`}><span>Day of the week</span><select id={`break-day-${breakItem.id}`} value={breakItem.day} onChange={(event) => handleBreakChange(breakItem.id, 'day', event.target.value)}>{['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => <option key={day} value={day}>{day.charAt(0).toUpperCase() + day.slice(1)}</option>)}</select></label><label htmlFor={`break-start-${breakItem.id}`}><span>Start time</span><input id={`break-start-${breakItem.id}`} type="time" value={breakItem.start} onChange={(event) => handleBreakChange(breakItem.id, 'start', event.target.value)} /></label><span className="ins-break-arrow" aria-hidden="true"><ArrowRight size={16} /></span><label htmlFor={`break-end-${breakItem.id}`}><span>End time</span><input id={`break-end-${breakItem.id}`} type="time" value={breakItem.end} onChange={(event) => handleBreakChange(breakItem.id, 'end', event.target.value)} /></label></div><button type="button" className="ins-icon-button ins-icon-button--danger" onClick={() => removeBreak(breakItem.id)} aria-label={`Remove break ${index + 1}`}><Trash2 size={17} aria-hidden="true" /></button></div>
+          ))}</div>}
+          <div className="ins-card-actions"><button type="button" className="ins-button ins-button--secondary" onClick={addBreak}><Plus size={17} aria-hidden="true" />Add break</button><button type="button" className="ins-button ins-button--primary" onClick={handleSaveBreaks}><Save size={16} aria-hidden="true" />Save breaks</button></div>
+        </section>
+      )}
 
-        {/* Breaks Tab */}
-        {activeTab === 'breaks' && (
-          <div className="tab-panel">
-            <div className="instructor-card">
-              <h2 className="section-title">Manage Your Breaks</h2>
-              <div className="breaks-container">
-                {breaks.length === 0 ? (
-                  <div className="empty-state">
-                    <p>No breaks scheduled</p>
-                  </div>
-                ) : (
-                  <div className="breaks-list">
-                    {breaks.map(breakItem => (
-                      <div key={breakItem.id} className="break-item">
-                        <div className="break-content">
-                          <select
-                            value={breakItem.day}
-                            onChange={(e) => handleBreakChange(breakItem.id, 'day', e.target.value)}
-                            className="break-day-select"
-                          >
-                            <option value="monday">Monday</option>
-                            <option value="tuesday">Tuesday</option>
-                            <option value="wednesday">Wednesday</option>
-                            <option value="thursday">Thursday</option>
-                            <option value="friday">Friday</option>
-                            <option value="saturday">Saturday</option>
-                            <option value="sunday">Sunday</option>
-                          </select>
-                          <input
-                            type="time"
-                            value={breakItem.start}
-                            onChange={(e) => handleBreakChange(breakItem.id, 'start', e.target.value)}
-                          />
-                          <span>→</span>
-                          <input
-                            type="time"
-                            value={breakItem.end}
-                            onChange={(e) => handleBreakChange(breakItem.id, 'end', e.target.value)}
-                          />
-                        </div>
-                        <button
-                          className="remove-btn"
-                          onClick={() => removeBreak(breakItem.id)}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="action-buttons">
-                <button className="add-button" onClick={addBreak}>
-                  ➕ Add Break
-                </button>
-                <button className="save-button" onClick={handleSaveBreaks}>
-                  💾 Save Breaks
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Leaves Tab */}
-        {activeTab === 'leaves' && (
-          <div className="tab-panel">
-            <div className="instructor-card">
-              <h2 className="section-title">Request Leaves</h2>
-              <div className="leave-form">
-                <div className="form-group">
-                  <label>Start Date</label>
-                  <input
-                    type="date"
-                    value={leaveForm.startDate}
-                    onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>End Date</label>
-                  <input
-                    type="date"
-                    value={leaveForm.endDate}
-                    onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Reason (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Personal, Medical, Vacation"
-                    value={leaveForm.reason}
-                    onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
-                  />
-                </div>
-                <button className="add-button" onClick={addLeave}>
-                  Add Leave
-                </button>
-              </div>
-
-              {leaves.length > 0 && (
-                <div className="leaves-list">
-                  <h3>Your Leaves</h3>
-                  {leaves.map(leave => (
-                    <div key={leave.id} className="leave-item">
-                      <div className="leave-content">
-                        <div className="leave-dates">
-                          {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
-                        </div>
-                        {leave.reason && <div className="leave-reason">Reason: {leave.reason}</div>}
-                      </div>
-                      <button
-                        className="remove-btn"
-                        onClick={() => removeLeave(leave.id)}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <button className="save-button" onClick={handleSaveLeaves}>
-                Save Leaves
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Notifications Tab */}
-        {activeTab === 'notifications' && (
-          <div className="tab-panel">
-            <div className="instructor-card">
-              <h2 className="section-title">Available Slots from Cancellations</h2>
-              {cancelledNotifications.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">📭</div>
-                  <p>No cancelled slots available right now</p>
-                </div>
-              ) : (
-                <div className="notifications-list">
-                  {cancelledNotifications.map((notification, index) => (
-                    <div key={index} className="notification-item">
-                      <div className="notification-content">
-                        <div className="notification-date">
-                          {new Date(notification.date).toLocaleDateString()} at {notification.time}
-                        </div>
-                        <div className="notification-student">
-                          Student: {notification.studentName}
-                        </div>
-                        <div className="notification-type">
-                          {notification.lessonType === 'practical' ? 'Behind-the-Wheel' : 'Theory'} Lesson
-                        </div>
-                      </div>
-                      <button className="claim-btn" onClick={() => {
-                        alert('You can now accept this slot from ' + notification.studentName);
-                        setCancelledNotifications(prev => prev.filter((_, i) => i !== index));
-                      }}>
-                        ✓ Mark as Reviewed
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Settings Tab */}
-        {activeTab === 'settings' && (
-          <div className="tab-panel">
-            <div className="instructor-card">
-              <h2 className="section-title">Account Settings</h2>
-              
-              <form style={{maxWidth: '500px'}}>
-                {passwordMessage.text && (
-                  <div style={{
-                    background: passwordMessage.type === 'success' ? '#dcfce7' : '#fee2e2',
-                    color: passwordMessage.type === 'success' ? '#166534' : '#991b1b',
-                    padding: '12px 16px',
-                    borderRadius: '6px',
-                    marginBottom: '16px',
-                    fontSize: '14px'
-                  }}>
-                    {passwordMessage.text}
-                  </div>
-                )}
-                
-                <div className="form-group" style={{marginBottom: '16px'}}>
-                  <label style={{display: 'block', marginBottom: '8px', fontWeight: '600'}}>Current Password</label>
-                  <input
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
-                    placeholder="Enter your current password"
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontFamily: 'inherit'
-                    }}
-                  />
-                </div>
-
-                <div className="form-group" style={{marginBottom: '16px'}}>
-                  <label style={{display: 'block', marginBottom: '8px', fontWeight: '600'}}>New Password (minimum 8 characters)</label>
-                  <input
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-                    placeholder="Enter new password"
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontFamily: 'inherit'
-                    }}
-                  />
-                </div>
-
-                <div className="form-group" style={{marginBottom: '20px'}}>
-                  <label style={{display: 'block', marginBottom: '8px', fontWeight: '600'}}>Confirm New Password</label>
-                  <input
-                    type="password"
-                    value={passwordForm.confirmPassword}
-                    onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
-                    placeholder="Confirm new password"
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontFamily: 'inherit'
-                    }}
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowSaveSettingsModal(true)}
-                  style={{
-                    background: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    padding: '12px 24px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600'
-                  }}
-                >
-                  Change Password
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Sign Out Confirmation Modal */}
-      {showSignOutModal && (
-        <div className="modal-overlay" onClick={() => setShowSignOutModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Sign Out</h2>
-              <button className="modal-close" onClick={() => setShowSignOutModal(false)}>×</button>
-            </div>
-            <div style={{padding: '20px', textAlign: 'center'}}>
-              <p style={{marginBottom: '20px', color: '#333'}}>Are you sure you want to sign out of your account?</p>
-              <div style={{display: 'flex', gap: '10px', justifyContent: 'center'}}>
-                <button
-                  onClick={() => setShowSignOutModal(false)}
-                  style={{
-                    background: '#e5e7eb',
-                    color: '#333',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSignOut}
-                  style={{
-                    background: '#dc2626',
-                    color: 'white',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Sign Out
-                </button>
-              </div>
-            </div>
-          </div>
+      {currentTab === 'leaves' && (
+        <div className="ins-leave-layout">
+          <section className="ins-card"><SectionHeading icon={CalendarPlus} title="Add leave dates" description="Let your schedule reflect your time away." /><div className="ins-leave-form"><div className="ins-form-two"><label htmlFor="leave-start"><span>Start date</span><input id="leave-start" type="date" value={leaveForm.startDate} onChange={(event) => setLeaveForm({ ...leaveForm, startDate: event.target.value })} /></label><label htmlFor="leave-end"><span>End date</span><input id="leave-end" type="date" value={leaveForm.endDate} onChange={(event) => setLeaveForm({ ...leaveForm, endDate: event.target.value })} /></label></div><label htmlFor="leave-reason"><span>Reason <small>(optional)</small></span><input id="leave-reason" type="text" placeholder="e.g. Personal appointment or vacation" value={leaveForm.reason} onChange={(event) => setLeaveForm({ ...leaveForm, reason: event.target.value })} /></label><button type="button" className="ins-button ins-button--secondary" onClick={addLeave}><Plus size={16} aria-hidden="true" />Add leave</button><div className="ins-info"><Info size={17} aria-hidden="true" /><p>Add your dates to the list, then save your leaves to apply the changes.</p></div></div></section>
+          <section className="ins-card"><SectionHeading icon={CalendarOff} title="Your leaves" description="A record of your planned time away." action={<span className="ins-count">{leaves.length} {leaves.length === 1 ? 'entry' : 'entries'}</span>} />{leaves.length === 0 ? <EmptyState icon={CalendarOff} title="No leave dates added" description="Your leave dates will appear here once you add them." /> : <div className="ins-leaves-list">{leaves.map((leave) => <article key={leave.id} className="ins-leave-row"><span className="ins-leave-icon"><CalendarOff size={19} aria-hidden="true" /></span><div><h3>{formatDate(leave.startDate)} <span>to</span> {formatDate(leave.endDate)}</h3><p>{leave.reason || 'No reason provided'}</p></div><button type="button" className="ins-icon-button ins-icon-button--danger" onClick={() => removeLeave(leave.id)} aria-label={`Remove leave starting ${formatDate(leave.startDate)}`}><Trash2 size={17} aria-hidden="true" /></button></article>)}</div>}<div className="ins-card-actions"><p>Save to apply your leave dates.</p><button type="button" className="ins-button ins-button--primary" onClick={handleSaveLeaves}><Save size={16} aria-hidden="true" />Save leaves</button></div></section>
         </div>
       )}
 
-      {/* Save Breaks Confirmation Modal */}
-      {showSaveBreaksModal && (
-        <div className="modal-overlay" onClick={() => setShowSaveBreaksModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Save Breaks</h2>
-              <button className="modal-close" onClick={() => setShowSaveBreaksModal(false)}>×</button>
-            </div>
-            <div style={{padding: '20px', textAlign: 'center'}}>
-              <p style={{marginBottom: '20px', color: '#333'}}>Are you sure you want to save these break changes?</p>
-              <div style={{display: 'flex', gap: '10px', justifyContent: 'center'}}>
-                <button
-                  onClick={() => setShowSaveBreaksModal(false)}
-                  style={{
-                    background: '#e5e7eb',
-                    color: '#333',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmSaveBreaks}
-                  style={{
-                    background: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {currentTab === 'notifications' && (
+        <section className="ins-card"><SectionHeading icon={Bell} title="Available lesson slots" description="Slots made available when a student cancels a booking." action={<span className="ins-count">{cancelledNotifications.length} unreviewed</span>} />{cancelledNotifications.length === 0 ? <EmptyState icon={Bell} title="You're all caught up" description="When a cancelled lesson opens up a slot, you'll find the details here." /> : <div className="ins-alerts-list">{cancelledNotifications.map((notification, index) => <article key={index} className="ins-alert-row"><span className="ins-alert-icon"><CalendarDays size={21} aria-hidden="true" /></span><div className="ins-alert-copy"><span className="ins-status ins-status--available"><span aria-hidden="true" />Available slot</span><h3>{formatDate(notification.date)} <span>at {notification.time}</span></h3><p>{notification.studentName} <span aria-hidden="true">·</span> {notification.lessonType === 'practical' ? 'Behind-the-wheel' : 'Theory'} lesson</p></div><button type="button" className="ins-button ins-button--secondary" onClick={() => { alert('You can now accept this slot from ' + notification.studentName); setCancelledNotifications((prev) => prev.filter((_, i) => i !== index)); }}><Check size={16} aria-hidden="true" />Mark as reviewed</button></article>)}</div>}</section>
       )}
 
-      {/* Save Leaves Confirmation Modal */}
-      {showSaveLeavesModal && (
-        <div className="modal-overlay" onClick={() => setShowSaveLeavesModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Save Leaves</h2>
-              <button className="modal-close" onClick={() => setShowSaveLeavesModal(false)}>×</button>
-            </div>
-            <div style={{padding: '20px', textAlign: 'center'}}>
-              <p style={{marginBottom: '20px', color: '#333'}}>Are you sure you want to save these leave requests?</p>
-              <div style={{display: 'flex', gap: '10px', justifyContent: 'center'}}>
-                <button
-                  onClick={() => setShowSaveLeavesModal(false)}
-                  style={{
-                    background: '#e5e7eb',
-                    color: '#333',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmSaveLeaves}
-                  style={{
-                    background: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {currentTab === 'settings' && (
+        <div className="ins-settings-layout"><aside className="ins-card ins-account-card"><span className="ins-account-avatar" aria-hidden="true">{instructorName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}</span><h2>{instructorName}</h2><span className="ins-account-role">Driving instructor</span><div className="ins-account-detail"><Mail size={17} aria-hidden="true" /><span>{currentUser?.email}</span></div><div className="ins-note"><ShieldCheck size={20} aria-hidden="true" /><p>Keep your account secure with a strong, unique password.</p></div></aside><section className="ins-card"><SectionHeading icon={LockKeyhole} title="Change password" description="Update the password you use to sign in to EasyDrive." /><form className="ins-password-form" onSubmit={(event) => { event.preventDefault(); setShowSaveSettingsModal(true); }}>{passwordMessage.text && <div className={`ins-feedback ins-feedback--${passwordMessage.type}`} role="status">{passwordMessage.type === 'success' ? <Check size={18} aria-hidden="true" /> : <AlertCircle size={18} aria-hidden="true" />}<span>{passwordMessage.text}</span></div>}<label htmlFor="current-password"><span>Current password</span><input id="current-password" type="password" autoComplete="current-password" value={passwordForm.currentPassword} onChange={(event) => setPasswordForm({ ...passwordForm, currentPassword: event.target.value })} placeholder="Enter your current password" required /></label><label htmlFor="new-password"><span>New password</span><input id="new-password" type="password" autoComplete="new-password" value={passwordForm.newPassword} onChange={(event) => setPasswordForm({ ...passwordForm, newPassword: event.target.value })} placeholder="Enter a new password" aria-describedby="password-hint" required /><small id="password-hint" className="ins-field-hint">Use at least 8 characters.</small></label><label htmlFor="confirm-password"><span>Confirm new password</span><input id="confirm-password" type="password" autoComplete="new-password" value={passwordForm.confirmPassword} onChange={(event) => setPasswordForm({ ...passwordForm, confirmPassword: event.target.value })} placeholder="Re-enter your new password" required /></label><div className="ins-card-actions"><span /><button type="submit" className="ins-button ins-button--primary"><LockKeyhole size={16} aria-hidden="true" />Change password</button></div></form></section></div>
       )}
 
-      {/* Change Password Confirmation Modal */}
-      {/* Save Working Hours Confirmation Modal */}
-      {showSaveHoursModal && (
-        <div className="modal-overlay" onClick={() => setShowSaveHoursModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Save Working Hours</h2>
-              <button className="modal-close" onClick={() => setShowSaveHoursModal(false)}>×</button>
-            </div>
-            <div style={{padding: '20px', textAlign: 'center'}}>
-              <p style={{marginBottom: '20px', color: '#333'}}>Are you sure you want to save these working hours changes?</p>
-              <div style={{display: 'flex', gap: '10px', justifyContent: 'center'}}>
-                <button
-                  onClick={() => setShowSaveHoursModal(false)}
-                  style={{
-                    background: '#e5e7eb',
-                    color: '#333',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmSaveHours}
-                  style={{
-                    background: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Change Password Confirmation Modal */}
-      {showSaveSettingsModal && (
-        <div className="modal-overlay" onClick={() => setShowSaveSettingsModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Change Password</h2>
-              <button className="modal-close" onClick={() => setShowSaveSettingsModal(false)}>×</button>
-            </div>
-            <div style={{padding: '20px', textAlign: 'center'}}>
-              <p style={{marginBottom: '20px', color: '#333'}}>Are you sure you want to change your password?</p>
-              <div style={{display: 'flex', gap: '10px', justifyContent: 'center'}}>
-                <button
-                  onClick={() => setShowSaveSettingsModal(false)}
-                  style={{
-                    background: '#e5e7eb',
-                    color: '#333',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmSaveSettings}
-                  style={{
-                    background: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Change Password
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <footer className="ins-page-footer"><span>EasyDrive <span aria-hidden="true">/</span> Instructor portal</span><span><ShieldCheck size={13} aria-hidden="true" />Teach with confidence.</span></footer>
+      {showSaveBreaksModal && <ConfirmationDialog title="Save your breaks?" description="Your break times will be updated with the changes you've made." onClose={() => setShowSaveBreaksModal(false)} onConfirm={confirmSaveBreaks} />}
+      {showSaveLeavesModal && <ConfirmationDialog title="Save your leave dates?" description="Your leave dates will be updated with the changes you've made." onClose={() => setShowSaveLeavesModal(false)} onConfirm={confirmSaveLeaves} />}
+      {showSaveHoursModal && <ConfirmationDialog title="Save your working hours?" description="Your weekly availability will be updated with the changes you've made." onClose={() => setShowSaveHoursModal(false)} onConfirm={confirmSaveHours} />}
+      {showSaveSettingsModal && <ConfirmationDialog title="Change your password?" description="Use your new password the next time you sign in to EasyDrive." confirmLabel="Change password" onClose={() => setShowSaveSettingsModal(false)} onConfirm={confirmSaveSettings} />}
+    </main>
   );
 }
 

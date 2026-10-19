@@ -1,27 +1,30 @@
 import React, { useState } from 'react';
 import useTheme from '../../hooks/useTheme';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Sidebar from '../Shared/Sidebar';
+import { ConfirmationDialog } from '../Instructor/InstructorUI';
 import '../Instructor/InstructorPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
-import DashboardIcon from '../../assets/icons/dashboard-white.png';
-import CalendarIcon from '../../assets/icons/calendar-white.png';
-import LessonsIcon from '../../assets/icons/lessons-white.png';
-import ProfileIcon from '../../assets/icons/profile-white.png';
-import SMSIcon from '../../assets/icons/sms-icon.png';
+
+const navigation = [
+  { id: 'dashboard', label: 'My Dashboard' },
+  { id: 'schedule', label: 'My Schedule' },
+  { id: 'hours', label: 'Working Hours' },
+  { id: 'breaks', label: 'Breaks' },
+  { id: 'leaves', label: 'Leaves' },
+  { id: 'notifications', label: 'Slot Alerts' },
+  { id: 'settings', label: 'Settings' }
+];
 
 function InstructorLayout() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const location = useLocation();
   const { theme, setTheme, toggleTheme } = useTheme('instructorTheme');
-
   const [showSignOutModal, setShowSignOutModal] = useState(false);
-
-  const handleLogout = async () => {
-    setShowSignOutModal(true);
-  };
+  const requestedTab = new URLSearchParams(location.search).get('tab');
+  const activeTab = navigation.some((item) => item.id === requestedTab) ? requestedTab : 'dashboard';
 
   const confirmSignOut = async () => {
     try {
@@ -31,156 +34,33 @@ function InstructorLayout() {
       console.error('Logout error:', error);
     }
   };
+
   return (
-    <div className="instructor-page-container" style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="instructor-page-container">
       <Sidebar
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
+        isOpen
         logo={EasyDriveLogo}
-        navItems={[
-          {
-            id: 'dashboard',
-            label: 'My Dashboard',
-            icon: DashboardIcon,
-            active: window.location.pathname === '/instructor' && !window.location.search,
-            onClick: () => navigate('/instructor')
-          },
-          {
-            id: 'schedule',
-            label: 'My Schedule',
-            icon: CalendarIcon,
-            active: window.location.search === '?tab=schedule',
-            onClick: () => navigate('/instructor?tab=schedule')
-          },
-          {
-            id: 'hours',
-            label: 'Working Hours',
-            icon: LessonsIcon,
-            active: window.location.search === '?tab=hours',
-            onClick: () => navigate('/instructor?tab=hours')
-          },
-          {
-            id: 'breaks',
-            label: 'Breaks',
-            icon: CalendarIcon,
-            active: window.location.search === '?tab=breaks',
-            onClick: () => navigate('/instructor?tab=breaks')
-          },
-          {
-            id: 'leaves',
-            label: 'Leaves',
-            icon: CalendarIcon,
-            active: window.location.search === '?tab=leaves',
-            onClick: () => navigate('/instructor?tab=leaves')
-          },
-          {
-            id: 'notifications',
-            label: 'Slot Alerts',
-            icon: SMSIcon,
-            active: window.location.search === '?tab=notifications',
-            onClick: () => navigate('/instructor?tab=notifications')
-          },
-          {
-            id: 'settings',
-            label: 'Settings',
-            icon: ProfileIcon,
-            active: window.location.search === '?tab=settings',
-            onClick: () => navigate('/instructor?tab=settings')
-          }
-        ]}
+        navItems={navigation.map((item) => ({
+          ...item,
+          active: activeTab === item.id,
+          onClick: () => navigate(item.id === 'dashboard' ? '/instructor' : `/instructor?tab=${item.id}`)
+        }))}
         currentUser={currentUser}
-        onLogout={handleLogout}
+        onLogout={() => setShowSignOutModal(true)}
         theme={theme}
         onThemeToggle={toggleTheme}
         userType="instructor"
       />
-
-      {/* Content wrapper that responds to sidebar state */}
-      <div className="instructor-content-wrapper">
-        <Outlet context={{ theme, setTheme }} />
-      </div>
-
-      {/* Sign Out Confirmation Modal */}
+      <div className="instructor-content-wrapper"><Outlet context={{ theme, setTheme }} /></div>
       {showSignOutModal && (
-        <div className="modal-overlay" onClick={() => setShowSignOutModal(false)} style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '0',
-            maxWidth: '400px',
-            width: '90%',
-            boxShadow: '0 20px 25px rgba(0,0,0,0.15)'
-          }}>
-            <div className="modal-header" style={{
-              borderBottom: '1px solid #e5e7eb',
-              padding: '20px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <h2 style={{margin: 0, fontSize: '18px', fontWeight: 'bold'}}>Sign Out</h2>
-              <button 
-                className="modal-close" 
-                onClick={() => setShowSignOutModal(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '28px',
-                  cursor: 'pointer',
-                  padding: '0',
-                  width: '30px',
-                  height: '30px'
-                }}
-              >
-                ×
-              </button>
-            </div>
-            <div style={{padding: '20px', textAlign: 'center'}}>
-              <p style={{marginBottom: '20px', color: '#333'}}>Are you sure you want to sign out of your account?</p>
-              <div style={{display: 'flex', gap: '10px', justifyContent: 'center'}}>
-                <button
-                  onClick={() => setShowSignOutModal(false)}
-                  style={{
-                    background: '#e5e7eb',
-                    color: '#333',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmSignOut}
-                  style={{
-                    background: '#dc2626',
-                    color: 'white',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  Sign Out
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ConfirmationDialog
+          title="Sign out of EasyDrive?"
+          description="You can sign in again whenever you're ready to return to your instructor workspace."
+          confirmLabel="Sign out"
+          destructive
+          onClose={() => setShowSignOutModal(false)}
+          onConfirm={confirmSignOut}
+        />
       )}
     </div>
   );

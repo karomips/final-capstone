@@ -1,13 +1,83 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId, instructorsCollectionId, instructorSchedulesCollectionId } from '../../appwrite/config';
+import { 
+  databases, 
+  databaseId, 
+  bookingsCollectionId, 
+  usersCollectionId, 
+  vehiclesCollectionId, 
+  instructorsCollectionId, 
+  instructorSchedulesCollectionId 
+} from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
-import { CalendarDays, Clock3, ChevronLeft, ChevronRight } from 'lucide-react';
-import { fetchMyInstructorAssignment, saveMyInstructorAssignment } from '../../utils/instructorAssignmentApi';
 import './UserPages.css';
 
-// ✅ Moved outside component — pure utility functions, never change
+// Safe property keys to isolate Appwrite system attributes
+const ID_KEY = '$' + 'id';
+const CREATED_KEY = '$' + 'createdAt';
+
+// Lightweight, zero-dependency inline SVG icon kit
+const Icons = {
+  Calendar: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  ),
+  Clock: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+  ChevronLeft: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  ),
+  ChevronRight: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  ),
+  Check: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ),
+  ShieldAlert: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  ),
+  Car: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="9" rx="2" />
+      <path d="m5 11 2-5h10l2 5" />
+      <circle cx="7.5" cy="16.5" r="1.5" />
+      <circle cx="16.5" cy="16.5" r="1.5" />
+    </svg>
+  ),
+  Book: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+      <path d="M6 6h10" />
+      <path d="M6 10h10" />
+    </svg>
+  ),
+  Sparkles: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+    </svg>
+  )
+};
+
+// Pure utility date functions
 const toIsoDate = (dateObject) => {
   const year = dateObject.getFullYear();
   const month = String(dateObject.getMonth() + 1).padStart(2, '0');
@@ -58,8 +128,6 @@ const scheduleBlocksDate = (schedule, dateValue) => {
   return Boolean(workingHours[scheduleDayNames[date.getDay()]]?.off);
 };
 
-// ✅ Moved outside component — no need for useCallback
-// ✅ Debounce utility to prevent excessive database calls
 const createDebounce = () => {
   let timeoutId = null;
   return (fn, delay = 500) => {
@@ -75,14 +143,10 @@ function BookLesson() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [selectedLesson, setSelectedLesson] = useState('practical');
-  const [transmission, setTransmission] = useState(''); // New: transmission type selection
+  const [transmission, setTransmission] = useState('');
   const [instructor, setInstructor] = useState('');
-  const [selectedInstructorId, setSelectedInstructorId] = useState('');
-  const [assignedInstructor, setAssignedInstructor] = useState(null);
-  const [assignmentMessage, setAssignmentMessage] = useState({ type: '', text: '' });
-  const [isSavingInstructorAssignment, setIsSavingInstructorAssignment] = useState(false);
   const [vehicle, setVehicle] = useState('');
-  const [selectedDates, setSelectedDates] = useState([]); // Array of ISO date strings
+  const [selectedDates, setSelectedDates] = useState([]);
   const [time, setTime] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -95,7 +159,8 @@ function BookLesson() {
   const [vehicles, setVehicles] = useState([]);
   const [showPackages, setShowPackages] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState('starter');
-  // Package-level selection states (used inside package panel)
+
+  // Package bundle state
   const [packageTheoryInstructor, setPackageTheoryInstructor] = useState('');
   const [packagePracticalTransmission, setPackagePracticalTransmission] = useState('');
   const [packagePracticalInstructor, setPackagePracticalInstructor] = useState('');
@@ -125,10 +190,10 @@ function BookLesson() {
     const numberOfDays = new Date(year, month + 1, 0).getDate();
 
     const grid = [];
-    for (let i = 0; i < startingOffset; i += 1) {
+    for (let i = 0; i < startingOffset; i = i + 1) {
       grid.push(null);
     }
-    for (let day = 1; day <= numberOfDays; day += 1) {
+    for (let day = 1; day <= numberOfDays; day = day + 1) {
       grid.push(new Date(year, month, day));
     }
     while (grid.length % 7 !== 0) {
@@ -143,7 +208,7 @@ function BookLesson() {
     const startMinutes = 8 * 60;
     const endMinutes = 18 * 60;
 
-    for (let totalMinutes = startMinutes; totalMinutes <= endMinutes; totalMinutes += 120) {
+    for (let totalMinutes = startMinutes; totalMinutes <= endMinutes; totalMinutes = totalMinutes + 120) {
       const hour = Math.floor(totalMinutes / 60);
       const minute = totalMinutes % 60;
       const value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
@@ -170,16 +235,15 @@ function BookLesson() {
     dateA.getDate() === dateB.getDate()
   );
 
-  // For practical: show all selected dates, for theory: show the single date
   const formattedDateSummary = selectedDates.length > 0
-    ? selectedDates.map(isoDate => parseIsoDate(isoDate)).filter(Boolean).map(d => 
+    ? selectedDates.map((isoDate) => parseIsoDate(isoDate)).filter(Boolean).map((d) => 
         d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
       ).join(', ')
-    : 'Select date(s)';
+    : 'No date selected';
 
   const formattedTimeSummary = time
     ? new Date(`1970-01-01T${time}:00`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-    : 'Select time';
+    : 'No time selected';
 
   const stepDefinitions = useMemo(() => {
     const lessonSelected = Boolean(selectedLesson);
@@ -187,19 +251,19 @@ function BookLesson() {
     const transmissionSelected = Boolean(transmission);
     const vehicleSelected = selectedLesson === 'practical' ? Boolean(vehicle) : true;
     const step2Completed = instructorSelected && (selectedLesson === 'theory' ? vehicleSelected : (transmissionSelected && vehicleSelected));
-    const step3Completed = selectedDates.length > 0 && Boolean(time);
+    const step3Completed = (selectedLesson === 'practical' ? selectedDates.length === 3 : selectedDates.length === 1) && Boolean(time);
 
     return [
-      { id: 1, label: 'Lesson type', status: lessonSelected ? 'completed' : 'active' },
-      { id: 2, label: 'Instructor & vehicle', status: step2Completed ? 'completed' : lessonSelected ? 'active' : 'upcoming' },
-      { id: 3, label: 'Date & time', status: step2Completed ? (step3Completed ? 'completed' : 'active') : 'upcoming' },
-      { id: 4, label: 'Details', status: step3Completed ? 'active' : 'upcoming' },
-      { id: 5, label: 'Confirm', status: 'upcoming' }
+      { id: 1, label: 'Lesson Track', status: lessonSelected ? 'completed' : 'active' },
+      { id: 2, label: 'Instructor & Unit', status: step2Completed ? 'completed' : lessonSelected ? 'active' : 'upcoming' },
+      { id: 3, label: 'Date & Time', status: step2Completed ? (step3Completed ? 'completed' : 'active') : 'upcoming' },
+      { id: 4, label: 'Review Summary', status: step3Completed ? 'active' : 'upcoming' },
+      { id: 5, label: 'Confirmation', status: 'upcoming' }
     ];
   }, [selectedLesson, instructor, vehicle, transmission, selectedDates, time]);
 
   const progressPercentage = useMemo(() => {
-    const completedSteps = stepDefinitions.filter(step => step.status === 'completed').length;
+    const completedSteps = stepDefinitions.filter((step) => step.status === 'completed').length;
     return (completedSteps / stepDefinitions.length) * 100;
   }, [stepDefinitions]);
 
@@ -217,20 +281,15 @@ function BookLesson() {
     const dayIsoValue = toIsoDate(dayDate);
     
     if (selectedLesson === 'practical') {
-      // For practical: allow selecting up to 3 dates (toggle)
-      setSelectedDates(prev => {
+      setSelectedDates((prev) => {
         if (prev.includes(dayIsoValue)) {
-          // Already selected, remove it
-          return prev.filter(d => d !== dayIsoValue);
+          return prev.filter((d) => d !== dayIsoValue);
         } else if (prev.length < 3) {
-          // Not selected yet, add it (if under limit)
           return [...prev, dayIsoValue];
         }
-        // Already have 3, don't add more
         return prev;
       });
     } else {
-      // For theory: only 1 date
       setSelectedDates([dayIsoValue]);
     }
   };
@@ -244,7 +303,7 @@ function BookLesson() {
   }, [selectedDates]);
 
   const getTheoryCapacity = (instructorDoc) => {
-    const parsed = Number(instructorDoc?.theoryCapacity);
+    const parsed = Number(instructorDoc && instructorDoc.theoryCapacity ? instructorDoc.theoryCapacity : null);
     if (Number.isFinite(parsed)) {
       return Math.min(Math.max(parsed, THEORY_MIN_CAPACITY), THEORY_MAX_CAPACITY);
     }
@@ -262,7 +321,7 @@ function BookLesson() {
     );
 
     return response.documents.filter((bookingDoc) => {
-      const status = String(bookingDoc.status || '').toLowerCase();
+      const status = String(bookingDoc && bookingDoc.status ? bookingDoc.status : '').toLowerCase();
       return status !== 'completed' && status !== 'cancelled';
     }).length;
   };
@@ -283,7 +342,7 @@ function BookLesson() {
 
       const checkDate = new Date(dateToCheck);
       checkDate.setHours(0, 0, 0, 0);
-      return leaves.some(leave => {
+      return leaves.some((leave) => {
         const leaveStart = new Date(leave.startDate);
         const leaveEnd = new Date(leave.endDate);
         leaveStart.setHours(0, 0, 0, 0);
@@ -304,7 +363,9 @@ function BookLesson() {
       );
       const schedules = {};
       response.documents.forEach((schedule) => {
-        if (schedule.instructorName) schedules[schedule.instructorName] = schedule;
+        if (schedule && schedule.instructorName) {
+          schedules[schedule.instructorName] = schedule;
+        }
       });
       setInstructorSchedules(schedules);
     } catch (error) {
@@ -329,15 +390,15 @@ function BookLesson() {
 
       const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
       const daySchedule = workingHours[dayNames[date.getDay()]];
-      if (daySchedule?.off) return true;
-      if (daySchedule?.start && timeToCheck < daySchedule.start) return true;
-      if (daySchedule?.end && timeToCheck > daySchedule.end) return true;
+      if (daySchedule && daySchedule.off) return true;
+      if (daySchedule && daySchedule.start && timeToCheck < daySchedule.start) return true;
+      if (daySchedule && daySchedule.end && timeToCheck > daySchedule.end) return true;
 
-      return Array.isArray(breaks) && breaks.some((breakItem) => (
-        breakItem.day === dayNames[date.getDay()] &&
-        timeToCheck >= breakItem.start &&
-        timeToCheck < breakItem.end
-      ));
+      return Array.isArray(breaks) && breaks.some((breakItem) => {
+        const matchesDay = breakItem.day === dayNames[date.getDay()];
+        const withinBreak = timeToCheck >= breakItem.start && timeToCheck < breakItem.end;
+        return matchesDay && withinBreak;
+      });
     } catch (error) {
       console.error('Error checking instructor working hours:', error);
       return false;
@@ -345,14 +406,18 @@ function BookLesson() {
   };
 
   const checkUserApproval = useCallback(async () => {
+    if (!currentUser) return;
+    const currentUserId = currentUser[ID_KEY];
+    if (!currentUserId) return;
+
     try {
       const userDoc = await databases.getDocument(
         databaseId,
         usersCollectionId,
-        currentUser.$id
+        currentUserId
       );
-      setIsApproved(userDoc.approved || false);
-      if (userDoc.approved) {
+      setIsApproved(Boolean(userDoc && userDoc.approved));
+      if (userDoc && userDoc.approved) {
         setError('');
       }
     } catch (err) {
@@ -363,7 +428,6 @@ function BookLesson() {
     }
   }, [currentUser]);
 
-  // Fetch instructors/vehicles for package selection panel
   const fetchPackageResources = useCallback(async (transmissionFilter = '') => {
     try {
       const response = await databases.listDocuments(
@@ -374,11 +438,11 @@ function BookLesson() {
 
       const docs = response.documents || [];
 
-      const theoryList = docs.filter(inst => !inst.lessonType || inst.lessonType === 'theory' || inst.lessonType === 'both');
-      let practicalList = docs.filter(inst => !inst.lessonType || inst.lessonType === 'practical' || inst.lessonType === 'both');
+      const theoryList = docs.filter((inst) => !inst.lessonType || inst.lessonType === 'theory' || inst.lessonType === 'both');
+      let practicalList = docs.filter((inst) => !inst.lessonType || inst.lessonType === 'practical' || inst.lessonType === 'both');
 
       if (transmissionFilter) {
-        practicalList = practicalList.filter(inst => {
+        practicalList = practicalList.filter((inst) => {
           const instTrans = inst.motorcycleTransmission || inst.transmission;
           return normalizeTransmission(instTrans) === transmissionFilter;
         });
@@ -387,7 +451,6 @@ function BookLesson() {
       setPackageTheoryInstructors(theoryList);
       setPackagePracticalInstructors(practicalList);
 
-      // fetch vehicles
       const vehResp = await databases.listDocuments(
         databaseId,
         vehiclesCollectionId,
@@ -396,7 +459,10 @@ function BookLesson() {
 
       let vehDocs = vehResp.documents || [];
       if (transmissionFilter) {
-        vehDocs = vehDocs.filter(v => (v.motorcycleTransmission || v.transmission) === transmissionFilter);
+        vehDocs = vehDocs.filter((v) => {
+          const trans = v.motorcycleTransmission || v.transmission;
+          return normalizeTransmission(trans) === transmissionFilter;
+        });
       }
       setPackageVehicles(vehDocs);
     } catch (err) {
@@ -415,36 +481,36 @@ function BookLesson() {
         [Query.equal('availability', 'available')]
       );
 
-      let filteredInstructors = response.documents.filter(inst => {
+      let filteredInstructors = response.documents.filter((inst) => {
         if (!inst.lessonType) return true;
         return inst.lessonType === selectedLesson || inst.lessonType === 'both';
       });
 
-      // NEW: For practical lessons, filter by transmission if selected
       if (selectedLesson === 'practical' && transmission) {
-        filteredInstructors = filteredInstructors.filter(inst => {
-          // Check both transmission (for regular vehicles) and motorcycleTransmission (for motorcycles)
+        filteredInstructors = filteredInstructors.filter((inst) => {
           const instructorTransmission = inst.motorcycleTransmission || inst.transmission;
-          if (!instructorTransmission) return false; // Only show instructors with transmission set
+          if (!instructorTransmission) return false;
           return normalizeTransmission(instructorTransmission) === transmission;
         });
       }
 
-      // Check for leaves if a date is selected
       let instructorsAfterLeaveCheck = filteredInstructors;
       if (selectedDates.length > 0) {
         const leaveCheckPromises = filteredInstructors.map(async (inst) => {
-          const unavailable = await Promise.all(selectedDates.map(async (date) => (
-            await isInstructorOnLeave(inst.name, date) ||
-            (time ? await isInstructorUnavailableAtTime(inst.name, date, time) : false)
-          )));
-          return { inst, unavailable: unavailable.some(Boolean) };
+          const unavailableResults = await Promise.all(
+            selectedDates.map(async (date) => {
+              const onLeave = await isInstructorOnLeave(inst.name, date);
+              const offDuty = time ? await isInstructorUnavailableAtTime(inst.name, date, time) : false;
+              return onLeave || offDuty;
+            })
+          );
+          return { inst, unavailable: unavailableResults.some(Boolean) };
         });
         
         const leaveCheckResults = await Promise.all(leaveCheckPromises);
         instructorsAfterLeaveCheck = leaveCheckResults
-          .filter(result => !result.unavailable)
-          .map(result => result.inst);
+          .filter((result) => !result.unavailable)
+          .map((result) => result.inst);
       }
 
       if (selectedLesson === 'theory') {
@@ -471,7 +537,7 @@ function BookLesson() {
       console.error('Error fetching instructors:', err);
       setInstructors([]);
     }
-  }, [selectedLesson, selectedDates, transmission, time]); // Refresh availability when date or time changes
+  }, [selectedLesson, selectedDates, transmission, time]);
 
   const fetchVehicles = useCallback(async () => {
     try {
@@ -481,13 +547,11 @@ function BookLesson() {
         [Query.equal('status', 'available')]
       );
       
-      // NEW: Filter vehicles by transmission if selected
-      // For motorcycles, check motorcycleTransmission; for regular vehicles, check transmission
       let filteredVehicles = response.documents;
       if (transmission) {
-        filteredVehicles = response.documents.filter(veh => {
+        filteredVehicles = response.documents.filter((veh) => {
           const vehicleTransmission = veh.motorcycleTransmission || veh.transmission;
-          return vehicleTransmission === transmission;
+          return normalizeTransmission(vehicleTransmission) === transmission;
         });
       }
       
@@ -496,61 +560,11 @@ function BookLesson() {
       console.error('Error fetching vehicles:', err);
       setVehicles([]);
     }
-  }, [transmission]); // Updated: added transmission dependency
+  }, [transmission]);
 
-  const handleInstructorSelection = async (instructorId) => {
-    const selected = instructors.find((item) => item.$id === instructorId);
-    if (!selected || isSavingInstructorAssignment) return;
-
-    const previousAssignment = assignedInstructor;
-    const previousInstructorId = selectedInstructorId;
-    const previousInstructorName = instructor;
-    setSelectedInstructorId(selected.$id);
-    setInstructor(selected.name);
-    setAssignmentMessage({ type: 'loading', text: 'Saving instructor assignment...' });
-    setIsSavingInstructorAssignment(true);
-
-    try {
-      const savedAssignment = await saveMyInstructorAssignment(selected.$id);
-      setAssignedInstructor(savedAssignment);
-      setAssignmentMessage({ type: 'success', text: `You are assigned to ${savedAssignment.instructorName}.` });
-      return true;
-    } catch (assignmentError) {
-      setSelectedInstructorId(previousInstructorId);
-      setInstructor(previousInstructorName);
-      setAssignedInstructor(previousAssignment);
-      setAssignmentMessage({
-        type: 'error',
-        text: assignmentError.message || 'Could not save your instructor assignment. Please try again.'
-      });
-      return false;
-    } finally {
-      setIsSavingInstructorAssignment(false);
-    }
-  };
-
-  // ✅ Consolidated useEffect: runs on mount and when critical props change
   useEffect(() => {
     if (!currentUser) return;
-
-    let cancelled = false;
-    fetchMyInstructorAssignment()
-      .then((assignment) => {
-        if (cancelled || !assignment) return;
-        setAssignedInstructor(assignment);
-        setSelectedInstructorId(assignment.instructorId);
-        setInstructor(assignment.instructorName);
-      })
-      .catch((assignmentError) => {
-        if (!cancelled) {
-          setAssignmentMessage({
-            type: 'error',
-            text: assignmentError.message || 'Could not load your saved instructor assignment.'
-          });
-        }
-      });
     
-    // Check approval on mount
     checkUserApproval();
     fetchInstructorSchedules();
 
@@ -563,33 +577,20 @@ function BookLesson() {
     const interval = setInterval(refreshInstructorAvailability, 30000);
     document.addEventListener('visibilitychange', refreshInstructorAvailability);
     
-    // Debounce instructor and vehicle fetches
     debounce(() => {
       fetchInstructors();
       fetchVehicles();
-      // also prepare package resources when packages panel may be opened
       fetchPackageResources(packagePracticalTransmission);
     }, 300);
+
     return () => {
-      cancelled = true;
       clearInterval(interval);
       document.removeEventListener('visibilitychange', refreshInstructorAvailability);
     };
-  }, [
-    currentUser,
-    checkUserApproval,
-    debounce,
-    fetchInstructorSchedules,
-    fetchInstructors,
-    fetchVehicles,
-    fetchPackageResources,
-    packagePracticalTransmission
-  ]);
+  }, [currentUser, fetchInstructorSchedules, fetchInstructors, fetchVehicles, fetchPackageResources, checkUserApproval, debounce, packagePracticalTransmission]);
 
-  // ✅ Separate effect for lesson type changes (requires debouncing)
   useEffect(() => {
     if (!currentUser) return;
-    
     debounce(() => {
       fetchInstructors();
     }, 300);
@@ -597,11 +598,9 @@ function BookLesson() {
 
   useEffect(() => {
     if (!showPackages) return;
-    // whenever package panel opens or transmission filter changes, refresh package resources
     fetchPackageResources(packagePracticalTransmission);
   }, [showPackages, packagePracticalTransmission, fetchPackageResources]);
 
-  // ✅ Window focus handler
   useEffect(() => {
     const handleFocus = () => {
       if (currentUser) {
@@ -614,47 +613,47 @@ function BookLesson() {
   }, [currentUser, checkUserApproval]);
 
   const handleConfirmBooking = async () => {
-    // ✅ Prevent double-submit and excessive writes
     if (isSubmitting || loading) return;
     
     setError('');
     setSuccess('');
 
     if (!isApproved) {
-      setError('Your account is pending approval. Please wait for admin confirmation before booking lessons.');
+      setError('Your account is awaiting approval from admin. Please wait before reserving sessions.');
       return;
     }
 
     if (!instructor || selectedDates.length === 0 || !time) {
-      setError('Please fill in all fields');
+      setError('Please select an instructor, required date(s), and a session time slot.');
       return;
     }
 
-    // NEW: Validate transmission for practical lessons
     if (selectedLesson === 'practical') {
       if (!transmission) {
-        setError('Please select a transmission type');
+        setError('Please select a transmission type (Automatic or Manual).');
         return;
       }
       if (!vehicle) {
-        setError('Please select a vehicle for practical lesson');
+        setError('Please choose an available vehicle unit.');
         return;
       }
       if (selectedDates.length !== 3) {
-        setError('Please select exactly 3 dates for the practical lesson');
+        setError('Practical driving lessons require exactly 3 session dates to be selected on the calendar.');
         return;
       }
     }
 
     const unavailableDates = [];
     for (const bookingDate of selectedDates) {
-      if (await isInstructorOnLeave(instructor, bookingDate) ||
-          await isInstructorUnavailableAtTime(instructor, bookingDate, time)) {
+      const onLeave = await isInstructorOnLeave(instructor, bookingDate);
+      const offDuty = await isInstructorUnavailableAtTime(instructor, bookingDate, time);
+      if (onLeave || offDuty) {
         unavailableDates.push(bookingDate);
       }
     }
+
     if (unavailableDates.length > 0) {
-      setError('The instructor is unavailable during the selected date or time. Please choose another slot.');
+      setError('The selected instructor is on leave or off-duty during the selected slot. Please pick another date or time.');
       return;
     }
 
@@ -667,29 +666,29 @@ function BookLesson() {
       let activeTheoryBookings = 0;
 
       if (selectedLesson === 'theory') {
-        selectedInstructorDoc = instructors.find((inst) => inst.$id === selectedInstructorId) || null;
+        selectedInstructorDoc = instructors.find((inst) => inst.name === instructor) || null;
         theoryCapacity = getTheoryCapacity(selectedInstructorDoc);
         activeTheoryBookings = await countActiveTheoryBookings(instructor);
 
         if (activeTheoryBookings >= theoryCapacity) {
-          setError('This instructor has reached the theory class capacity. Please select another instructor.');
+          setError('This instructor has reached maximum theoretical classroom capacity. Please select another instructor.');
           await fetchInstructors();
           setLoading(false);
+          setIsSubmitting(false);
           return;
         }
       }
 
-      // Use selected dates (1 for theory, 3 for practical)
       const bookingDates = selectedDates;
+      const currentUserId = currentUser[ID_KEY];
 
       for (const bookingDate of bookingDates) {
-        console.log('Creating booking with date:', bookingDate);
         await databases.createDocument(
           databaseId,
           bookingsCollectionId,
           ID.unique(),
           {
-            userId: currentUser.$id,
+            userId: currentUserId,
             userName: currentUser.name || 'User',
             userEmail: currentUser.email,
             lessonType: selectedLesson,
@@ -702,23 +701,21 @@ function BookLesson() {
           }
         );
       }
-      console.log('Booking created successfully for dates:', bookingDates);
 
-      // Send SMS confirmation to user
+      // Optional SMS trigger
       try {
         const API_URL = process.env.REACT_APP_API_URL ||
           (window.location.hostname === 'localhost'
             ? 'http://localhost:5000'
             : 'https://final-capstone-3ugp.onrender.com');
 
-        // Get user's phone number
         const userDoc = await databases.getDocument(
           databaseId,
           usersCollectionId,
-          currentUser.$id
+          currentUserId
         );
         
-        if (userDoc.phone) {
+        if (userDoc && userDoc.phone) {
           await fetch(`${API_URL}/api/sms/appointment-confirmation`, {
             method: 'POST',
             headers: {
@@ -734,15 +731,13 @@ function BookLesson() {
               }
             })
           });
-          console.log('SMS confirmation sent successfully');
         }
-      } catch (err) {
-        console.warn('Failed to send SMS confirmation:', err);
-        // Don't fail the booking if SMS fails
+      } catch (smsErr) {
+        console.warn('SMS notification non-critical alert:', smsErr);
       }
 
+      // Update instructor availability
       try {
-        // Update instructor availability (optional - won't fail booking if this fails)
         const instructorQuery = await databases.listDocuments(
           databaseId,
           usersCollectionId,
@@ -754,12 +749,13 @@ function BookLesson() {
 
         if (instructorQuery.documents.length > 0) {
           const instructorDoc = instructorQuery.documents[0];
+          const instructorDocId = instructorDoc[ID_KEY];
           try {
             if (selectedLesson === 'practical') {
               await databases.updateDocument(
                 databaseId,
                 usersCollectionId,
-                instructorDoc.$id,
+                instructorDocId,
                 { availability: 'booked' }
               );
             } else {
@@ -768,13 +764,12 @@ function BookLesson() {
                 await databases.updateDocument(
                   databaseId,
                   usersCollectionId,
-                  instructorDoc.$id,
+                  instructorDocId,
                   { availability: 'booked' }
                 );
               }
             }
           } catch (updateErr) {
-            // Log but don't fail booking if availability update fails
             console.warn('Could not update instructor availability:', updateErr);
           }
         }
@@ -782,6 +777,7 @@ function BookLesson() {
         console.error('Error updating instructor availability:', err);
       }
 
+      // Update vehicle status
       if (selectedLesson === 'practical' && vehicle) {
         try {
           const vehicleModel = vehicle.split(' (')[0];
@@ -793,10 +789,11 @@ function BookLesson() {
 
           if (vehicleQuery.documents.length > 0) {
             const vehicleDoc = vehicleQuery.documents[0];
+            const vehicleDocId = vehicleDoc[ID_KEY];
             await databases.updateDocument(
               databaseId,
               vehiclesCollectionId,
-              vehicleDoc.$id,
+              vehicleDocId,
               { status: 'booked' }
             );
           }
@@ -805,9 +802,10 @@ function BookLesson() {
         }
       }
 
-      setSuccess('Booking confirmed successfully!');
+      setSuccess('Driving session successfully booked! Redirecting to your dashboard...');
+      setInstructor('');
       setVehicle('');
-      setTransmission(''); // NEW: Reset transmission after booking
+      setTransmission('');
       setSelectedDates([]);
       setTime('');
 
@@ -816,7 +814,7 @@ function BookLesson() {
       }, 2000);
     } catch (err) {
       console.error('Booking error:', err);
-      setError('Failed to create booking: ' + err.message);
+      setError('Failed to book session: ' + err.message);
     } finally {
       setLoading(false);
       setIsSubmitting(false);
@@ -825,336 +823,192 @@ function BookLesson() {
 
   return (
     <div className="user-main-content user-main-content--fit">
-        <h1 className="page-title">Book a Lesson</h1>
+      {/* Title & Authorization Banner */}
+      <div className="page-header-row">
+        <div>
+          <h1 className="page-title">Reserve Driving Lessons</h1>
+          <p className="page-subtitle-muted">
+            Configure your lesson track, select your preferred transmission, and pick your session dates.
+          </p>
+        </div>
+      </div>
 
-        {!isApproved && !checkingApproval && (
-          <div style={{background: '#fee2e2', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#991b1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-            <span>Your account is pending approval. Please wait for admin confirmation before booking lessons.</span>
+      {!isApproved && !checkingApproval && (
+        <div className="approval-notice-bar">
+          <div className="approval-notice-icon"><Icons.ShieldAlert /></div>
+          <div className="approval-notice-copy">
+            <strong>Account Verification Pending</strong>
+            <span>Your student profile is awaiting administrator approval before reservations can be finalized.</span>
+          </div>
+          <button
+            onClick={() => checkUserApproval()}
+            className="approval-notice-btn"
+          >
+            Check Status
+          </button>
+        </div>
+      )}
+
+      {error && <div className="booking-feedback-alert error-alert">{error}</div>}
+      {success && <div className="booking-feedback-alert success-alert">{success}</div>}
+
+      {/* Stepper Indicator */}
+      <div className="progress-bar-container">
+        <div className="progress-bar">
+          <div className="progress-fill" style={{ width: `${progressPercentage}%` }}></div>
+        </div>
+        <div className="booking-steps">
+          {stepDefinitions.map((step) => (
+            <div key={step.id} className={`step ${step.status}`}>
+              <span className="step-number">
+                {step.status === 'completed' ? <Icons.Check /> : step.id}
+              </span>
+              <div>
+                <strong>{step.label}</strong>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Multi-Column Booking Deck */}
+      <div className={`booking-layout ${showPackages ? 'packages-open' : ''}`}>
+        {/* Column 1: Lesson Track Selection */}
+        <div className="booking-panel booking-panel--lesson">
+          <div className="promo-card">
+            <div className="promo-card-copy">
+              <div className="promo-badge"><Icons.Sparkles /> Special Bundle Offer</div>
+              <h3>Enroll in Full Course Packages</h3>
+              <p>Reserve complete curriculum packages with both classroom theory and practical road evaluations.</p>
+            </div>
             <button
-              onClick={() => checkUserApproval()}
-              style={{
-                background: '#dc2626',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
+              type="button"
+              className="promo-btn"
+              onClick={() => setShowPackages((prev) => !prev)}
             >
-              ↻ Refresh Status
+              {showPackages ? 'Hide Packages' : 'View Bundles'}
             </button>
           </div>
-        )}
 
-        {error && <div style={{background: '#fee', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#c00'}}>{error}</div>}
-        {success && <div style={{background: '#efe', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#060'}}>{success}</div>}
-
-        <div className="progress-bar-container">
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progressPercentage}%` }}></div>
-          </div>
-          <div className="booking-steps">
-            {stepDefinitions.map((step) => (
-              <div key={step.id} className={`step ${step.status}`}>
-                <span className="step-number">
-                  {step.status === 'completed' ? '✓' : step.id}
-                </span>
+          {showPackages && (
+            <div className="package-offers-panel">
+              <div className="package-offers-header">
                 <div>
-                  <strong>{step.label}</strong>
+                  <span className="package-offers-label">Pre-Structured Curriculums</span>
+                  <h3>Select an Enrollment Package</h3>
+                </div>
+                <button
+                  type="button"
+                  className="package-offers-close"
+                  onClick={() => setShowPackages(false)}
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="package-cards">
+                <div
+                  className={`package-card ${selectedPackage === 'starter' ? 'package-card--selected' : ''}`}
+                  onClick={() => setSelectedPackage('starter')}
+                >
+                  <div className="package-card-header">
+                    <span className="package-badge">Standard Course</span>
+                    <span className="package-price">₱18,000</span>
+                  </div>
+                  <h3>Starter Driver Package</h3>
+                  <p>3 Practical Driving Lessons + 2 Theoretical Classroom Sessions.</p>
+                </div>
+
+                <div
+                  className={`package-card ${selectedPackage === 'license' ? 'package-card--selected' : ''}`}
+                  onClick={() => setSelectedPackage('license')}
+                >
+                  <div className="package-card-header">
+                    <span className="package-badge package-badge--highlight">Full Certification</span>
+                    <span className="package-price">₱28,000</span>
+                  </div>
+                  <h3>License Prep Package</h3>
+                  <p>5 Practical Driving Lessons + 3 Theoretical Sessions + Assessment Prep.</p>
                 </div>
               </div>
-            ))}
+
+              <div className="package-details-body">
+                <button
+                  type="button"
+                  className="package-apply-btn"
+                  onClick={() => {
+                    setSelectedLesson('practical');
+                    setAppliedPackage(selectedPackage);
+                    setShowPackages(false);
+                  }}
+                >
+                  Select &amp; Apply {selectedPackage === 'starter' ? 'Starter Driver' : 'License Prep'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!showPackages && (
+            <div className="lesson-type-cards">
+              <div
+                className={`lesson-card ${selectedLesson === 'practical' ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedLesson('practical');
+                  setInstructor('');
+                  setSelectedDates([]);
+                  setTransmission('');
+                  setVehicle('');
+                }}
+              >
+                <div className="lesson-icon-circle"><Icons.Car /></div>
+                <div className="lesson-card-details">
+                  <h3>Behind-the-Wheel Practical</h3>
+                  <p>2-hour on-road instruction. Vehicle units provided. (3 days required)</p>
+                </div>
+                <div className="lesson-price">₱4,000 / Day</div>
+              </div>
+
+              <div
+                className={`lesson-card ${selectedLesson === 'theory' ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedLesson('theory');
+                  setInstructor('');
+                  setVehicle('');
+                  setSelectedDates([]);
+                  setTransmission('');
+                }}
+              >
+                <div className="lesson-icon-circle"><Icons.Book /></div>
+                <div className="lesson-card-details">
+                  <h3>Theoretical Classroom</h3>
+                  <p>4-hour comprehensive road rules &amp; traffic laws session. (1 day required)</p>
+                </div>
+                <div className="lesson-price">₱1,000 / Session</div>
+              </div>
+            </div>
+          )}
+
+          <div className="lesson-detail-card">
+            <h3>Training Inclusions</h3>
+            <ul>
+              <li>LTO Accredited Certified Professional Instructors</li>
+              <li>Dual-Brake Safety Controlled Training Vehicles</li>
+              <li>Defensive Driving Evaluation &amp; Certificate Support</li>
+            </ul>
           </div>
         </div>
 
-        <div className={`booking-layout ${showPackages ? 'packages-open' : ''}`}>
-          <div className="booking-panel booking-panel--lesson">
-            <div className="promo-card">
-              <div>
-                <div className="promo-badge">Save 15%</div>
-                <h3>Book 5 lessons as a bundle</h3>
-                <p>Reserve five sessions and enjoy a special discount on your driving lessons.</p>
-              </div>
-              <button
-                type="button"
-                className="promo-btn"
-                onClick={() => setShowPackages((prev) => !prev)}
-                aria-expanded={showPackages}
-                aria-controls="package-offers-panel"
-              >
-                {showPackages ? 'Hide packages' : 'View packages'}
-              </button>
-            </div>
-            {showPackages && (
-              <div className="package-offers-panel" id="package-offers-panel">
-                <div className="package-offers-header">
-                  <div>
-                    <span className="package-offers-label">Package options</span>
-                    <h3>Choose a bundle that fits your driving goals</h3>
-                    <p>These packages are designed for learners who want a structured driving-school plan.</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="package-offers-close"
-                    onClick={() => setShowPackages(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-
-                <div className="package-cards">
-                  <div
-                    className={`package-card package-card--featured package-card--interactive ${selectedPackage === 'starter' ? 'package-card--selected' : 'package-card--muted'}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setSelectedPackage('starter')}
-                    onKeyDown={(e) => e.key === 'Enter' && setSelectedPackage('starter')}
-                  >
-                    <div className="package-card-header">
-                      <span className="package-badge">Popular</span>
-                      <span className="package-price">₱18,000</span>
-                    </div>
-                    <h3>Starter Driver Package</h3>
-                    <p>Balanced for new students who want practical and classroom support.</p>
-                  </div>
-
-                  <div
-                    className={`package-card package-card--interactive ${selectedPackage === 'license' ? 'package-card--selected' : 'package-card--muted'}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setSelectedPackage('license')}
-                    onKeyDown={(e) => e.key === 'Enter' && setSelectedPackage('license')}
-                  >
-                    <div className="package-card-header">
-                      <span className="package-badge package-badge--muted">Best value</span>
-                      <span className="package-price">₱28,000</span>
-                    </div>
-                    <h3>License Prep Package</h3>
-                    <p>Complete driving-school prep for your assessment and road test.</p>
-                  </div>
-                </div>
-
-                <div className="package-details-panel">
-                  <div className="package-details-header">
-                    <span className="package-details-label">Selected package</span>
-                    <h4>
-                      {selectedPackage === 'starter' ? 'Starter Driver Package' : 'License Prep Package'}
-                    </h4>
-                    <p>
-                      {selectedPackage === 'starter'
-                        ? 'Best for beginners who want a balanced start with both practical and classroom support.'
-                        : 'Best for learners preparing for the licensing process with a stronger theory-to-road-test flow.'}
-                    </p>
-                  </div>
-
-                  <div className="package-details-body">
-                      <div className="package-detail-card">
-                      <h4>{selectedPackage === 'starter' ? 'Starter Driver Package' : 'License Prep Package'}</h4>
-                      <p>
-                        {selectedPackage === 'starter'
-                          ? 'Best for beginners who need a steady mix of practical driving and classroom learning.'
-                          : 'Best for learners who want a complete package focused on passing the assessment and road test.'}
-                      </p>
-                      <ul>
-                        {selectedPackage === 'starter' ? (
-                          <>
-                            <li>3 practical lessons</li>
-                            <li>2 theory classes</li>
-                            <li>Priority scheduling support</li>
-                            <li>Free booking assistance</li>
-                          </>
-                        ) : (
-                          <>
-                            <li>5 practical lessons</li>
-                            <li>3 theory classes</li>
-                            <li>Mock driving evaluation</li>
-                            <li>Testing day checklist</li>
-                          </>
-                        )}
-                      </ul>
-                    </div>
-                    <div className="package-selection-grid">
-                      <div className="package-detail-card">
-                        <h4>Theory Class</h4>
-                        <p>Choose instructor for theory sessions.</p>
-                        <div className="form-group">
-                          <label>Instructor</label>
-                          <select
-                            value={packageTheoryInstructor}
-                            onChange={(e) => setPackageTheoryInstructor(e.target.value)}
-                            className="booking-select"
-                          >
-                            <option value="">Select instructor</option>
-                            {packageTheoryInstructors.length === 0 ? (
-                              <option disabled>No available instructors</option>
-                            ) : (
-                              packageTheoryInstructors.map((inst) => (
-                                <option key={inst.$id} value={inst.name}>{inst.name} {inst.certifications ? ` - ${inst.certifications}` : ''}</option>
-                              ))
-                            )}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="package-detail-card">
-                        <h4>Behind-the-Wheel Lesson</h4>
-                        <p>Choose transmission, instructor and vehicle for practical sessions.</p>
-
-                        <div className="form-group">
-                          <label>Transmission type</label>
-                          <select
-                            value={packagePracticalTransmission}
-                            onChange={(e) => {
-                              setPackagePracticalTransmission(e.target.value);
-                              setPackagePracticalInstructor('');
-                              setPackagePracticalVehicle('');
-                            }}
-                            className="booking-select"
-                          >
-                            <option value="">Select transmission</option>
-                            <option value="MT">Manual Transmission</option>
-                            <option value="AT">Automatic Transmission</option>
-                          </select>
-                        </div>
-
-                        <div className="form-group">
-                          <label>Select Instructor</label>
-                          <select
-                            value={packagePracticalInstructor}
-                            onChange={(e) => setPackagePracticalInstructor(e.target.value)}
-                            className="booking-select"
-                            disabled={!packagePracticalTransmission}
-                          >
-                            <option value="">{!packagePracticalTransmission ? 'Select transmission type first' : 'Select Instructor'}</option>
-                            {packagePracticalInstructors.length === 0 ? (
-                              <option disabled>No available instructors</option>
-                            ) : (
-                              packagePracticalInstructors.map((inst) => (
-                                <option key={inst.$id} value={inst.name}>{inst.name} {inst.certifications ? ` - ${inst.certifications}` : ''}</option>
-                              ))
-                            )}
-                          </select>
-                        </div>
-
-                        <div className="form-group">
-                          <label>Vehicle model</label>
-                          <select
-                            value={packagePracticalVehicle}
-                            onChange={(e) => setPackagePracticalVehicle(e.target.value)}
-                            className="booking-select"
-                            disabled={!packagePracticalTransmission}
-                          >
-                            <option value="">{!packagePracticalTransmission ? 'Select transmission type first' : 'Select Vehicle Model'}</option>
-                            {packageVehicles.length === 0 ? (
-                              <option disabled>No available vehicles</option>
-                            ) : (
-                              packageVehicles.map((veh) => (
-                                <option key={veh.$id} value={`${veh.model} (${veh.transmission})`}>{veh.model} ({veh.transmission}) - {veh.plateNumber}</option>
-                              ))
-                            )}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: 16 }}>
-                      <button
-                        type="button"
-                        className="lesson-action-btn"
-                        onClick={async () => {
-                          // Apply package selections to booking context and close panel
-                          // Practical lesson is the main booking target for package
-                          const primaryInstructor = packagePracticalInstructor
-                            ? packagePracticalInstructors.find((item) => item.name === packagePracticalInstructor)
-                            : packageTheoryInstructors.find((item) => item.name === packageTheoryInstructor);
-                          if (primaryInstructor && !(await handleInstructorSelection(primaryInstructor.$id))) return;
-
-                          setTransmission(packagePracticalTransmission || transmission);
-                          setInstructor(packagePracticalInstructor || packageTheoryInstructor || instructor);
-                          setVehicle(packagePracticalVehicle || vehicle);
-                          setSelectedLesson('practical');
-                          setAppliedPackage(selectedPackage);
-                          setShowPackages(false);
-                        }}
-                        disabled={isSavingInstructorAssignment}
-                      >
-                        {isSavingInstructorAssignment ? 'Saving instructor...' : 'Select package'}
-                      </button>
-                      {assignmentMessage.text && (
-                        <small role={assignmentMessage.type === 'error' ? 'alert' : 'status'} style={{ display: 'block', marginTop: '8px' }}>
-                          {assignmentMessage.text}
-                        </small>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!showPackages && (
-              <div className="lesson-type-cards">
-                <div
-                  className={`lesson-card ${selectedLesson === 'practical' ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedLesson('practical');
-                    setInstructor('');
-                    setSelectedDates([]);
-                    setTransmission('');
-                    setVehicle('');
-                  }}
-                >
-                  <div className="lesson-icon">🚗</div>
-                  <div>
-                    <h3>Behind-the-Wheel Lesson</h3>
-                    <p>2-hour on-road instruction. Vehicle options available.</p>
-                  </div>
-                  <div className="lesson-price">₱4,000 / session</div>
-                </div>
-                <div
-                  className={`lesson-card ${selectedLesson === 'theory' ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedLesson('theory');
-                    setInstructor('');
-                    setVehicle('');
-                    setSelectedDates([]);
-                    setTransmission('');
-                  }}
-                >
-                  <div className="lesson-icon">📖</div>
-                  <div>
-                    <h3>Theory Class</h3>
-                    <p>4-hour classroom instruction. All materials provided.</p>
-                  </div>
-                  <div className="lesson-price lesson-price--secondary">₱1,000 / session</div>
-                </div>
-              </div>
-            )}
-
-            <div className="lesson-detail-card">
-              <h3>What’s included</h3>
-              <ul>
-                <li>Experienced instructors with proven training methods</li>
-                <li>Flexible lesson scheduling in hourly slots</li>
-                <li>Full support for license preparation and testing</li>
-                <li>Vehicle choice available for practical sessions</li>
-              </ul>
-            </div>
-          </div>
-
-          {!showPackages && (
-            <div className="booking-panel booking-panel--instructor">
+        {/* Column 2: Instructor & Vehicle Unit */}
+        {!showPackages && (
+          <div className="booking-panel booking-panel--instructor">
             <div className="panel-header">
-              <div>
-                <h2>Instructor & vehicle</h2>
-                <p>Choose a certified instructor and the right vehicle for your lesson.</p>
-              </div>
+              <h2>Instructor &amp; Unit</h2>
+              <p>Choose an instructor and training vehicle for this session.</p>
             </div>
 
             {selectedLesson === 'practical' && (
               <div className="form-group">
-                <label>Transmission type</label>
+                <label>Transmission Mode *</label>
                 <select
                   value={transmission}
                   onChange={(e) => {
@@ -1164,59 +1018,42 @@ function BookLesson() {
                   }}
                   className="booking-select"
                 >
-                  <option value="">Select transmission</option>
-                  <option value="MT">Manual Transmission</option>
-                  <option value="AT">Automatic Transmission</option>
+                  <option value="">Select Transmission Mode</option>
+                  <option value="MT">Manual Transmission (MT)</option>
+                  <option value="AT">Automatic Transmission (AT)</option>
                 </select>
               </div>
             )}
 
             <div className="form-group">
-              <label>{selectedLesson === 'practical' ? 'Select Instructor' : 'Instructor Name'}</label>
+              <label>Assigned Instructor *</label>
               <select
-                value={selectedInstructorId}
-                onChange={(e) => handleInstructorSelection(e.target.value)}
+                value={instructor}
+                onChange={(e) => setInstructor(e.target.value)}
                 className="booking-select"
-                disabled={isSavingInstructorAssignment || (selectedLesson === 'practical' && !transmission)}
+                disabled={selectedLesson === 'practical' && !transmission}
               >
                 <option value="">
                   {selectedLesson === 'practical' && !transmission
-                    ? 'Select transmission type first'
+                    ? 'Select transmission first'
                     : 'Select Instructor'}
                 </option>
-                {instructors.length === 0 ? (
-                  <option value="" disabled>No available instructors</option>
-                ) : (
-                  instructors.map((inst) => (
-                    <option key={inst.$id} value={inst.$id}>
+                {instructors.map((inst) => {
+                  const instId = inst[ID_KEY] || inst.name;
+                  return (
+                    <option key={instId} value={inst.name}>
                       {selectedLesson === 'theory'
-                        ? `${inst.name} - ${inst.certifications} (${inst.theoryRemainingSlots}/${inst.theoryCapacity} slots)`
-                        : `${inst.name} - ${inst.certifications}`}
+                        ? `${inst.name} (${inst.theoryRemainingSlots}/${inst.theoryCapacity} classroom slots open)`
+                        : `${inst.name} - ${inst.certifications || 'Driving Instructor'}`}
                     </option>
-                  ))
-                )}
-                {assignedInstructor?.instructorId === selectedInstructorId &&
-                  !instructors.some((inst) => inst.$id === selectedInstructorId) && (
-                    <option value={selectedInstructorId}>{assignedInstructor.instructorName} (currently assigned)</option>
-                  )}
+                  );
+                })}
               </select>
-              {assignmentMessage.text && (
-                <small
-                  role={assignmentMessage.type === 'error' ? 'alert' : 'status'}
-                  style={{
-                    display: 'block',
-                    marginTop: '8px',
-                    color: assignmentMessage.type === 'error' ? '#b91c1c' : assignmentMessage.type === 'success' ? '#15803d' : '#475569'
-                  }}
-                >
-                  {assignmentMessage.text}
-                </small>
-              )}
             </div>
 
             {selectedLesson === 'practical' && (
               <div className="form-group">
-                <label>Vehicle model</label>
+                <label>Vehicle Fleet Unit *</label>
                 <select
                   value={vehicle}
                   onChange={(e) => setVehicle(e.target.value)}
@@ -1224,190 +1061,171 @@ function BookLesson() {
                   disabled={!transmission}
                 >
                   <option value="">
-                    {!transmission
-                      ? 'Select transmission type first'
-                      : 'Select Vehicle Model'}
+                    {!transmission ? 'Select transmission first' : 'Select Vehicle Fleet Unit'}
                   </option>
-                  {vehicles.length === 0 ? (
-                    <option disabled>No available vehicles</option>
-                  ) : (
-                    vehicles.map((veh) => (
-                      <option key={veh.$id} value={`${veh.model} (${veh.transmission})`}>
-                        {veh.model} ({veh.transmission}) - {veh.plateNumber}
+                  {vehicles.map((veh) => {
+                    const vehId = veh[ID_KEY] || veh.plateNumber;
+                    return (
+                      <option key={vehId} value={`${veh.model} (${veh.transmission})`}>
+                        {veh.model} ({veh.transmission}) &mdash; {veh.plateNumber}
                       </option>
-                    ))
-                  )}
+                    );
+                  })}
                 </select>
               </div>
             )}
 
-            <div className="instructor-cards">
-              {instructors.length > 0 ? (
-                instructors.slice(0, 3).map((inst) => (
-                  <div key={inst.$id} className="instructor-card">
-                    <div>
-                      <strong>{inst.name}</strong>
-                      <p>{inst.certifications || 'Certified driving instructor'}</p>
-                    </div>
-                    <span>{selectedLesson === 'theory' ? `${inst.theoryRemainingSlots} slots left` : 'Top rated'}</span>
-                  </div>
-                ))
+            <div className="selection-notice-box">
+              {instructor ? (
+                <span>Instructor <strong>{instructor}</strong> selected. Checking leave and schedule blocks on the calendar.</span>
               ) : (
-                <div className="instructor-card instructor-card--placeholder">
-                  <p>No instructors are available right now. Please try another date or transmission type.</p>
-                </div>
+                <span>Pick an instructor to unlock live calendar dates.</span>
               )}
             </div>
           </div>
-          )}
+        )}
 
-          <div className="booking-panel booking-panel--schedule">
-            <div className="panel-header">
-              <div>
-                <h2>Date & time</h2>
-                <p>Pick the best available dates and time slot for your lesson.</p>
+        {/* Column 3: Calendar & Time Picker */}
+        <div className="booking-panel booking-panel--schedule">
+          <div className="panel-header">
+            <h2>Date &amp; Schedule</h2>
+            <p>
+              {selectedLesson === 'practical'
+                ? `Pick 3 dates for behind-the-wheel (${selectedDates.length}/3 selected)`
+                : `Pick 1 date for theory (${selectedDates.length}/1 selected)`}
+            </p>
+          </div>
+
+          <div className="calendar-shell">
+            <div className="calendar-shell-header">
+              <div className="calendar-shell-title">
+                <Icons.Calendar />
+                <span>{calendarMonth.toLocaleDateString([], { month: 'long', year: 'numeric' })}</span>
+              </div>
+              <div className="calendar-nav">
+                <button
+                  type="button"
+                  className="calendar-nav-btn"
+                  onClick={goToPreviousMonth}
+                  aria-label="Previous Month"
+                >
+                  <Icons.ChevronLeft />
+                </button>
+                <button
+                  type="button"
+                  className="calendar-nav-btn"
+                  onClick={goToNextMonth}
+                  aria-label="Next Month"
+                >
+                  <Icons.ChevronRight />
+                </button>
               </div>
             </div>
 
-            <div className="calendar-shell">
-              <div className="calendar-shell-header">
-                <div className="calendar-shell-title">
-                  <CalendarDays size={16} />
-                  <span>{calendarMonth.toLocaleDateString([], { month: 'long', year: 'numeric' })}</span>
-                </div>
-                <div className="calendar-nav">
-                  <button
-                    type="button"
-                    className="calendar-nav-btn"
-                    onClick={goToPreviousMonth}
-                    aria-label="Previous month"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    className="calendar-nav-btn"
-                    onClick={goToNextMonth}
-                    aria-label="Next month"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="calendar-weekdays">
-                {weekLabels.map((weekday) => (
-                  <span key={weekday} className="calendar-weekday-label">{weekday}</span>
-                ))}
-              </div>
-
-              <div className="calendar-grid">
-                {calendarDays.map((dayDate, index) => {
-                  if (!dayDate) {
-                    return <div key={`empty-${index}`} className="calendar-day-empty" aria-hidden="true" />;
-                  }
-
-                  const dayIsoValue = toIsoDate(dayDate);
-                  const isDisabled = isPastDate(dayDate) || isUnavailableDate(dayDate);
-                  const isSelected = selectedDates.includes(dayIsoValue);
-                  const isToday = isSameDay(dayDate, today);
-
-                  return (
-                    <button
-                      key={dayIsoValue}
-                      type="button"
-                      className={`calendar-day-btn ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
-                      disabled={isDisabled}
-                      onClick={() => handleDatePick(dayDate)}
-                      aria-label={dayDate.toLocaleDateString([], {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    >
-                      {dayDate.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="calendar-weekdays">
+              {weekLabels.map((weekday) => (
+                <span key={weekday} className="calendar-weekday-label">{weekday}</span>
+              ))}
             </div>
 
-            <div className="slot-panel">
-              <div className="time-picker-header">
-                <Clock3 size={16} />
-                <span>Available time slots</span>
-              </div>
-              <select
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="booking-select time-select"
-              >
-                <option value="">Select time</option>
-                {timeOptions.map((slot) => (
-                  <option key={slot.value} value={slot.value}>
-                    {slot.label}
-                  </option>
-                ))}
-              </select>
-              <small className="time-hint">2-hour interval scheduling from 8:00 AM to 6:00 PM</small>
+            <div className="calendar-grid">
+              {calendarDays.map((dayDate, index) => {
+                if (!dayDate) {
+                  return <div key={`empty-${index}`} className="calendar-day-empty" aria-hidden="true" />;
+                }
+
+                const dayIsoValue = toIsoDate(dayDate);
+                const isBlocked = isPastDate(dayDate) || isUnavailableDate(dayDate);
+                const isSelected = selectedDates.includes(dayIsoValue);
+                const isToday = isSameDay(dayDate, today);
+
+                return (
+                  <button
+                    key={dayIsoValue}
+                    type="button"
+                    className={`calendar-day-btn ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
+                    disabled={isBlocked}
+                    onClick={() => handleDatePick(dayDate)}
+                    title={isUnavailableDate(dayDate) ? 'Instructor is on leave / off duty' : ''}
+                  >
+                    {dayDate.getDate()}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <div className="booking-summary booking-summary--wide">
-            <div className="summary-header">
-              <div>
-                <h2>Booking Summary</h2>
-                <p>Review your lesson selection before confirming.</p>
-              </div>
+          <div className="slot-panel">
+            <div className="time-picker-header">
+              <Icons.Clock />
+              <span>Available Session Slot *</span>
             </div>
-            <div className={`summary-grid ${selectedLesson === 'theory' ? 'summary-grid--centered' : ''}`}>
-              <div className="summary-card">
-                <span>Lesson type</span>
-                <strong>
-                  {appliedPackage
-                    ? `Package: ${appliedPackage === 'starter' ? 'Starter Driver Package' : 'License Prep Package'}`
-                    : (selectedLesson === 'practical' ? 'Behind-the-Wheel Lesson' : 'Theory Class')}
-                </strong>
-              </div>
-
-              <div className="summary-card">
-                <span>Instructor{appliedPackage ? 's' : ''}</span>
-                {appliedPackage ? (
-                  <div>
-                    <strong style={{ display: 'block' }}>{packagePracticalInstructor || 'Practical: Not selected'}</strong>
-                    <small style={{ display: 'block', color: '#64748b' }}>{packageTheoryInstructor ? `Theory: ${packageTheoryInstructor}` : 'Theory: Not selected'}</small>
-                  </div>
-                ) : (
-                  <strong>{instructor || 'Not selected'}</strong>
-                )}
-              </div>
-
-              <div className="summary-card">
-                <span>Vehicle</span>
-                <strong>{appliedPackage ? (packagePracticalVehicle || 'Not selected') : (vehicle || 'Not selected')}</strong>
-              </div>
-
-              <div className="summary-card">
-                <span>Date</span>
-                <strong>{formattedDateSummary}</strong>
-              </div>
-
-              <div className="summary-card">
-                <span>Time</span>
-                <strong>{formattedTimeSummary}</strong>
-              </div>
-            </div>
-            <button
-              className="confirm-booking-btn"
-              onClick={handleConfirmBooking}
-              disabled={loading || isSubmitting}
+            <select
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="booking-select"
             >
-              {loading || isSubmitting ? 'BOOKING...' : 'CONFIRM BOOKING'}
-            </button>
+              <option value="">Select Time Slot</option>
+              {timeOptions.map((slot) => (
+                <option key={slot.value} value={slot.value}>
+                  {slot.label}
+                </option>
+              ))}
+            </select>
+            <small className="time-hint">2-Hour Standard Instruction Windows (08:00 AM - 06:00 PM)</small>
           </div>
         </div>
+
+        {/* Summary Card */}
+        <div className="booking-summary booking-summary--wide">
+          <div className="summary-header">
+            <div>
+              <h2>Reservation Receipt</h2>
+              <p>Review and verify your course credentials prior to confirmation.</p>
+            </div>
+          </div>
+
+          <div className="summary-grid">
+            <div className="summary-card">
+              <span>Track Type</span>
+              <strong>
+                {appliedPackage
+                  ? `Package: ${appliedPackage === 'starter' ? 'Starter Driver' : 'License Prep'}`
+                  : (selectedLesson === 'practical' ? 'Behind-the-Wheel' : 'Theoretical Classroom')}
+              </strong>
+            </div>
+
+            <div className="summary-card">
+              <span>Assigned Instructor</span>
+              <strong>{instructor || 'None Selected'}</strong>
+            </div>
+
+            <div className="summary-card">
+              <span>Vehicle Fleet Unit</span>
+              <strong>{selectedLesson === 'theory' ? 'Classroom Facility' : (vehicle || 'None Selected')}</strong>
+            </div>
+
+            <div className="summary-card">
+              <span>Selected Dates</span>
+              <strong>{formattedDateSummary}</strong>
+            </div>
+
+            <div className="summary-card">
+              <span>Selected Slot</span>
+              <strong>{formattedTimeSummary}</strong>
+            </div>
+          </div>
+
+          <button
+            className="confirm-booking-btn"
+            onClick={handleConfirmBooking}
+            disabled={loading || isSubmitting}
+          >
+            {loading || isSubmitting ? 'Processing Reservation...' : 'Confirm & Finalize Reservation →'}
+          </button>
+        </div>
       </div>
+    </div>
   );
 }
 

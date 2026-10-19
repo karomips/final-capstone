@@ -259,10 +259,6 @@ function SMSMonitoring() {
   const updateBookingStatus = async (booking, nextStatus) => {
     const updateData = { status: nextStatus };
 
-    if (nextStatus === 'completed') {
-      updateData.completedDate = new Date().toISOString();
-    }
-
     try {
       await databases.updateDocument(
         databaseId,
@@ -271,24 +267,8 @@ function SMSMonitoring() {
         updateData
       );
     } catch (error) {
-      // Some setups don't have completedDate yet; still allow status transition.
-      const message = String(error?.message || '');
-      const missingCompletedDate =
-        nextStatus === 'completed' &&
-        (message.toLowerCase().includes('completeddate') ||
-          message.toLowerCase().includes('attribute not found') ||
-          error?.type === 'attribute_not_found');
-
-      if (!missingCompletedDate) {
-        throw error;
-      }
-
-      await databases.updateDocument(
-        databaseId,
-        bookingsCollectionId,
-        booking.$id,
-        { status: nextStatus }
-      );
+      console.error('Error updating booking status:', error);
+      throw error;
     }
 
     if (nextStatus === 'completed' || nextStatus === 'cancelled') {

@@ -1,0 +1,181 @@
+/* Apply tokens at the root so the page background and native controls agree. */
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --app-page: #0b1626;
+  --app-surface: #132338;
+  --app-surface-subtle: #1a2e46;
+  --app-border: #32465f;
+  --app-text: #edf4ff;
+  --app-muted: #b2c2d6;
+  --app-accent: #93c5fd;
+  --app-sidebar: #091525;
+  --app-nav-active: #254765;
+  --app-hero: #183a54;
+  --app-hero-text: #edf4ff;
+  --user-bg: var(--app-page);
+  --user-surface: var(--app-surface);
+  --user-surface-subtle: var(--app-surface-subtle);
+  --user-border: var(--app-border);
+  --user-border-active: #84b3ce;
+  --user-steel-light: #254765;
+  --user-text-dark: var(--app-text);
+  --user-text-muted: var(--app-muted);
+}
+
+/* Older pages still use literal light colors. Keep their surfaces in the palette. */
+body.dark-mode :is(
+  .dashboard-container, .profile-container, .profile-hero, .summary-card,
+  .detail-section, .pending-changes-alert, .pending-details, .booking-panel, .booking-summary,
+  .progress-bar-container, .package-card, .vehicle-card, .student-table-container,
+  .sms-filters, .sms-bookings-section, .sms-history-section,
+  .modal-content, .modal-header, .profile-dropdown, .sidebar-profile-dropdown,
+  .info-card, .slideshow-container, .updates-container, .user-info-section,
+  .empty-state
+) {
+  background: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
+  color: var(--app-text);
+}
+
+body.dark-mode :is(
+  .sms-content, .sms-item, .history-item, .working-hours-item, .break-item,
+  .leave-item, .leave-form, .notification-item, .calendar-shell,
+  .profile-dropdown-header, .profile-dropdown-footer, .slideshow-wrapper,
+  .update-item, .detail-row, .image-preview, .step-number,
+  .custom-progress-track, .progress-bar
+) {
+  background: var(--app-surface-subtle) !important;
+  border-color: var(--app-border) !important;
+}
+
+body.dark-mode :is(
+  .profile-info h2, .profile-edit h2, .detail-group p, .summary-card strong,
+  .detail-section-title, .pending-details strong, .instructor-info h3,
+  .vehicle-info h3, .sms-header strong, .student-info strong, .datetime-info strong,
+  .sms-bookings-section h2, .sms-history-section h2, .history-header strong,
+  .modal-header h2, .admin-signout-title, .day-label, .leave-dates,
+  .notification-date, .leaves-list h3, .welcome-section h1, .info-card h3,
+  .slideshow-header h2, .updates-header h2, .update-content h3,
+  .user-info-section h2, .detail-label, .profile-dropdown-header h3
+) {
+  color: var(--app-text) !important;
+}
+
+body.dark-mode :is(
+  .profile-email, .profile-photo-hint, .profile-help-text, .summary-card-title,
+  .detail-group label, .input-label, .form-group label, .form-group small,
+  .time-field label, .day-off-checkbox, .leave-reason, .notification-student,
+  .notification-type, .notification-message, .sms-message, .sms-empty p,
+  .empty-state p, .loading, .admin-signout-copy, .alert-content p,
+  .pending-details li, .filter-group label, .welcome-section p, .info-card p,
+  .detail-value, .status-dropdown-container label,
+  .availability-dropdown-container label, .history-message, .history-time
+) {
+  color: var(--app-muted) !important;
+}
+
+body.dark-mode :is(
+  .lesson-course, .study-tip-title, .overview-icon-circle, .card-badge-counter,
+  .knowledge-tag, .lesson-price, .package-price, .package-offers-label,
+  .step.active strong, .tab-button:hover, .tab-button.active
+) {
+  color: var(--app-accent) !important;
+}
+
+body.dark-mode :is(.schedule-table, .student-table, .bookings-table) th {
+  background: var(--app-surface-subtle) !important;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+}
+
+body.dark-mode :is(.schedule-table, .student-table, .bookings-table) td {
+  color: var(--app-muted) !important;
+  border-color: var(--app-border) !important;
+}
+
+body.dark-mode .name-cell {
+  color: var(--app-text) !important;
+}
+
+body.dark-mode :is(.schedule-table, .student-table, .bookings-table) tbody tr:nth-child(even),
+body.dark-mode :is(.schedule-table, .student-table, .bookings-table) tbody tr:hover {
+  background: var(--app-surface-subtle) !important;
+}
+
+body.dark-mode :is(
+  .form-group input, .form-group select, .form-group textarea,
+  .profile-input, .profile-file-input, .booking-select, .time-field input,
+  .search-input, .filter-group select,
+  .break-item input, .break-day-select, .inline-status-select,
+  .inline-availability-select, .calendar-day-btn, .calendar-nav-btn,
+  .pagination button:not(.active), .view-profile-btn, .sidebar-btn:not(.primary)
+) {
+  background: var(--app-surface-subtle) !important;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+}
+
+body.dark-mode :is(input, textarea)::placeholder {
+  color: var(--app-muted);
+}
+
+body.dark-mode :is(input, select, textarea):focus-visible {
+  border-color: var(--app-accent) !important;
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+body.dark-mode .calendar-shell .calendar-day-btn.selected,
+body.dark-mode .step.active .step-number {
+  background: var(--login-background) !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .package-card:hover,
+body.dark-mode .package-card--selected,
+body.dark-mode .lesson-card.active {
+  background: var(--app-surface-subtle) !important;
+  border-color: var(--app-accent) !important;
+}
+
+body.dark-mode :is(
+  .section-title, .card-header, .detail-section-title, .detail-group,
+  .pending-details li, .modal-actions, .instructor-tabs
+) {
+  border-color: var(--app-border) !important;
+}
+
+body.dark-mode .modal-content > div > p {
+  color: var(--app-muted) !important;
+}
+
+body.dark-mode .modal-close {
+  color: var(--app-text) !important;
+}
+
+.app-theme-toggle-btn:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 3px;
+}
+
+.dashboard-nav .theme-toggle {
+  width: auto;
+  background: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+}
+
+.dashboard-nav .theme-toggle-track {
+  background: var(--app-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.theme-transition,
+  body.theme-transition * {
+    transition: none !important;
+  }
+}

@@ -561,6 +561,7 @@
 .theme-toggle-track {
   position: relative;
   width: 50px;
+  flex-shrink: 0;
   height: 26px;
   border-radius: 13px;
   background: rgba(255, 255, 255, 0.15);
@@ -576,6 +577,7 @@
 
 .theme-toggle-knob {
   width: 20px;
+  flex-shrink: 0;
   height: 20px;
   border-radius: 50%;
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
@@ -600,7 +602,7 @@
 }
 
 .app-theme-toggle-btn.toggled .theme-toggle-knob {
-  transform: translateX(24px);
+  transform: translateX(22px);
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   box-shadow:
     0 3px 8px rgba(0, 0, 0, 0.2),

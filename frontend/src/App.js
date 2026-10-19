@@ -18,6 +18,7 @@ import UserLayout from './components/Layouts/UserLayout';
 import InstructorLayout from './components/Layouts/InstructorLayout';
 import PrivateRoute from './components/Shared/PrivateRoute';
 import './App.css';
+import './theme.css';
 
 function AppContent() {
   const location = useLocation();

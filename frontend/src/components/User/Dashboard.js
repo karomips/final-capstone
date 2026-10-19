@@ -1,19 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Dashboard.css';
 
 function Dashboard() {
   const { currentUser, logout } = useAuth();
   const [error, setError] = useState('');
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dashboardTheme');
-      if (saved === 'dark' || saved === 'light') return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return 'light';
-  });
+  const { theme, setTheme } = useOutletContext();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -31,16 +24,6 @@ function Dashboard() {
     setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
 
-  useEffect(() => {
-    const body = document.body;
-    if (theme === 'dark') {
-      body.classList.add('dark-mode');
-    } else {
-      body.classList.remove('dark-mode');
-    }
-    localStorage.setItem('dashboardTheme', theme);
-  }, [theme]);
-
   return (
     <div className="dashboard-container">
       <nav className="dashboard-nav">
@@ -49,37 +32,16 @@ function Dashboard() {
         </div>
         <div className="nav-user">
           <button 
-            className={`theme-toggle ${theme === 'dark' ? 'dark' : ''}`}
+            className={`app-theme-toggle-btn theme-toggle ${theme === 'dark' ? 'toggled' : ''}`}
             onClick={toggleTheme}
+            type="button"
+            aria-pressed={theme === 'dark'}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           >
-            <div className="toggle-track">
-              <span className="toggle-icon sun">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="5"/>
-                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-                </svg>
-              </span>
-              <span className="toggle-icon moon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                </svg>
-              </span>
-              <div className="toggle-thumb">
-                <span className="thumb-icon">
-                  {theme === 'dark' ? (
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="12" cy="12" r="5"/>
-                      <path stroke="currentColor" strokeWidth="2" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-                    </svg>
-                  )}
-                </span>
-              </div>
-            </div>
+            <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+            <span className="theme-toggle-track" aria-hidden="true">
+              <span className="theme-toggle-knob" />
+            </span>
           </button>
           <span className="user-email">{currentUser?.email}</span>
           <button onClick={handleLogout} className="btn-logout">

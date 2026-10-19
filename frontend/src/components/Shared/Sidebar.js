@@ -78,14 +78,17 @@ function Sidebar({
         ))}
         {(userType === 'user' || userType === 'admin' || userType === 'instructor') && (
           <div className="app-sidebar-footer">
-            {userType === 'user' && (
+            {onThemeToggle && (
               <button 
+                type="button"
                 className={`app-theme-toggle-btn ${isCollapsed ? 'collapsed' : ''} ${theme === 'dark' ? 'toggled' : ''}`}
                 onClick={onThemeToggle}
                 title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-pressed={theme === 'dark'}
               >
                 {!isCollapsed && <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>}
-                <span className="theme-toggle-track">
+                <span className="theme-toggle-track" aria-hidden="true">
                   <span className="theme-toggle-knob" />
                 </span>
               </button>

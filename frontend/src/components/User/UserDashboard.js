@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, usersCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
@@ -13,8 +13,6 @@ const UPDATED_KEY = '$' + 'updatedAt';
 function UserDashboard() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const outletContext = useOutletContext();
-  const theme = outletContext && outletContext.theme ? outletContext.theme : 'light';
 
   const [bookings, setBookings] = useState([]);
   const [smsNotifications, setSmsNotifications] = useState([]);
@@ -166,15 +164,6 @@ function UserDashboard() {
     const days = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
     daysUntilNextText = days === 0 ? 'Today' : `${days} Days`;
   }
-
-  useEffect(() => {
-    const body = document.body;
-    if (theme === 'dark') {
-      body.classList.add('dark-mode');
-    } else {
-      body.classList.remove('dark-mode');
-    }
-  }, [theme]);
 
   useEffect(() => {
     let isMounted = true;

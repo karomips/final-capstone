@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import useTheme from '../../hooks/useTheme';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Sidebar from '../Shared/Sidebar';
@@ -13,14 +14,7 @@ function UserLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('userTheme');
-      if (saved === 'dark' || saved === 'light') return saved;
-      return 'light';
-    }
-    return 'light';
-  });
+  const { theme, setTheme, toggleTheme } = useTheme('userTheme');
 
   const handleLogout = async () => {
     setShowSignOutModal(true);
@@ -34,32 +28,6 @@ function UserLayout() {
       console.error('Logout error:', error);
     }
   };
-
-  const toggleTheme = () => {
-    setTheme((prevTheme) => {
-      const newTheme = prevTheme === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('userTheme', newTheme);
-      return newTheme;
-    });
-  };
-
-  useEffect(() => {
-    const body = document.body;
-    if (theme === 'dark') {
-      body.classList.add('dark-mode');
-    } else {
-      body.classList.remove('dark-mode');
-    }
-    body.classList.add('theme-transition');
-    const timeoutId = window.setTimeout(() => {
-      body.classList.remove('theme-transition');
-    }, 350);
-    localStorage.setItem('userTheme', theme);
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [theme]);
-
   return (
     <div className="user-page-container">
       <Sidebar

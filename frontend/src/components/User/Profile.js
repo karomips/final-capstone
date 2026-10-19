@@ -290,8 +290,8 @@ function Profile() {
 
   if (loading) {
     return (
-      <div className="user-main-content user-main-content--fit">
-        <div style={{ padding: '40px', textAlign: 'center' }}>
+      <div className="user-main-content user-main-content--fit user-profile-page">
+        <div className="profile-loading" role="status" style={{ padding: '40px', textAlign: 'center' }}>
           <p>Loading profile...</p>
         </div>
       </div>
@@ -299,7 +299,7 @@ function Profile() {
   }
 
   return (
-    <div className="user-main-content user-main-content--fit">
+    <div className="user-main-content user-main-content--fit user-profile-page">
 
         {error && (
           <div className="alert alert-error">
@@ -382,7 +382,7 @@ function Profile() {
                 <div className="detail-section">
                   <h3 className="detail-section-title">Personal Information</h3>
                   
-                  <div className="detail-group">
+                  <div className="detail-group detail-group--wide">
                     <label>Full Name</label>
                     <p>{userData?.name}</p>
                   </div>
@@ -415,7 +415,7 @@ function Profile() {
                     </div>
                   )}
 
-                  <div className="detail-group">
+                  <div className="detail-group detail-group--wide">
                     <label>Email Address</label>
                     <p>{userData?.email}</p>
                   </div>
@@ -471,7 +471,7 @@ function Profile() {
                     )}
 
                     {userData?.addressLine1 && (
-                      <div className="detail-group">
+                      <div className="detail-group detail-group--wide">
                         <label>Address</label>
                         <p>{userData.addressLine1}</p>
                       </div>
@@ -506,7 +506,7 @@ function Profile() {
                     <h3 className="detail-section-title">Contact Person Information</h3>
                     
                     {userData?.contactPersonName && (
-                      <div className="detail-group">
+                      <div className="detail-group detail-group--wide">
                         <label>Contact Person Name</label>
                         <p>{userData.contactPersonName}</p>
                       </div>
@@ -574,8 +574,9 @@ function Profile() {
               
               <form onSubmit={handleSubmitChanges}>
                 <div className="form-group">
-                  <label>Profile Picture</label>
+                  <label htmlFor="profile-picture">Profile Picture</label>
                   <input
+                    id="profile-picture"
                     type="file"
                     accept="image/*"
                     onChange={handleProfileImageChange}
@@ -597,8 +598,9 @@ function Profile() {
                 <div className="profile-form-container">
                   <div className="form-grid">
                     <div className="form-group">
-                      <label className="input-label">Full Name</label>
+                      <label className="input-label" htmlFor="profile-name">Full Name</label>
                       <input
+                        id="profile-name"
                         type="text"
                         name="name"
                         value={formData.name}
@@ -609,8 +611,9 @@ function Profile() {
                     </div>
 
                     <div className="form-group">
-                      <label className="input-label">Email Address</label>
+                      <label className="input-label" htmlFor="profile-email">Email Address</label>
                       <input
+                        id="profile-email"
                         type="email"
                         name="email"
                         value={formData.email}
@@ -621,8 +624,9 @@ function Profile() {
                     </div>
 
                     <div className="form-group">
-                      <label className="input-label">Phone Number</label>
+                      <label className="input-label" htmlFor="profile-phone">Phone Number</label>
                       <input
+                        id="profile-phone"
                         type="tel"
                         name="phoneNumber"
                         value={formData.phoneNumber}

@@ -1,0 +1,287 @@
+/* Keep the established desktop layout; these refinements apply only to phones. */
+@media (max-width: 768px) {
+  .App .user-dashboard-page {
+    padding: 16px 14px 24px;
+    gap: 14px;
+  }
+
+  .App .user-dashboard-page .user-dashboard-hero {
+    gap: 16px;
+    margin-bottom: 0;
+    padding: 18px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #16587b, #0f3d56) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(22, 88, 123, 0.1);
+  }
+
+  .App .user-dashboard-page .user-dashboard-hero-copy {
+    gap: 8px;
+  }
+
+  .App .user-dashboard-page .user-dashboard-hero-title,
+  .App .user-dashboard-page .user-dashboard-hero-copy p {
+    color: #ffffff !important;
+  }
+
+  .App .user-dashboard-page .user-dashboard-hero-eyebrow {
+    padding: 0;
+    background: transparent;
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+  }
+
+  .App .user-dashboard-page .live-status-pulse {
+    animation: none;
+    box-shadow: none;
+  }
+
+  .App .user-dashboard-page .user-dashboard-primary-btn {
+    background: #ffffff !important;
+    color: #0f3d56 !important;
+    box-shadow: none !important;
+  }
+
+  .App .user-dashboard-page .user-dashboard-secondary-btn {
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+  }
+
+  .App .user-dashboard-page .user-dashboard-hero-title {
+    font-size: clamp(1.2rem, 5vw, 1.5rem);
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .App .user-dashboard-page .user-dashboard-hero-copy p {
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  .App .user-dashboard-page .user-dashboard-hero-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .App .user-dashboard-page .user-dashboard-hero-actions > button {
+    justify-content: center;
+    min-width: 0;
+    min-height: 44px;
+    padding: 9px 8px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    box-shadow: none;
+  }
+
+  .App .user-dashboard-page .dashboard-header,
+  .App .user-dashboard-page .dashboard-grid {
+    margin-bottom: 0;
+  }
+
+  .App .user-dashboard-page .dashboard-overview {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .App .user-dashboard-page .overview-card {
+    justify-content: flex-start;
+    padding: 12px 10px;
+    border-radius: 12px;
+    box-shadow: none;
+  }
+
+  .App .user-dashboard-page .overview-card-header {
+    min-height: 32px;
+    align-items: flex-start;
+  }
+
+  .App .user-dashboard-page .overview-card h3 {
+    font-size: 0.68rem;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .App .user-dashboard-page .overview-icon-circle {
+    display: none;
+  }
+
+  .App .user-dashboard-page .overview-value {
+    margin: 8px 0 5px;
+    font-size: clamp(1.1rem, 4.8vw, 1.45rem);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  .App .user-dashboard-page .overview-meta {
+    font-size: 0.65rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .App .user-dashboard-page .custom-progress-track {
+    height: 4px;
+    margin-top: 6px;
+  }
+
+  .App .user-dashboard-page .dashboard-grid,
+  .App .user-dashboard-page .dashboard-bottom-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .App .user-dashboard-page .dashboard-card {
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: none;
+  }
+
+  .App .user-dashboard-page .card-header {
+    gap: 8px;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    align-items: center;
+  }
+
+  .App .user-dashboard-page .card-header h2 {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    text-transform: none;
+  }
+
+  .App .user-dashboard-page :is(.card-status-pill, .card-badge-counter, .knowledge-tag) {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    white-space: nowrap;
+  }
+
+  .App .user-dashboard-page .lesson-title {
+    font-size: 1rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .App .user-dashboard-page .lesson-course {
+    font-size: 0.68rem;
+    letter-spacing: 0.03em;
+  }
+
+  .App .user-dashboard-page .lesson-date-badge {
+    max-width: 100%;
+    padding: 6px 8px;
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+  }
+
+  .App .user-dashboard-page :is(.lesson-topics, .empty-desc, .study-tip-content p) {
+    font-size: 0.8rem;
+    line-height: 1.55;
+  }
+
+  .App .user-dashboard-page .lesson-empty-panel {
+    padding: 0;
+    gap: 6px;
+  }
+
+  .App .user-dashboard-page .lesson-action-btn {
+    min-height: 44px;
+    margin-top: 8px;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 0.78rem;
+  }
+
+  .App .user-dashboard-page .practical-progress-list {
+    gap: 8px;
+  }
+
+  .App .user-dashboard-page .practical-course-item {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 9px;
+  }
+
+  .App .user-dashboard-page .course-step-index {
+    width: 26px;
+    height: 26px;
+    font-size: 0.72rem;
+  }
+
+  .App .user-dashboard-page .practical-course-name {
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .App .user-dashboard-page .practical-course-date {
+    font-size: 0.68rem;
+    line-height: 1.4;
+  }
+
+  .App .user-dashboard-page .practical-course-status {
+    margin-left: 0;
+    padding: 3px 6px;
+    font-size: 0.6rem;
+    text-transform: none;
+  }
+
+  .App .user-dashboard-page .study-tip-title {
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .App .user-dashboard-page .notification-empty-state {
+    padding: 8px 0;
+    text-align: left;
+    font-style: normal;
+    font-size: 0.78rem;
+    line-height: 1.55;
+  }
+
+  .App .user-dashboard-page .notification-item {
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .App .user-dashboard-page .notification-meta-row {
+    gap: 4px 8px;
+  }
+
+  .App .user-dashboard-page .notifications-content {
+    max-height: 240px;
+  }
+
+  .App .user-dashboard-page :is(.overview-card, .practical-course-item):hover {
+    transform: none;
+  }
+
+  .App .user-dashboard-page button:focus-visible {
+    outline: 3px solid var(--user-border-active);
+    outline-offset: 3px;
+  }
+}
+
+@media (max-width: 380px) {
+  .App .user-dashboard-page .practical-course-item {
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 5px 8px;
+  }
+
+  .App .user-dashboard-page .course-step-index {
+    grid-row: 1 / 3;
+    align-self: start;
+  }
+
+  .App .user-dashboard-page .practical-course-status {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

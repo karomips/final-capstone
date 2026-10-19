@@ -458,3 +458,327 @@
     flex-direction: column;
   }
 }
+
+/* Mobile profile uses the same spacing and surfaces as the student dashboard. */
+@media (max-width: 768px) {
+  .App .user-profile-page {
+    padding: 16px 14px 24px;
+    gap: 14px;
+  }
+
+  .App .user-profile-page .profile-container {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent !important;
+    box-shadow: none;
+  }
+
+  .App .user-profile-page .profile-view {
+    gap: 14px;
+  }
+
+  .App .user-profile-page .profile-hero {
+    order: -2;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--user-border);
+    border-radius: 12px;
+    background: var(--user-surface);
+    box-shadow: none;
+    text-align: left;
+  }
+
+  .App .user-profile-page .profile-avatar-large {
+    width: 56px;
+    height: 56px;
+    border: 2px solid var(--user-border-active);
+    box-shadow: none;
+  }
+
+  .App .user-profile-page .profile-avatar-placeholder {
+    background: var(--user-steel-light);
+    color: var(--user-text-dark);
+    font-size: 24px;
+  }
+
+  .App .user-profile-page .profile-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .App .user-profile-page .profile-info h2 {
+    margin: 0 0 5px;
+    color: var(--user-text-dark);
+    font-size: 1.05rem;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+  }
+
+  .App .user-profile-page .profile-email {
+    margin-bottom: 8px;
+    color: var(--user-text-muted);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .App .user-profile-page .profile-status {
+    padding: 4px 8px;
+    font-size: 0.68rem;
+    line-height: 1.4;
+  }
+
+  .App .user-profile-page .profile-photo-hint {
+    margin-top: 8px;
+    color: var(--user-text-muted);
+    font-size: 0.7rem;
+    line-height: 1.45;
+  }
+
+  .App .user-profile-page .profile-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .App .user-profile-page .summary-card {
+    min-width: 0;
+    gap: 6px;
+    padding: 12px 10px;
+    border: 1px solid var(--user-border);
+    border-radius: 10px;
+    background: var(--user-surface);
+    box-shadow: none;
+  }
+
+  .App .user-profile-page .summary-card-title {
+    color: var(--user-text-muted);
+    font-size: 0.65rem;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .App .user-profile-page .summary-card strong {
+    color: var(--user-text-dark);
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+
+  .App .user-profile-page .profile-details {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .App .user-profile-page .detail-section {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 14px;
+    padding: 16px;
+    border: 1px solid var(--user-border);
+    border-radius: 12px;
+    background: var(--user-surface);
+    box-shadow: none;
+  }
+
+  .App .user-profile-page .detail-section-title {
+    grid-column: 1 / -1;
+    margin-bottom: 2px;
+    padding-bottom: 10px;
+    border-color: var(--user-border);
+    color: var(--user-text-dark);
+    font-size: 0.86rem;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    text-transform: none;
+  }
+
+  .App .user-profile-page .detail-group {
+    min-width: 0;
+    padding: 10px 0;
+    border-bottom: 0;
+  }
+
+  .App .user-profile-page .detail-group--wide {
+    grid-column: 1 / -1;
+  }
+
+  .App .user-profile-page .detail-group label {
+    margin-bottom: 4px;
+    color: var(--user-text-muted);
+    font-size: 0.68rem;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .App .user-profile-page .detail-group p {
+    color: var(--user-text-dark);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .App .user-profile-page .edit-profile-btn {
+    order: -1;
+    align-self: stretch;
+    margin: 0;
+    min-height: 44px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--user-navy);
+    font-family: inherit;
+    font-size: 0.8rem;
+    box-shadow: none;
+  }
+
+  .App .user-profile-page .edit-profile-btn:disabled {
+    background: var(--user-steel-light);
+    color: var(--user-text-muted);
+  }
+
+  .App .user-profile-page .profile-edit {
+    padding: 16px;
+    border: 1px solid var(--user-border);
+    border-radius: 12px;
+    background: var(--user-surface);
+  }
+
+  .App .user-profile-page .profile-edit h2 {
+    font-size: 1.2rem;
+    line-height: 1.35;
+  }
+
+  .App .user-profile-page .edit-note {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+
+  .App .user-profile-page .profile-edit form,
+  .App .user-profile-page .profile-edit .form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .App .user-profile-page .profile-edit .form-group {
+    gap: 6px;
+  }
+
+  .App .user-profile-page .profile-edit label {
+    margin-bottom: 0;
+    font-size: 0.78rem;
+  }
+
+  .App .user-profile-page .profile-input {
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 16px;
+  }
+
+  .App .user-profile-page .profile-file-input {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 10px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.75rem;
+  }
+
+  .App .user-profile-page .profile-help-text {
+    margin-top: 0;
+    font-size: 0.7rem;
+    line-height: 1.5;
+  }
+
+  .App .user-profile-page .profile-image-preview {
+    margin-top: 4px;
+  }
+
+  .App .user-profile-page .profile-image-preview img {
+    width: 64px;
+    height: 64px;
+    border: 2px solid var(--user-border-active);
+  }
+
+  .App .user-profile-page .form-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    margin-top: 0;
+  }
+
+  .App .user-profile-page .form-actions button {
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    box-shadow: none !important;
+  }
+
+  .App .user-profile-page :is(.alert, .pending-changes-alert) {
+    margin-bottom: 0;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    box-shadow: none;
+  }
+
+  .App .user-profile-page .pending-changes-alert {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+
+  .App .user-profile-page .alert-icon {
+    font-size: 20px;
+  }
+
+  .App .user-profile-page .alert-content h3 {
+    margin-bottom: 5px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .App .user-profile-page .alert-content p {
+    margin-bottom: 8px;
+  }
+
+  .App .user-profile-page .pending-details {
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .App .user-profile-page .pending-details > strong {
+    margin-bottom: 4px;
+  }
+
+  .App .user-profile-page .pending-details li {
+    padding: 6px 0;
+  }
+
+  .App .user-profile-page :is(button, input):focus-visible {
+    outline: 3px solid var(--user-border-active);
+    outline-offset: 3px;
+  }
+
+  .App .user-profile-page .edit-profile-btn:hover:not(:disabled) {
+    transform: none;
+    box-shadow: none;
+  }
+}

@@ -147,10 +147,10 @@ function MySessions() {
           </div>
         ) : (
           <div className="sessions-table-wrap" tabIndex={0} role="region" aria-label="Session details">
-            <table className="sessions-table">
+            <table className="sessions-table" role="table">
               <caption className="sessions-caption">{visibleSessions.length} {visibleSessions.length === 1 ? 'session' : 'sessions'} shown</caption>
               <thead>
-                <tr>
+                <tr role="row">
                   <th scope="col">Date &amp; time</th>
                   <th scope="col">Lesson</th>
                   <th scope="col">Instructor</th>
@@ -163,12 +163,12 @@ function MySessions() {
                   const status = getStatus(session);
                   const statusLabel = statusLabels[status];
                   return (
-                    <tr key={session.$id}>
-                      <td><strong>{formatDate(session.date)}</strong><span className="sessions-time">{session.time || 'Time to be assigned'}</span></td>
-                      <td>{session.lessonType === 'practical' ? 'Practical driving' : session.lessonType === 'theory' ? 'Theoretical classroom' : 'Driving lesson'}</td>
-                      <td>{session.instructor || 'To be assigned'}</td>
-                      <td>{session.lessonType === 'theory' ? 'Not required' : session.vehicle || 'To be assigned'}</td>
-                      <td><span className={`sessions-status sessions-status--${statusLabel ? status : 'other'}`}>{statusLabel || session.status}</span></td>
+                    <tr key={session.$id} role="row">
+                      <td className="sessions-cell-date" role="cell"><strong>{formatDate(session.date)}</strong><span className="sessions-time">{session.time || 'Time to be assigned'}</span></td>
+                      <td className="sessions-cell-lesson" role="cell">{session.lessonType === 'practical' ? 'Practical driving' : session.lessonType === 'theory' ? 'Theoretical classroom' : 'Driving lesson'}</td>
+                      <td className="sessions-cell-instructor" role="cell" data-label="Instructor">{session.instructor || 'To be assigned'}</td>
+                      <td className="sessions-cell-vehicle" role="cell" data-label="Vehicle">{session.lessonType === 'theory' ? 'Not required' : session.vehicle || 'To be assigned'}</td>
+                      <td className="sessions-cell-status" role="cell"><span className={`sessions-status sessions-status--${statusLabel ? status : 'other'}`}>{statusLabel || session.status}</span></td>
                     </tr>
                   );
                 })}

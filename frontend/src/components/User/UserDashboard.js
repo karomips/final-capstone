@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, usersCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import './UserPages.css';
+import './UserDashboard.css';
 
 // Safe property keys to isolate Appwrite dollar attributes
 const ID_KEY = '$' + 'id';
@@ -214,7 +215,7 @@ function UserDashboard() {
   }, [currentUser, getSmsNotifications]);
 
   return (
-    <div className="user-main-content user-main-content--fit">
+    <div className="user-main-content user-main-content--fit user-dashboard-page">
       {/* Hero Welcome Deck */}
       <section className="user-dashboard-hero">
         <div className="user-dashboard-hero-copy">

@@ -195,22 +195,180 @@
 }
 
 @media (max-width: 768px) {
-  .sessions-filters {
-    padding: 12px;
+  .App .sessions-page {
+    padding: 16px 14px 24px;
+    gap: 14px;
+  }
+
+  .App .sessions-page .sessions-back-link {
+    min-height: 44px;
+    margin-block: -8px;
+    font-size: 0.75rem;
+  }
+
+  .App .sessions-page .sessions-page-header {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .App .sessions-page .page-title {
+    font-size: 1.35rem;
+    letter-spacing: -0.03em;
+  }
+
+  .App .sessions-page .page-subtitle-muted {
+    max-width: 48ch;
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .App .sessions-page :is(.sessions-book-link, .sessions-retry) {
+    min-height: 44px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+  }
+
+  .App .sessions-page .sessions-panel {
+    border-radius: 12px;
+    box-shadow: none;
+  }
+
+  .App .sessions-page .sessions-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 8px;
     gap: 4px;
   }
 
-  .sessions-filter {
-    flex: 1 1 calc(50% - 4px);
-    justify-content: center;
+  .App .sessions-page .sessions-filter {
+    justify-content: space-between;
+    gap: 6px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 10px;
+    font-size: 0.75rem;
   }
 
-  .sessions-table {
-    min-width: 700px;
+  .App .sessions-page .sessions-filter > span {
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
   }
 
-  .sessions-table th,
-  .sessions-table td {
-    padding: 14px 16px;
+  .App .sessions-page .sessions-table-wrap {
+    overflow: visible;
+  }
+
+  .App .sessions-page .sessions-table {
+    display: block;
+    min-width: 0;
+  }
+
+  /* Preserve table headers for assistive technology while rows become cards. */
+  .App .sessions-page .sessions-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .App .sessions-page .sessions-caption {
+    display: block;
+    padding: 12px 14px 4px;
+    font-size: 0.7rem;
+  }
+
+  .App .sessions-page .sessions-table tbody {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .App .sessions-page .sessions-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--user-border);
+    border-radius: 10px;
+    background: var(--user-surface-subtle);
+  }
+
+  .App .sessions-page .sessions-table td {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .App .sessions-page .sessions-cell-date {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .App .sessions-page .sessions-time {
+    margin-top: 3px;
+    font-size: 0.7rem;
+  }
+
+  .App .sessions-page .sessions-cell-status {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: start;
+  }
+
+  .App .sessions-page .sessions-status {
+    max-width: 100%;
+    padding: 4px 8px;
+    font-size: 0.65rem;
+  }
+
+  .App .sessions-page .sessions-cell-lesson {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--user-border);
+    font-weight: 700;
+  }
+
+  .App .sessions-page .sessions-cell-instructor {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .App .sessions-page .sessions-cell-vehicle {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .App .sessions-page td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: var(--user-text-muted);
+    font-size: 0.68rem;
+    font-weight: 500;
+  }
+
+  .App .sessions-page .sessions-message {
+    gap: 10px;
+    padding: 32px 18px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  .App .sessions-page .sessions-message h2 {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 540px) and (max-width: 768px) {
+  .App .sessions-page .sessions-filters {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

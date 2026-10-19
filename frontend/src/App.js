@@ -19,6 +19,7 @@ import InstructorLayout from './components/Layouts/InstructorLayout';
 import PrivateRoute from './components/Shared/PrivateRoute';
 import './App.css';
 import './theme.css';
+import './responsive.css';
 
 function AppContent() {
   const location = useLocation();

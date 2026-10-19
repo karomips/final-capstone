@@ -392,7 +392,7 @@ function InstructorDashboard() {
       </div>
 
       <div className="instructor-card" style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+        <div className="assigned-users-header">
           <h2 className="section-title" style={{ margin: 0 }}>My Assigned Users</h2>
           <button type="button" className="action-btn" onClick={fetchAssignedUsers} disabled={assignedUsersRefreshing}>
             {assignedUsersRefreshing ? 'Refreshing...' : 'Refresh'}
@@ -410,9 +410,9 @@ function InstructorDashboard() {
               <p>No users are assigned to you yet.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+            <div className="assigned-users-grid">
               {assignedUsers.map((student) => (
-                <div key={student.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', border: '1px solid #e5e7eb', borderRadius: '10px' }}>
+                <div key={student.id} className="assigned-user-card">
                   {student.profileImageUrl ? (
                     <img src={student.profileImageUrl} alt="" style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }} />
                   ) : (
@@ -439,7 +439,7 @@ function InstructorDashboard() {
           <div className="tab-panel">
             <div className="instructor-card">
               <h2 className="section-title">📅 Upcoming Lessons</h2>
-              <div className="schedule-list">
+              <div className="schedule-list table-scroll-region" tabIndex={0} role="region" aria-label="Upcoming lessons">
                 {loading ? (
                   <div className="loading-state">Loading schedule...</div>
                 ) : upcomingSchedule.length === 0 ? (

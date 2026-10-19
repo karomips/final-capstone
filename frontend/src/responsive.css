@@ -1,0 +1,704 @@
+/* Shared sizing rules load after the page styles to keep every route in sync. */
+.App {
+  align-items: stretch;
+}
+
+.admin-page-container,
+.user-page-container,
+.instructor-page-container {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  align-items: flex-start;
+  overflow: visible;
+}
+
+.admin-content-wrapper,
+.user-content-wrapper,
+.instructor-content-wrapper {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
+.App .admin-main-content,
+.App .user-main-content,
+.App .instructor-main-content {
+  flex: 1 0 auto;
+  width: 100%;
+  max-width: 1680px;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  margin-inline: auto;
+  padding: clamp(20px, 2.4vw, 36px);
+  overflow: visible;
+  will-change: auto;
+}
+
+.App :is(
+  .dashboard-stats, .dashboard-overview, .dashboard-grid, .dashboard-bottom,
+  .dashboard-bottom-grid, .booking-layout, .summary-grid, .instructors-grid,
+  .vehicles-grid, .sms-stats, .analytics-grid, .profile-details, .form-grid,
+  .package-cards, .working-hours-grid, .leave-form, .assigned-users-grid
+) > * {
+  min-width: 0;
+}
+
+.App :is(.dashboard-stats, .dashboard-overview, .sms-stats, .analytics-grid) {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+}
+
+.App :is(.dashboard-grid, .dashboard-bottom-grid) {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+.App .dashboard-bottom {
+  flex: 0 0 auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  overflow: visible;
+}
+
+.App :is(.instructors-grid, .vehicles-grid) {
+  flex: 0 0 auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+}
+
+.App .instructors-grid > .instructor-card {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.App .instructors-grid .card-actions {
+  position: static;
+  flex: 1 0 100%;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.App .vehicle-image {
+  width: clamp(100px, 10vw, 150px);
+}
+
+.App .booking-layout,
+.App .booking-layout.packages-open {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+
+.App .summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+}
+
+.App :is(.profile-details, .working-hours-grid) {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+
+.App .leave-form {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+}
+
+.App :is(
+  .page-header, .header-actions, .section-toolbar, .card-header,
+  .admin-hero-actions, .user-dashboard-hero-actions, .assigned-users-header,
+  .sms-header, .sms-meta, .history-header, .history-details,
+  .notification-meta-row, .package-card-header, .calendar-shell-header,
+  .status-dropdown-container, .availability-dropdown-container,
+  .action-buttons, .appointment-actions, .pagination
+) {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.App :is(
+  .admin-hero-copy, .user-dashboard-hero-copy, .stat-content, .profile-info,
+  .vehicle-info, .instructor-info, .lesson-card-details, .notification-content,
+  .history-content, .leave-content, .alert-content, .time-field, .form-group,
+  .form-group > div, .filter-group, .analytics-content, .update-content
+) {
+  min-width: 0;
+}
+
+.App :is(
+  .admin-page-title, .instructor-page-title, .page-title, .profile-info,
+  .detail-group p, .summary-card strong, .vehicle-info, .instructor-info,
+  .assigned-user-card, .notification-content, .notification-message,
+  .sms-message, .history-content, .leave-content, .detail-value,
+  .appointment-title-section, .alert-content, .pending-details,
+  .modal-content p, .modal-content code
+) {
+  overflow-wrap: anywhere;
+}
+
+.App :is(.admin-hero, .user-dashboard-hero) {
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.App :is(.admin-hero-actions, .user-dashboard-hero-actions) {
+  flex: 0 1 auto;
+}
+
+.App :is(.schedule-section, .sms-section, .student-table-container) {
+  min-width: 0;
+}
+
+/* Wide data stays in a scroll region; the page itself stays at viewport width. */
+.App :is(.table-wrapper, .bookings-table-container, .table-scroll-region),
+.App .admin-main-content--fit .student-table-container .table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior-x: contain;
+}
+
+.App :is(.today-table-wrapper, .upcoming-table-wrapper) {
+  flex: 0 0 auto;
+  height: auto;
+  max-height: 420px;
+}
+
+.App .schedule-table {
+  min-width: 640px;
+}
+
+.App .student-table {
+  min-width: 760px;
+}
+
+.App .bookings-table {
+  min-width: 880px;
+}
+
+.App :is(.schedule-table, .student-table, .bookings-table) :is(th, td) {
+  overflow-wrap: anywhere;
+}
+
+.table-scroll-region:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 3px;
+}
+
+.App .instructor-main-content .instructor-card {
+  display: block;
+}
+
+.App .instructor-tabs-content {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.assigned-users-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.assigned-users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 12px;
+}
+
+.assigned-user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+}
+
+.assigned-user-card > :first-child {
+  flex-shrink: 0;
+}
+
+.App :is(.time-inputs, .break-item, .break-content, .leave-item) {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.App .time-field {
+  flex: 1 1 140px;
+}
+
+.App .break-content {
+  min-width: 0;
+}
+
+.App .break-content :is(input, select) {
+  flex: 1 1 130px;
+}
+
+.App :is(input, select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.App :is(.time-field input, .filter-group input, .filter-group select) {
+  width: 100%;
+}
+
+.App :is(.inline-status-select, .inline-availability-select) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.App .profile-container {
+  width: 100%;
+  margin: 0 auto;
+  padding: clamp(16px, 2.4vw, 32px);
+}
+
+.App .profile-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+}
+
+.App .profile-edit .form-grid,
+.App .modal-form,
+.App .modal-content.modal-large .modal-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Dialogs remain reachable on short screens and when the mobile keyboard opens. */
+.App .modal-overlay {
+  padding: clamp(12px, 2vw, 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.App .modal-content {
+  flex-shrink: 0;
+  width: min(760px, 100%);
+  min-width: 0;
+  max-width: min(760px, calc(100vw - 24px));
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
+  margin-block: auto;
+  overflow: auto;
+}
+
+.App .modal-content.modal-large {
+  width: min(1080px, 100%);
+  max-width: min(1080px, calc(100vw - 24px));
+}
+
+.App .admin-signout-modal {
+  max-width: min(560px, calc(100vw - 24px));
+}
+
+.App .admin-info-modal {
+  max-width: min(680px, calc(100vw - 24px));
+}
+
+.App .modal-header {
+  gap: 16px;
+}
+
+.App .modal-header h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.App .modal-close {
+  flex-shrink: 0;
+}
+
+.App :is(.modal-actions, .admin-signout-actions, .form-actions) {
+  flex-wrap: wrap;
+}
+
+.App .dashboard-container {
+  min-width: 0;
+}
+
+.App :is(.dashboard-nav, .nav-user) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.App .dashboard-nav {
+  justify-content: space-between;
+  padding: 20px clamp(16px, 2.4vw, 36px);
+}
+
+.App .user-email {
+  overflow-wrap: anywhere;
+}
+
+.App .dashboard-content {
+  width: 100%;
+  min-width: 0;
+  margin: 0 auto;
+  padding: clamp(20px, 2.4vw, 36px);
+}
+
+.App .cards-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
+
+.App .login-panel {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+}
+
+.App .signup-enroll-layout {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+.App :is(.auth-split-left, .auth-split-right, .login-brand, .login-form-wrap, .auth-card) {
+  min-width: 0;
+}
+
+.App .login-footer {
+  flex-wrap: wrap;
+}
+
+.App .verification-row {
+  flex-wrap: wrap;
+}
+
+.App .verification-row input {
+  min-width: 0;
+  flex-basis: 180px;
+}
+
+.App .enroll-step-actions {
+  flex-wrap: wrap;
+}
+
+.App .enroll-step-actions button {
+  height: auto;
+  min-height: 48px;
+  padding-block: 12px;
+  white-space: normal;
+}
+
+@media (min-width: 1440px) {
+  .App .dashboard-bottom {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  .App :is(.admin-hero, .user-dashboard-hero) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .App .booking-layout,
+  .App .booking-layout.packages-open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .App .signup-enroll-layout,
+  .App .login-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .App .signup-enroll-layout .enroll-form-side {
+    order: 1;
+  }
+
+  .App .signup-enroll-layout .enroll-info-side {
+    order: 2;
+    min-height: 0;
+    padding: 32px 24px;
+  }
+
+  .App .login-panel {
+    min-height: 0;
+  }
+
+  .App .login-brand {
+    padding: 28px 28px 40px;
+  }
+
+  .App .login-form-wrap {
+    padding: 28px;
+  }
+}
+
+@media (max-width: 768px) {
+  .App {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
+  }
+
+  .App :is(.admin-page-container, .user-page-container, .instructor-page-container) {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 100dvh;
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .App :is(.admin-content-wrapper, .user-content-wrapper, .instructor-content-wrapper) {
+    flex: 1 0 auto;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .App :is(.admin-main-content, .user-main-content, .instructor-main-content) {
+    padding: 20px 16px 32px;
+  }
+
+  .App :is(.admin-page-title, .page-title, .instructor-page-title) {
+    font-size: clamp(1.2rem, 4.5vw, 1.55rem);
+  }
+
+  .App :is(.admin-hero, .user-dashboard-hero) {
+    padding: 22px 20px;
+    border-radius: 16px;
+  }
+
+  .App .instructor-main-content > .instructor-page-title {
+    margin-top: 0;
+    padding: 22px 20px;
+  }
+
+  .App :is(.page-header, .header-actions) {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .App :is(.header-actions, .admin-hero-actions, .user-dashboard-hero-actions) > button {
+    flex: 1 1 160px;
+    white-space: normal;
+  }
+
+  .App :is(.stat-card, .overview-card, .dashboard-card, .schedule-section,
+    .sms-section, .student-table-container, .instructor-card, .sms-bookings-section,
+    .sms-history-section, .booking-panel, .booking-summary, .progress-bar-container) {
+    padding: 18px;
+  }
+
+  .App .vehicle-card {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .App .vehicle-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  .App .vehicle-info {
+    width: 100%;
+    flex-basis: 100%;
+  }
+
+  .App .card-actions > button {
+    flex: 1;
+  }
+
+  .App .profile-container {
+    border-radius: 18px;
+  }
+
+  .App :is(.profile-hero, .detail-section, .summary-card) {
+    padding: 18px;
+  }
+
+  .App .profile-info h2 {
+    font-size: clamp(1.4rem, 6vw, 1.875rem);
+  }
+
+  .App .profile-edit .form-grid,
+  .App .modal-form,
+  .App .modal-content.modal-large .modal-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .App .modal-content {
+    width: 100% !important;
+    max-height: calc(100dvh - 24px);
+    margin: auto;
+    border-radius: 16px;
+  }
+
+  .App :is(.modal-header, .modal-form, .appointment-form, .admin-signout-body) {
+    padding: 18px;
+  }
+
+  .App .modal-header h2 {
+    font-size: 1.15rem;
+  }
+
+  .App :is(.modal-close, .calendar-nav-btn) {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .App :is(button, .booking-select, .search-input, .profile-input):not(.app-bottom-nav-btn) {
+    min-height: 44px;
+  }
+
+  .App input:not([type='checkbox']):not([type='radio']),
+  .App select,
+  .App textarea {
+    font-size: 16px !important;
+    min-height: 44px;
+  }
+
+  .App .calendar-day-btn {
+    min-width: 0;
+    min-height: 40px;
+    height: 40px;
+  }
+
+  .App :is(.calendar-weekdays, .calendar-grid) {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .App .calendar-shell {
+    padding: 10px;
+  }
+
+  .App :is(.lesson-card, .promo-card, .approval-notice-bar,
+    .pending-changes-alert, .practical-course-item) {
+    flex-wrap: wrap;
+  }
+
+  .App .lesson-card-details {
+    flex-basis: 140px;
+  }
+
+  .App .approval-notice-copy {
+    flex-basis: 160px;
+  }
+
+  .App .approval-notice-btn {
+    white-space: normal;
+  }
+
+  .App .package-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .App .filter-group {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .App :is(.sms-actions, .appointment-details, .appointment-actions, .notification-item) {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .App :is(.history-item, .sms-item) {
+    gap: 10px;
+  }
+
+  .App .history-time {
+    white-space: normal;
+  }
+
+  .App .pagination button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .App .login-page.auth-container {
+    min-height: 100dvh;
+    padding: 16px;
+    align-items: flex-start;
+  }
+
+  .App .login-logo {
+    width: 144px;
+    padding: 12px;
+  }
+
+  .App .login-brand h2 {
+    font-size: clamp(1.6rem, 6vw, 2rem);
+  }
+
+  .App .login-highlights li {
+    width: 100%;
+    border-radius: 12px;
+  }
+
+  .App .login-highlights li svg {
+    flex-shrink: 0;
+  }
+
+  .App :is(.name-grid-3, .dob-grid-3, .address-grid-2) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .App .signup-enroll-layout .enroll-form-side {
+    padding: 24px 16px;
+  }
+
+  .App .form-section {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .App :is(.dashboard-stats, .dashboard-overview, .sms-stats, .analytics-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .App .login-page.auth-container {
+    padding: 12px;
+  }
+
+  .App .login-panel {
+    border-radius: 18px;
+  }
+
+  .App :is(.login-brand, .login-form-wrap) {
+    padding: 24px 18px;
+  }
+
+  .App .login-brand {
+    padding-bottom: 40px;
+  }
+
+  .App .login-header h1 {
+    font-size: 1.6rem;
+  }
+
+  .App :is(.enroll-step-actions, .verification-row, .admin-signout-actions) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .App .verification-row input {
+    flex-basis: auto;
+  }
+
+  .App .enroll-step-actions button,
+  .App .admin-signout-actions button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .App .practical-course-status {
+    margin-left: 42px;
+  }
+
+  .App .calendar-shell-header {
+    gap: 8px;
+  }
+
+  .App .dashboard-content .welcome-section h1 {
+    font-size: 1.75rem;
+  }
+}

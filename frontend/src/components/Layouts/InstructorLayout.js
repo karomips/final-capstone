@@ -96,7 +96,7 @@ function InstructorLayout() {
       />
 
       {/* Content wrapper that responds to sidebar state */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <div className="instructor-content-wrapper">
         <Outlet context={{ theme, setTheme }} />
       </div>
 

@@ -32,8 +32,14 @@
   --app-text: #0b2545;
   --app-muted: #52657c;
   --app-accent: #164a85;
-  --app-sidebar: #16587b;
-  --app-nav-active: #84b3ce;
+  --app-sidebar: #ffffff;
+  --app-sidebar-text: #20344e;
+  --app-sidebar-muted: #65758b;
+  --app-sidebar-line: #e3eaf1;
+  --app-sidebar-accent: #16587b;
+  --app-sidebar-danger: #b24a4a;
+  --app-sidebar-danger-bg: #fff0f0;
+  --app-nav-active: #edf4fa;
   --app-hero: #84b3ce;
   --app-hero-text: #000000;
   --login-background: #16587b;
@@ -52,17 +58,7 @@
 
 .app-sidebar {
   background: var(--app-sidebar) !important;
-  border-right-color: rgba(191, 219, 254, 0.2) !important;
-}
-
-.app-sidebar::before {
-  background: transparent !important;
-}
-
-.app-nav-btn.active,
-.app-nav-btn:hover {
-  background: var(--app-nav-active) !important;
-  border-color: rgba(191, 219, 254, 0.26) !important;
+  border-right-color: var(--app-sidebar-line) !important;
 }
 
 .admin-hero,

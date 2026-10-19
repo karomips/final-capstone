@@ -13,7 +13,13 @@
   --app-muted: #b2c2d6;
   --app-accent: #93c5fd;
   --app-sidebar: #091525;
-  --app-nav-active: #254765;
+  --app-sidebar-text: #edf4ff;
+  --app-sidebar-muted: #9eafc5;
+  --app-sidebar-line: #243449;
+  --app-sidebar-accent: #94c9ec;
+  --app-sidebar-danger: #e89b9b;
+  --app-sidebar-danger-bg: #30222c;
+  --app-nav-active: #1b3047;
   --app-hero: #183a54;
   --app-hero-text: #edf4ff;
   --user-bg: var(--app-page);

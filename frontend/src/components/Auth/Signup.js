@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
-import { Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import emailVerificationHelper from '../../utils/emailVerificationHelper';
 import { formatPhoneNumber, isValidPhoneNumber, formatLtoClientId, isValidLtoClientId } from '../../utils/phoneNumberFormatter';
 
@@ -357,6 +357,7 @@ function Signup() {
       <div className="auth-split-right enroll-form-side">
         <div className="auth-card enroll-card">
           <div className="auth-header enroll-header">
+            <Link className="auth-home-link" to="/"><ArrowLeft size={16} aria-hidden="true" /> Back to home</Link>
             <h3>Online Registration</h3>
             <h1>Enroll Now to Get Started on Your Driving Journey!</h1>
             <div className="enroll-step-row">

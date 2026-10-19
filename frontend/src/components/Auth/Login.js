@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
-import { ArrowRight, CalendarClock, Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarClock, Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -138,6 +138,7 @@ function Login() {
   return (
     <div className="auth-container login-page">
       <div className="login-stage">
+        <Link className="auth-home-link login-home-link" to="/"><ArrowLeft size={16} aria-hidden="true" /> Back to home</Link>
         <div className="login-panel">
           <aside className="login-brand">
             <p className="login-brand-kicker">Easy Drive Driving School</p>

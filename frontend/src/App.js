@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider } from './contexts/AuthContext';
 import Login from './components/Auth/Login';
 import Signup from './components/Auth/Signup';
+import LandingPage from './components/Landing/LandingPage';
 import Dashboard from './components/User/Dashboard';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import StudentManagement from './components/Admin/StudentManagement';
@@ -116,7 +117,7 @@ function AppContent() {
           <Route path="" element={<InstructorDashboard />} />
         </Route>
         
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
   );
@@ -125,9 +126,10 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/*" element={<AuthProvider><AppContent /></AuthProvider>} />
+      </Routes>
     </Router>
   );
 }

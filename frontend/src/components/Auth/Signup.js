@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
+import './AuthProfessional.css';
+import { AuthPageHeader, AuthPageFooter } from './AuthPageChrome';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { BookOpen, CalendarClock, Check, Eye, EyeOff, MapPin, ShieldCheck } from 'lucide-react';
 import emailVerificationHelper from '../../utils/emailVerificationHelper';
 import { formatPhoneNumber, isValidPhoneNumber, formatLtoClientId, isValidLtoClientId } from '../../utils/phoneNumberFormatter';
 
@@ -353,13 +355,16 @@ function Signup() {
   };
 
   return (
-    <div className="auth-container signup-enroll-layout">
+    <div className="auth-container auth-professional signup-enroll-layout">
+      <AuthPageHeader />
+      <main className="auth-signup-stage">
       <div className="auth-split-right enroll-form-side">
         <div className="auth-card enroll-card">
           <div className="auth-header enroll-header">
-            <Link className="auth-home-link" to="/"><ArrowLeft size={16} aria-hidden="true" /> Back to home</Link>
-            <h3>Online Registration</h3>
-            <h1>Enroll Now to Get Started on Your Driving Journey!</h1>
+            <p className="auth-kicker">STUDENT REGISTRATION</p>
+            <h1>Start your driving journey.</h1>
+            <p className="auth-form-intro">Create your student account in four simple steps.</p>
+            <p className="auth-step-caption">Step {step} of 4</p>
             <div className="enroll-step-row">
               <div className="enroll-step-indicators">
                 {[1, 2, 3, 4].map((stepNum) => (
@@ -393,7 +398,7 @@ function Signup() {
 
             {step === 1 && (
               <>
-                <div className="form-section">
+                <div className="form-section auth-personal-section">
                   <h3 className="form-section-title">Personal Information</h3>
 
                   <div className="form-group required">
@@ -704,6 +709,7 @@ function Signup() {
                       type="button"
                       className="password-toggle"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                     </button>
@@ -765,32 +771,36 @@ function Signup() {
             )}
 
             <div className="auth-footer">
+              <span>Already registered?</span>
               <Link to="/login" onClick={(e) => handleAuthPageSwitch(e, '/login')}>
-                Log In →
+                Sign in
               </Link>
             </div>
           </form>
         </div>
       </div>
 
-      <div className="auth-split-left enroll-info-side">
+      <aside className="auth-split-left enroll-info-side">
         <div className="enroll-right-panel">
-          <h2>Why Easy Drive Driving School</h2>
-          <ul>
-            <li>Serving Olongapo City!</li>
-            <li>Friendly, punctual, and responsible local instructors.</li>
-            <li>Affordable driving packages with quality practical sessions.</li>
-            <li>Safe, insured, and professionally handled training units.</li>
-            <li>Curriculum aligned with LTO road safety standards.</li>
-            <li>Dual-control vehicles for safer beginner training.</li>
+          <p className="auth-kicker">A CLEAR ROAD AHEAD</p>
+          <h2>Your first step.<br /><span>A world of possibility.</span></h2>
+          <p className="auth-aside-copy">Build your knowledge, get behind the wheel, and follow your progress with Easy Drive.</p>
+          <img className="auth-brand-logo" src={EasyDriveLogo} alt="Easy Drive Driving School logo" width="325" height="316" />
+          <ul className="auth-aside-list">
+            <li><MapPin size={19} aria-hidden="true" /><span>Serving Olongapo City</span></li>
+            <li><BookOpen size={19} aria-hidden="true" /><span>Theoretical and practical courses</span></li>
+            <li><CalendarClock size={19} aria-hidden="true" /><span>Simple online lesson scheduling</span></li>
+            <li><Check size={19} aria-hidden="true" /><span>Your progress, all in one place</span></li>
           </ul>
-          <p>Learn from Certified Local Instructors</p>
-          <p>Covering Safe Driving Across Olongapo!</p>
-          <div className="enroll-image-wrap">
-            <img src={EasyDriveLogo} alt="EZ Driving School" />
+          <p className="auth-location-tagline">Covering Safe Driving Across Olongapo!</p>
+          <div className="auth-registration-note">
+            <ShieldCheck size={22} aria-hidden="true" />
+            <div><strong>Guidance from the start.</strong><p>After registration, the school will review your account before you can book lessons.</p></div>
           </div>
         </div>
-      </div>
+      </aside>
+      </main>
+      <AuthPageFooter />
     </div>
   );
 }

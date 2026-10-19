@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Auth.css';
+import './AuthProfessional.css';
+import { AuthPageHeader, AuthPageFooter } from './AuthPageChrome';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
-import { ArrowLeft, ArrowRight, CalendarClock, Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CalendarClock, Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -136,19 +138,17 @@ function Login() {
   };
 
   return (
-    <div className="auth-container login-page">
-      <div className="login-stage">
-        <Link className="auth-home-link login-home-link" to="/"><ArrowLeft size={16} aria-hidden="true" /> Back to home</Link>
+    <div className="auth-container auth-professional login-page">
+      <AuthPageHeader />
+      <main className="login-stage">
         <div className="login-panel">
           <aside className="login-brand">
-            <p className="login-brand-kicker">Easy Drive Driving School</p>
-            <div className="login-logo">
-              <img src={EasyDriveLogo} alt="Easy Drive Driving School Logo" />
-            </div>
-            <h2>Ready when you are.</h2>
+            <p className="login-brand-kicker">YOUR ROAD TO CONFIDENCE</p>
+            <h2>A clearer road.<br /><span>A confident you.</span></h2>
             <p className="login-brand-copy">
               Book lessons, track progress, and stay connected with your instructor — all from one place.
             </p>
+            <img className="auth-brand-logo" src={EasyDriveLogo} alt="Easy Drive Driving School logo" width="325" height="316" />
             <ul className="login-highlights">
               <li>
                 <CalendarClock size={18} />
@@ -242,7 +242,8 @@ function Login() {
             </form>
           </section>
         </div>
-      </div>
+      </main>
+      <AuthPageFooter />
     </div>
   );
 }

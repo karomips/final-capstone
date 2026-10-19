@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { ArrowUpRight, CalendarDays, Check, GraduationCap, Inbox, RefreshCw, Trash2, UserPlus, X } from 'lucide-react';
+import { AdminMetricCard, AdminPageHeader } from './AdminUI';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { databases, databaseId, bookingsCollectionId, instructorsCollectionId, usersCollectionId } from '../../appwrite/config';
@@ -210,61 +212,39 @@ function AdminDashboard() {
 
   return (
     <div className="admin-main-content">
-        <div className="admin-hero">
-          <div className="admin-hero-copy">
-            <span className="admin-hero-eyebrow">Admin overview</span>
-            <h1 className="admin-page-title">Welcome back, {adminName}!</h1>
-            <p>
-              Keep lessons moving, review new enrollments, and manage instructor and vehicle operations from one calm workspace.
-            </p>
-          </div>
-          <div className="admin-hero-actions">
+        <AdminPageHeader
+          eyebrow="Operations overview"
+          title={`Welcome back, ${adminName}`}
+          description="A clear view of your driving school, all in one place."
+        >
             <button className="admin-secondary-btn" onClick={refreshOverview} title="Refresh dashboard data">
-              Refresh data
+              <RefreshCw size={16} aria-hidden="true" /> Refresh data
             </button>
             <button className="admin-primary-btn" onClick={() => navigate('/admin/students')}>
-              Review students
+              Review students <ArrowUpRight size={16} aria-hidden="true" />
             </button>
-          </div>
-        </div>
+        </AdminPageHeader>
 
         {/* Stats Cards */}
         <div className="dashboard-stats">
-          <div className="stat-card">
-            <div className="stat-icon"></div>
-            <div className="stat-content">
-              <h3>Today's Lessons</h3>
-              <div className="stat-number">{todayBookings.length} Scheduled</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon"></div>
-            <div className="stat-content">
-              <h3>Available Instructors</h3>
-              <div className="stat-number">{availableInstructors} Active</div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon"></div>
-            <div className="stat-content">
-              <h3>New Enrollees (Week)</h3>
-              <div className="stat-number">{newEnrollees}</div>
-            </div>
-          </div>
+          <AdminMetricCard icon={CalendarDays} label="Today's lessons" value={todayBookings.length} detail="Scheduled for today" />
+          <AdminMetricCard icon={GraduationCap} label="Available instructors" value={availableInstructors} detail="Ready for lessons" tone="green" />
+          <AdminMetricCard icon={UserPlus} label="New enrollees" value={newEnrollees} detail="Registered in the last 7 days" tone="violet" />
         </div>
         <div className="dashboard-bottom">
-          <div className="schedule-section">
+          <div className="admin-schedule-column">
+          <section className="schedule-section">
             <div className="section-toolbar">
-              <h2 className="section-title" style={{margin: 0}}>TODAY'S SCHEDULE ({new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '/')})</h2>
+              <div><h2 className="section-title">Today's schedule</h2><p className="admin-section-description">{new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p></div>
               <button 
                 className="admin-secondary-btn admin-secondary-btn--compact"
                 onClick={refreshOverview}
                 title="Refresh bookings"
               >
-                 Refresh
+                 <RefreshCw size={14} aria-hidden="true" /> Refresh
               </button>
             </div>
-            <div className="table-wrapper today-table-wrapper">
+            <div className="table-wrapper today-table-wrapper" role="region" aria-label="Today's schedule" tabIndex={0}>
               <table className="schedule-table">
                 <thead>
                   <tr>
@@ -317,9 +297,10 @@ function AdminDashboard() {
             </table>
             </div>
 
-            <div className="upcoming-booked-section" style={{ marginTop: '18px' }}>
-              <h2 className="section-title" style={{ marginBottom: '10px' }}>UPCOMING BOOKED DATES</h2>
-              <div className="table-wrapper upcoming-table-wrapper">
+          </section>
+            <section className="schedule-section upcoming-booked-section">
+              <div className="section-toolbar"><div><h2 className="section-title">Upcoming bookings</h2><p className="admin-section-description">Your next scheduled lessons</p></div><span className="admin-count-badge">{upcomingBookings.length} bookings</span></div>
+              <div className="table-wrapper upcoming-table-wrapper" role="region" aria-label="Upcoming bookings" tabIndex={0}>
                 <table className="schedule-table">
                   <thead>
                     <tr>
@@ -366,27 +347,26 @@ function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </section>
           </div>
 
           <div className="sms-section">
             <div className="section-toolbar">
-              <h2 className="section-title" style={{ margin: 0 }}>RECENT SMS ACTIVITY</h2>
+              <div><h2 className="section-title">SMS activity</h2><p className="admin-section-description">Recent notifications</p></div>
               <button
                 className="clear-sms-btn"
                 onClick={() => {
                   localStorage.setItem('smsHistory', JSON.stringify([]));
                   setSmsHistory([]);
                 }}
-                style={{ background: '#e74c3c', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', marginLeft: '16px' }}
               >
-                Clear SMS History
+                <Trash2 size={14} aria-hidden="true" /> Clear history
               </button>
             </div>
             <div className="sms-content">
               {smsHistory.length === 0 ? (
                 <div className="sms-empty">
-                  <span className="empty-icon">📭</span>
+                  <span className="admin-empty-icon"><Inbox size={28} strokeWidth={1.5} aria-hidden="true" /></span>
                   <p>No SMS activity yet</p>
                   <small>SMS notifications will appear here</small>
                 </div>
@@ -395,7 +375,7 @@ function AdminDashboard() {
                   {smsHistory.slice(0, 5).map((entry) => (
                     <div key={entry.id} className={`sms-item ${entry.success ? 'success' : 'error'}`}>
                       <div className="sms-icon">
-                        {entry.success ? '✓' : '✗'}
+                        {entry.success ? <Check size={16} aria-label="Success" /> : <X size={16} aria-label="Failed" />}
                       </div>
                       <div className="sms-details">
                         <div className="sms-header">
@@ -430,7 +410,7 @@ function AdminDashboard() {
                 className="view-all-sms-btn"
                 onClick={() => navigate('/admin/sms-monitoring')}
               >
-                View All SMS Activity →
+                View all SMS activity <ArrowUpRight size={16} aria-hidden="true" />
               </button>
             </div>
           </div>

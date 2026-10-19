@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Clipboard, GraduationCap, Mail, Pencil, Plus, Trash2, UserRound } from 'lucide-react';
+import { AdminEmptyState, AdminPageHeader } from './AdminUI';
 import { databases, databaseId, instructorsCollectionId, usersCollectionId, bookingsCollectionId, instructorSchedulesCollectionId, storage, storageBucketId, buildStorageFileUrl, account } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import './AdminPages.css';
@@ -490,20 +492,18 @@ function InstructorsProfile() {
 
   return (
     <div className="admin-main-content admin-main-content--fit">
-        <div className="page-header">
-          <h1 className="admin-page-title">Instructors' Profile</h1>
+        <AdminPageHeader eyebrow="Team management" title="Instructors" description="Manage your teaching team, availability, and lesson assignments.">
           <button className="add-btn" onClick={() => { resetInstructorForm(); setShowModal(true); }}>
-            + Add Instructor
+            <Plus size={17} aria-hidden="true" /> Add instructor
           </button>
-          
-        </div>
+        </AdminPageHeader>
+
+        <div className="admin-directory-heading"><h2 className="section-title">Instructor directory</h2><span className="admin-count-badge">{instructors.length} instructors</span></div>
 
         {loading ? (
           <div className="loading">Loading instructors...</div>
         ) : instructors.length === 0 ? (
-          <div className="empty-state">
-            <p>No instructors added yet. Click "Add Instructor" to get started.</p>
-          </div>
+          <AdminEmptyState icon={GraduationCap} title="Build your teaching team" description="No instructors added yet. Click “Add instructor” to get started." />
         ) : (
           <>
             <div className="instructors-grid">
@@ -513,36 +513,30 @@ function InstructorsProfile() {
                     {instructor.resolvedImageUrl ? (
                       <img src={instructor.resolvedImageUrl} alt={instructor.name} />
                     ) : (
-                      '👤'
+                      <UserRound size={30} strokeWidth={1.5} aria-hidden="true" />
                     )}
                   </div>
                   <div className="instructor-info">
                     <h3>{instructor.name}</h3>
                     {instructor.isAccountOnly && (
-                      <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
-                        📧 {instructor.email}
+                      <p className="admin-instructor-email">
+                        <Mail size={13} aria-hidden="true" /> {instructor.email}
                       </p>
                     )}
                     <div className="instructor-cert">
-                      <strong>Teaches:</strong> {instructor.lessonType === 'both' ? 'Theoretical & Driving' : instructor.lessonType === 'theory' ? 'Theoretical Class' : 'Driving Class'}<br />
-                      <strong>Transmission:</strong> {instructor.transmission || 'Not set'}<br />
+                      <div><span>Lesson type</span><strong>{instructor.lessonType === 'both' ? 'Theoretical & Driving' : instructor.lessonType === 'theory' ? 'Theoretical Class' : 'Driving Class'}</strong></div>
+                      <div><span>Transmission</span><strong>{instructor.transmission || 'Not set'}</strong></div>
                       {(instructor.lessonType === 'theory' || instructor.lessonType === 'both') && !instructor.isAccountOnly && (
                         <>
-                          <strong>Booking Slots:</strong> {instructor.theoryRemainingSlots}/{instructor.theoryCapacity} available<br />
+                          <div><span>Booking slots</span><strong>{instructor.theoryRemainingSlots}/{instructor.theoryCapacity} available</strong></div>
                         </>
                       )}
                     </div>
                     {instructorSchedules[instructor.name]?.leaves && Array.isArray(instructorSchedules[instructor.name].leaves) && instructorSchedules[instructor.name].leaves.length > 0 && (
-                      <div className="instructor-leaves" style={{
-                        background: '#fef3c7',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        marginTop: '8px',
-                        fontSize: '12px'
-                      }}>
-                        <strong style={{color: '#92400e'}}>🏖️ On Leave:</strong><br />
+                      <div className="instructor-leaves admin-instructor-note">
+                        <strong>On leave</strong><br />
                         {instructorSchedules[instructor.name].leaves.map((leave, idx) => (
-                          <span key={idx} style={{color: '#92400e'}}>
+                          <span key={idx}>
                             {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
                             {leave.reason && ` (${leave.reason})`}
                             <br />
@@ -551,16 +545,10 @@ function InstructorsProfile() {
                       </div>
                     )}
                     {instructorSchedules[instructor.name]?.breaks && Array.isArray(instructorSchedules[instructor.name].breaks) && instructorSchedules[instructor.name].breaks.length > 0 && (
-                      <div className="instructor-breaks" style={{
-                        background: '#dbeafe',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        marginTop: '8px',
-                        fontSize: '12px'
-                      }}>
-                        <strong style={{color: '#0369a1'}}>☕ Breaks:</strong><br />
+                      <div className="instructor-breaks admin-instructor-note">
+                        <strong>Breaks</strong><br />
                         {instructorSchedules[instructor.name].breaks.map((brk, idx) => (
-                          <span key={idx} style={{color: '#0369a1'}}>
+                          <span key={idx}>
                             {brk.day}: {brk.start} - {brk.end}
                             <br />
                           </span>
@@ -568,16 +556,10 @@ function InstructorsProfile() {
                       </div>
                     )}
                     {instructorSchedules[instructor.name]?.workingHours && (
-                      <div className="instructor-working-hours" style={{
-                        background: '#eef3f9',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        marginTop: '8px',
-                        fontSize: '12px'
-                      }}>
-                        <strong style={{color: '#0b2545'}}>Working hours:</strong><br />
+                      <div className="instructor-working-hours admin-instructor-note">
+                        <strong>Working hours</strong><br />
                         {Object.entries(instructorSchedules[instructor.name].workingHours).map(([day, hours]) => (
-                          <span key={day} style={{color: '#52657c'}}>
+                          <span key={day}>
                             {day}: {hours.off ? 'Day off' : `${hours.start || 'N/A'} - ${hours.end || 'N/A'}`}<br />
                           </span>
                         ))}
@@ -596,17 +578,17 @@ function InstructorsProfile() {
                           <option value="on-leave">On Leave</option>
                         </select>
                         {instructor.availability === 'booked' && (
-                          <span style={{color: '#111f33', fontSize: '11px', marginLeft: '8px', fontWeight: '600'}}>Booked</span>
+                          <span className="status-badge confirmed">Booked</span>
                         )}
                         {instructor.availability === 'booked' && (
-                          <small style={{color: '#dc2626', fontSize: '11px', marginTop: '4px', display: 'block'}}>Locked until lesson completed</small>
+                          <small className="admin-locked-copy">Locked until lesson completed</small>
                         )}
                       </div>
                     )}
                     <div className="card-actions">
                       <div className="action-buttons">
-                        <button className="action-btn edit-btn" onClick={() => openEditModal(instructor)}>Edit</button>
-                        <button className="action-btn delete-btn" onClick={() => deleteInstructor(instructor)}>Delete</button>
+                        <button className="action-btn edit-btn" onClick={() => openEditModal(instructor)}><Pencil size={14} aria-hidden="true" /> Edit</button>
+                        <button className="action-btn delete-btn" onClick={() => deleteInstructor(instructor)}><Trash2 size={14} aria-hidden="true" /> Delete</button>
                       </div>
                     </div>
                   </div>
@@ -615,7 +597,7 @@ function InstructorsProfile() {
             </div>
 
             <div className="pagination">
-              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>◄</button>
+              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page"><ChevronLeft size={16} aria-hidden="true" /></button>
               {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
                 <button
                   key={page}
@@ -625,7 +607,7 @@ function InstructorsProfile() {
                   {page}
                 </button>
               ))}
-              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>►</button>
+              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page"><ChevronRight size={16} aria-hidden="true" /></button>
             </div>
           </>
         )}
@@ -633,10 +615,10 @@ function InstructorsProfile() {
         {/* Add Instructor Modal */}
         {showModal && (
           <div className="modal-overlay" onClick={() => { resetInstructorForm(); setShowModal(false); }}>
-            <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content modal-large" role="dialog" aria-modal="true" aria-labelledby="admin-instructor-heading" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>{editingInstructorId ? 'Edit Instructor' : 'Add New Instructor'}</h2>
-                <button className="modal-close" onClick={() => { resetInstructorForm(); setShowModal(false); }}>×</button>
+                <h2 id="admin-instructor-heading">{editingInstructorId ? 'Edit instructor' : 'Add new instructor'}</h2>
+                <button className="modal-close" aria-label="Close instructor dialog" onClick={() => { resetInstructorForm(); setShowModal(false); }}>×</button>
               </div>
               
               <form onSubmit={handleSubmit} className="modal-form">
@@ -750,86 +732,43 @@ function InstructorsProfile() {
         {/* Password Display Modal */}
         {showPasswordDisplay && (
           <div className="modal-overlay" onClick={() => setShowPasswordDisplay(false)}>
-            <div className="modal-content admin-info-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content admin-info-modal" role="dialog" aria-modal="true" aria-labelledby="admin-credentials-heading" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>✅ Instructor Account Created</h2>
-                <button className="modal-close" onClick={() => setShowPasswordDisplay(false)}>×</button>
+                <h2 id="admin-credentials-heading"><CheckCircle2 size={20} aria-hidden="true" /> Instructor account created</h2>
+                <button className="modal-close" aria-label="Close credentials dialog" onClick={() => setShowPasswordDisplay(false)}>×</button>
               </div>
               
-              <div style={{padding: '20px', textAlign: 'center'}}>
-                <p style={{marginBottom: '20px', color: '#6b7280'}}>
+              <div className="admin-credentials-body">
+                <p className="admin-muted-copy">
                   Share these credentials with the instructor:
                 </p>
                 
-                <div style={{
-                  background: '#f0f9ff',
-                  border: '2px solid #0284c7',
-                  borderRadius: '8px',
-                  padding: '20px',
-                  marginBottom: '20px'
-                }}>
-                  <p style={{marginBottom: '15px', color: '#333'}}>
+                <div className="admin-credentials-box">
+                  <p>
                     <strong>Email:</strong><br />
-                    <code style={{
-                      background: '#fff',
-                      padding: '8px 12px',
-                      borderRadius: '4px',
-                      display: 'inline-block',
-                      fontFamily: 'monospace',
-                      marginTop: '8px'
-                    }}>{formData.email}</code>
+                    <code>{formData.email}</code>
                   </p>
                   
-                  <p style={{marginBottom: '0', color: '#333'}}>
+                  <p>
                     <strong>Password:</strong><br />
-                    <code style={{
-                      background: '#fff',
-                      padding: '8px 12px',
-                      borderRadius: '4px',
-                      display: 'inline-block',
-                      fontFamily: 'monospace',
-                      marginTop: '8px'
-                    }}>{generatedPassword}</code>
+                    <code>{generatedPassword}</code>
                   </p>
                 </div>
 
                 <button
                   onClick={() => navigator.clipboard.writeText(`Email: ${formData.email}\nPassword: ${generatedPassword}`)}
-                  style={{
-                    background: '#0284c7',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    marginBottom: '10px'
-                  }}
+                  className="admin-secondary-btn"
                 >
-                  📋 Copy Credentials
+                  <Clipboard size={16} aria-hidden="true" /> Copy credentials
                 </button>
 
-                <p style={{
-                  marginTop: '15px',
-                  fontSize: '12px',
-                  color: '#dc2626',
-                  fontWeight: 'bold'
-                }}>
-                  ⚠️ They can change this password after logging into the instructor page.
+                <p className="admin-credentials-hint">
+                  They can change this password after logging into the instructor page.
                 </p>
 
                 <button
                   onClick={() => setShowPasswordDisplay(false)}
-                  style={{
-                    background: '#10b981',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '10px 30px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    marginTop: '20px',
-                    fontSize: '14px',
-                    fontWeight: '600'
-                  }}
+                  className="admin-primary-btn"
                 >
                   Done
                 </button>

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Bike, CarFront, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { AdminEmptyState, AdminPageHeader } from './AdminUI';
 import { databases, databaseId, vehiclesCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../../appwrite/config';
 import { ID, Query } from 'appwrite';
 import './AdminPages.css';
@@ -207,38 +209,35 @@ function VehicleInventory() {
 
   return (
     <div className="admin-main-content admin-main-content--fit">
-        <div className="page-header">
-          <h1 className="admin-page-title">Vehicle Inventory</h1>
-          <div className="header-actions">
+        <AdminPageHeader eyebrow="Fleet management" title="Vehicle inventory" description="Keep your training fleet organized and ready for every lesson.">
             <button className="add-btn" onClick={() => { setModalType('vehicle'); setShowModal(true); }}>
-              + Add Vehicle
+              <Plus size={17} aria-hidden="true" /> Add vehicle
             </button>
             <button className="add-btn add-motorcycle-btn" onClick={() => { setModalType('motorcycle'); setShowModal(true); }}>
-              + Add Motorcycle
+              <Plus size={17} aria-hidden="true" /> Add motorcycle
             </button>
-          </div>
-        </div>
+        </AdminPageHeader>
+
+        <div className="admin-directory-heading"><h2 className="section-title">Training fleet</h2><span className="admin-count-badge">{vehicles.length} vehicles</span></div>
 
         {loading ? (
           <div className="loading">Loading vehicles...</div>
         ) : vehicles.length === 0 ? (
-          <div className="empty-state">
-            <p>No vehicles added yet. Click "Add Vehicle" to get started.</p>
-          </div>
+          <AdminEmptyState icon={CarFront} title="Your fleet starts here" description="No vehicles added yet. Click “Add vehicle” to get started." />
         ) : (
           <>
             <div className="vehicles-grid">
               {paginatedVehicles.map((vehicle) => (
                 <div key={vehicle.$id} className="vehicle-card">
                   <div className="vehicle-image">
-                    <img src={vehicle.resolvedImageUrl} alt="Vehicle" />
+                    <img src={vehicle.resolvedImageUrl} alt={vehicle.model || 'Vehicle'} />
                   </div>
                   <div className="vehicle-info">
-                    <h3>Model: {vehicle.model}</h3>
-                    <div className="vehicle-details">Plate Number: {vehicle.plateNumber}</div>
+                    <h3>{vehicle.model}</h3>
+                    <div className="vehicle-details">Plate number <strong>{vehicle.plateNumber}</strong></div>
                     <div className="vehicle-badges">
                       <span className={`vehicle-type-badge ${vehicle.vehicleType || 'car'}`}>
-                        {vehicle.vehicleType === 'motorcycle' ? '🏍️ Motorcycle' : '🚗 Car'}
+                        {vehicle.vehicleType === 'motorcycle' ? <><Bike size={14} aria-hidden="true" /> Motorcycle</> : <><CarFront size={14} aria-hidden="true" /> Car</>}
                       </span>
                       <span className={`transmission-badge ${(vehicle.transmission || vehicle.motorcycleTransmission || 'MT').toLowerCase()}`}>
                         {vehicle.transmission || vehicle.motorcycleTransmission || 'MT'}
@@ -257,10 +256,10 @@ function VehicleInventory() {
                         <option value="maintenance">Maintenance</option>
                       </select>
                       {vehicle.status === 'booked' && (
-                        <span style={{color: '#111f33', fontSize: '11px', marginLeft: '8px', fontWeight: '600'}}>Booked</span>
+                        <span className="status-badge confirmed">Booked</span>
                       )}
                       {vehicle.status === 'booked' && (
-                        <small style={{color: '#dc2626', fontSize: '11px', marginTop: '4px', display: 'block'}}>Locked until lesson completed</small>
+                        <small className="admin-locked-copy">Locked until lesson completed</small>
                       )}
                     </div>
                   </div>
@@ -269,7 +268,7 @@ function VehicleInventory() {
             </div>
 
             <div className="pagination">
-              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>◄</button>
+              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page"><ChevronLeft size={16} aria-hidden="true" /></button>
               {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
                 <button
                   key={page}
@@ -279,7 +278,7 @@ function VehicleInventory() {
                   {page}
                 </button>
               ))}
-              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>►</button>
+              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page"><ChevronRight size={16} aria-hidden="true" /></button>
             </div>
           </>
         )}
@@ -287,10 +286,10 @@ function VehicleInventory() {
         {/* Add Vehicle Modal */}
         {showModal && (
           <div className="modal-overlay" onClick={() => { resetVehicleForm(); setShowModal(false); }}>
-            <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content modal-large" role="dialog" aria-modal="true" aria-labelledby="admin-vehicle-heading" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>{modalType === 'motorcycle' ? 'Add New Motorcycle' : 'Add New Vehicle'}</h2>
-                <button className="modal-close" onClick={() => { resetVehicleForm(); setShowModal(false); }}>×</button>
+                <h2 id="admin-vehicle-heading">{modalType === 'motorcycle' ? 'Add new motorcycle' : 'Add new vehicle'}</h2>
+                <button className="modal-close" aria-label="Close vehicle dialog" onClick={() => { resetVehicleForm(); setShowModal(false); }}>×</button>
               </div>
               
               <form onSubmit={handleSubmit} className="modal-form">

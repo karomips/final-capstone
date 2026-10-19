@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Check, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { AdminPageHeader } from './AdminUI';
 import { databases, databaseId, usersCollectionId } from '../../appwrite/config';
 import './AdminPages.css';
 
@@ -180,16 +182,15 @@ function StudentManagement() {
 
   return (
     <div className="admin-main-content admin-main-content--fit">
-        <div className="page-header">
-          <h1 className="admin-page-title">Student Management</h1>
+        <AdminPageHeader eyebrow="Student administration" title="Student management" description="Manage student accounts and review profile change requests.">
           <button onClick={fetchStudents} className="admin-secondary-btn admin-secondary-btn--compact">
-            Refresh List
+            <RefreshCw size={16} aria-hidden="true" /> Refresh list
           </button>
-        </div>
+        </AdminPageHeader>
 
         <div className="student-table-container">
-          <h2 className="section-title">STUDENT MANAGEMENT</h2>
-          <div className="table-wrapper">
+          <div className="section-toolbar"><div><h2 className="section-title">Student directory</h2><p className="admin-section-description">Account status and approval requests</p></div><span className="admin-count-badge">{students.length} students</span></div>
+          <div className="table-wrapper" role="region" aria-label="Student directory" tabIndex={0}>
             <table className="student-table">
             <thead>
               <tr>
@@ -213,8 +214,8 @@ function StudentManagement() {
               ) : (
                 paginatedStudents.map((student, index) => (
                   <tr key={student.$id}>
-                    <td style={{fontWeight: 600, color: '#1e3a5f'}}>{startIndex + index + 1}</td>
-                    <td style={{fontWeight: 500, color: '#1a1a1a'}}>{student.name}</td>
+                    <td className="admin-row-number">{String(startIndex + index + 1).padStart(2, '0')}</td>
+                    <td><div className="admin-student-name"><span className="admin-student-avatar" aria-hidden="true">{(student.name || 'S').trim().charAt(0).toUpperCase()}</span><span className="name-cell">{student.name}</span></div></td>
                     <td>{student.email}</td>
                     <td>
                       <span className={`status-badge ${student.approved ? 'approved' : 'pending'}`}>
@@ -223,17 +224,17 @@ function StudentManagement() {
                     </td>
                     <td>
                       {student.hasChangeRequest && student.pendingChanges ? (
-                        <div style={{fontSize: '12px'}}>
-                          <span style={{color: '#f59e0b', fontWeight: 600}}>⚠️ Pending Changes</span>
-                          <details style={{marginTop: '5px', cursor: 'pointer'}}>
-                            <summary style={{color: '#5a9cf8', cursor: 'pointer'}}>View Details</summary>
-                            <div style={{marginTop: '8px', padding: '8px', background: '#f3f4f6', borderRadius: '4px', fontSize: '11px', textAlign: 'left'}}>
+                        <div className="admin-change-request">
+                          <span className="admin-pending-copy">Pending changes</span>
+                          <details>
+                            <summary>View details</summary>
+                            <div className="admin-change-details">
                               {(() => {
                                 try {
                                   const changes = JSON.parse(student.pendingChanges);
                                   return Object.entries(changes).map(([key, value]) => (
-                                    <div key={key} style={{marginBottom: '4px'}}>
-                                      <strong style={{textTransform: 'capitalize'}}>{key}:</strong> {value}
+                                    <div key={key}>
+                                      <strong>{key}:</strong> {value}
                                     </div>
                                   ));
                                 } catch (e) {
@@ -244,14 +245,14 @@ function StudentManagement() {
                           </details>
                         </div>
                       ) : (
-                        <span style={{color: '#9ca3af', fontSize: '12px'}}>No pending changes</span>
+                        <span className="admin-muted-copy">No pending changes</span>
                       )}
                     </td>
                     <td>
-                      <div style={{display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start'}}>
+                      <div className="admin-student-actions">
                         {/* Account approval button */}
                         {student.approved ? (
-                          <span style={{color: '#16a34a', fontWeight: 600, fontSize: '14px'}}>✓ Approved</span>
+                          <span className="admin-approved-copy"><Check size={14} aria-hidden="true" /> Approved</span>
                         ) : (
                           <button 
                             className="approve-btn" 
@@ -263,36 +264,18 @@ function StudentManagement() {
                         
                         {/* Profile change approval buttons */}
                         {student.hasChangeRequest && student.pendingChanges && (
-                          <div style={{display: 'flex', gap: '6px'}}>
+                          <div className="admin-change-actions">
                             <button 
                               onClick={() => handleApproveProfileChange(student.$id, student.pendingChanges)}
-                              style={{
-                                padding: '6px 12px',
-                                background: '#16a34a',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                fontWeight: '500'
-                              }}
+                              className="approve-btn"
                             >
-                              ✓ Approve Changes
+                              Approve changes
                             </button>
                             <button 
                               onClick={() => handleRejectProfileChange(student.$id)}
-                              style={{
-                                padding: '6px 12px',
-                                background: '#dc2626',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                fontWeight: '500'
-                              }}
+                              className="decline-btn"
                             >
-                              ✗ Reject
+                              Reject
                             </button>
                           </div>
                         )}
@@ -307,7 +290,7 @@ function StudentManagement() {
 
           {!loading && students.length > 0 && (
             <div className="pagination">
-              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>◄</button>
+              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} aria-label="Previous page"><ChevronLeft size={16} aria-hidden="true" /></button>
               {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
                 <button
                   key={page}
@@ -317,7 +300,7 @@ function StudentManagement() {
                   {page}
                 </button>
               ))}
-              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>►</button>
+              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Next page"><ChevronRight size={16} aria-hidden="true" /></button>
             </div>
           )}
         </div>

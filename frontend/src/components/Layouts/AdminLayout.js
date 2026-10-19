@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import useTheme from '../../hooks/useTheme';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { ChevronRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import Sidebar from '../Shared/Sidebar';
 import '../Admin/AdminPages.css';
@@ -10,10 +11,19 @@ import StudentsIcon from '../../assets/icons/students-white.png';
 import InstructorIcon from '../../assets/icons/instructor-white.png';
 import VehicleIcon from '../../assets/icons/vehicle-white.png';
 import SMSIcon from '../../assets/icons/sms-icon.png';
+import '../Admin/AdminWorkspace.css';
 
 function AdminLayout() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const pageLabel = {
+    '/admin': 'Overview',
+    '/admin/students': 'Students',
+    '/admin/instructors': 'Instructors',
+    '/admin/vehicles': 'Vehicles',
+    '/admin/sms-monitoring': 'SMS monitoring'
+  }[location.pathname] || 'Overview';
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const { theme, setTheme, toggleTheme } = useTheme('adminTheme');
@@ -82,15 +92,23 @@ function AdminLayout() {
 
       {/* Content wrapper that responds to sidebar state */}
       <div className="admin-content-wrapper" data-sidebar-state={sidebarOpen ? 'open' : 'closed'}>
+        <div className="admin-workspace-bar">
+          <div className="admin-breadcrumb" aria-label="Current page">
+            <span>Administration</span>
+            <ChevronRight size={14} aria-hidden="true" />
+            <strong>{pageLabel}</strong>
+          </div>
+          <span className="admin-workspace-label"><ShieldCheck size={16} aria-hidden="true" /> Admin workspace</span>
+        </div>
         <Outlet context={{ theme, setTheme }} />
       </div>
 
       {/* Sign Out Confirmation Modal */}
       {showSignOutModal && (
         <div className="modal-overlay" onClick={() => setShowSignOutModal(false)}>
-          <div className="modal-content admin-signout-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content admin-signout-modal" role="dialog" aria-modal="true" aria-labelledby="admin-signout-heading" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Sign Out</h2>
+              <h2 id="admin-signout-heading">Sign out</h2>
               <button
                 className="modal-close"
                 onClick={() => setShowSignOutModal(false)}

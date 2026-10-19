@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Bell, CalendarDays, Check, CheckCircle2, Clock3, Inbox, MessageSquare, Search, X } from 'lucide-react';
+import { AdminEmptyState, AdminMetricCard, AdminPageHeader } from './AdminUI';
 import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import smsHelper from '../../utils/smsHelper';
@@ -454,29 +456,25 @@ function SMSMonitoring() {
   };
 
   return (
-    <div className="admin-main-content admin-main-content--fit">
-        <div className="page-header">
-          <div>
-            <h1 className="admin-page-title">SMS Monitoring & Notifications</h1>
-            <p style={{marginTop: '8px', color: '#666'}}>Send and track SMS notifications for scheduled appointments</p>
-          </div>
-        </div>
+    <div className="admin-main-content admin-main-content--fit admin-sms-page">
+        <AdminPageHeader eyebrow="Communications" title="SMS monitoring" description="Send and track notifications for your scheduled appointments." />
 
         {/* Filters */}
         <div className="sms-filters">
           <div className="filter-group">
-            <label>Search:</label>
-            <input
+            <label htmlFor="admin-sms-search">Search appointments</label>
+            <div className="admin-search-field"><Search size={17} aria-hidden="true" /><input
+              id="admin-sms-search"
               type="text"
               placeholder="Search by name, phone, or instructor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
-            />
+            /></div>
           </div>
           <div className="filter-group">
-            <label>Status:</label>
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+            <label htmlFor="admin-sms-status">Booking status</label>
+            <select id="admin-sms-status" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
               <option value="all">All Statuses</option>
               <option value="pending">Pending</option>
               <option value="completed">Completed</option>
@@ -484,8 +482,8 @@ function SMSMonitoring() {
             </select>
           </div>
           <div className="filter-group">
-            <label>Date:</label>
-            <select value={filterDate} onChange={(e) => setFilterDate(e.target.value)}>
+            <label htmlFor="admin-sms-date">Date range</label>
+            <select id="admin-sms-date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)}>
               <option value="all">All Dates</option>
               <option value="today">Today</option>
               <option value="upcoming">Upcoming</option>
@@ -496,51 +494,24 @@ function SMSMonitoring() {
 
         {/* Statistics Cards */}
         <div className="sms-stats">
-          <div className="stat-card">
-            <div className="stat-icon"></div>
-            <div className="stat-content">
-              <h3>{filteredBookings.length}</h3>
-              <p>Total Bookings</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon"></div>
-            <div className="stat-content">
-              <h3>{smsHistory.filter(h => h.success).length}</h3>
-              <p>SMS Sent Today</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon"></div>
-            <div className="stat-content">
-              <h3>{filteredBookings.filter(b => b.status === 'pending').length}</h3>
-              <p>Pending</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon"></div>
-            <div className="stat-content">
-              <h3>{filteredBookings.filter(b => b.status === 'completed').length}</h3>
-              <p>Completed</p>
-            </div>
-          </div>
+          <AdminMetricCard icon={CalendarDays} label="Total bookings" value={filteredBookings.length} />
+          <AdminMetricCard icon={MessageSquare} label="SMS sent today" value={smsHistory.filter(h => h.success).length} tone="violet" />
+          <AdminMetricCard icon={Clock3} label="Pending bookings" value={filteredBookings.filter(b => b.status === 'pending').length} tone="amber" />
+          <AdminMetricCard icon={CheckCircle2} label="Completed" value={filteredBookings.filter(b => b.status === 'completed').length} tone="green" />
         </div>
 
         {/* Bookings Table */}
         <div className="sms-bookings-section">
-          <h2>Scheduled Appointments</h2>
+          <div className="section-toolbar"><div><h2 className="section-title">Scheduled appointments</h2><p className="admin-section-description">Manage lessons and keep students informed</p></div><span className="admin-count-badge">{filteredBookings.length} bookings</span></div>
           {loading ? (
             <div className="loading-state">
               <div className="spinner"></div>
               <p>Loading bookings...</p>
             </div>
           ) : filteredBookings.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon"></span>
-              <p>No bookings found</p>
-            </div>
+            <AdminEmptyState icon={CalendarDays} title="No bookings found" description="Appointments matching your search and filters will appear here." />
           ) : (
-            <div className="bookings-table-container">
+            <div className="bookings-table-container" role="region" aria-label="Scheduled appointments" tabIndex={0}>
               <table className="bookings-table">
                 <thead>
                   <tr>
@@ -586,7 +557,7 @@ function SMSMonitoring() {
                             disabled={sendingStatus[booking.$id + 'completed'] === 'sending' || booking.status === 'completed'}
                             title="Mark booking as completed"
                           >
-                            ✓ Complete
+                            <Check size={13} aria-hidden="true" /> Complete
                             {getSMSStatusBadge(booking, 'completed')}
                           </button>
                           <button
@@ -595,7 +566,7 @@ function SMSMonitoring() {
                             disabled={sendingStatus[booking.$id + 'reminder'] === 'sending' || booking.userPhone === 'N/A'}
                             title="Send Reminder SMS"
                           >
-                            Remind
+                            <Bell size={13} aria-hidden="true" /> Remind
                             {getSMSStatusBadge(booking, 'reminder')}
                           </button>
                           <button
@@ -604,7 +575,7 @@ function SMSMonitoring() {
                             disabled={sendingStatus[booking.$id + 'cancellation'] === 'sending' || booking.status === 'cancelled'}
                             title="Cancel booking"
                           >
-                            ✗ Cancel
+                            <X size={13} aria-hidden="true" /> Cancel
                             {getSMSStatusBadge(booking, 'cancellation')}
                           </button>
                         </div>
@@ -619,18 +590,15 @@ function SMSMonitoring() {
 
         {/* SMS History */}
         <div className="sms-history-section">
-          <h2>Recent SMS Activity</h2>
+          <div className="section-toolbar"><div><h2 className="section-title">Recent SMS activity</h2><p className="admin-section-description">Delivery history and notification updates</p></div></div>
           {smsHistory.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon">📜</span>
-              <p>No SMS activity yet</p>
-            </div>
+            <AdminEmptyState icon={Inbox} title="No SMS activity yet" description="Your sent notifications and delivery updates will appear here." />
           ) : (
             <div className="history-list">
               {smsHistory.slice(0, 10).map((entry) => (
                 <div key={entry.id} className={`history-item ${entry.success ? 'success' : 'error'}`}>
                   <div className="history-icon">
-                    {entry.success ? '✓' : '✗'}
+                    {entry.success ? <Check size={17} aria-label="Success" /> : <X size={17} aria-label="Failed" />}
                   </div>
                   <div className="history-content">
                     <div className="history-header">

@@ -1,0 +1,49 @@
+.auth-session-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  box-sizing: border-box;
+  background: var(--user-bg, #eef3f9);
+  color: var(--user-text-muted, #52657c);
+  font-family: inherit;
+}
+
+.auth-session-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 32px;
+  border: 1px solid var(--user-border, #d6e0ec);
+  border-radius: 16px;
+  background: var(--user-surface, #ffffff);
+  text-align: center;
+}
+
+.auth-session-card h1 {
+  margin: 0 0 12px;
+  color: var(--user-text-dark, #0b2545);
+  font-size: 1.3rem;
+}
+
+.auth-session-card p {
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+
+.auth-session-card button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #16587b;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-session-card button:focus-visible {
+  outline: 3px solid var(--user-border-active, #84b3ce);
+  outline-offset: 3px;
+}

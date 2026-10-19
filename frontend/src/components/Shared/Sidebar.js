@@ -13,6 +13,7 @@ const navigationIcons = {
   vehicles: CarFront,
   sms: MessageSquare,
   'book-lesson': BookOpen,
+  sessions: CalendarDays,
   profile: UserRound,
   schedule: CalendarDays,
   hours: Clock3,
@@ -25,6 +26,7 @@ const navigationIcons = {
 const mobileLabels = {
   dashboard: 'Home',
   'book-lesson': 'Book lesson',
+  sessions: 'Sessions',
   profile: 'Profile',
   schedule: 'Schedule',
   hours: 'Hours'

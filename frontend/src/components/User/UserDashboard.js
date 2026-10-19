@@ -318,7 +318,7 @@ function UserDashboard() {
                   <button 
                     className="lesson-action-btn" 
                     type="button"
-                    onClick={() => navigate('/book-lesson')}
+                    onClick={() => navigate('/my-sessions')}
                   >
                     View All Sessions
                   </button>

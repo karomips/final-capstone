@@ -50,6 +50,12 @@ function UserLayout() {
             onClick: () => navigate('/book-lesson')
           },
           {
+            id: 'sessions',
+            label: 'My Sessions',
+            active: window.location.pathname === '/my-sessions',
+            onClick: () => navigate('/my-sessions')
+          },
+          {
             id: 'profile',
             label: 'My Profile',
             icon: ProfileIcon,

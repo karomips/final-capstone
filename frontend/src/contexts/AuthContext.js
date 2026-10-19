@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { account, databases, databaseId, usersCollectionId, storage, storageBucketId, buildStorageFileUrl } from '../appwrite/config';
 import { ID, Query } from 'appwrite';
 import emailVerificationHelper from '../utils/emailVerificationHelper';
+import './AuthContext.css';
 
 const AuthContext = createContext();
 
@@ -9,30 +10,42 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+function normalizeBoolean(value) {
+  return value === true || value === 'true' || value === 1 || value === '1';
+}
+
+function isAdminUser(user, userDoc) {
+  const email = String(user?.email || '').toLowerCase();
+  return email === 'admin@gmail.com' || userDoc?.role === 'admin';
+}
+
+function isInstructorUser(userDoc) {
+  return userDoc?.role === 'instructor';
+}
+
+// Keep session restoration and sign-in consistent with the existing access policy.
+function canAccessAccount(user, userDoc) {
+  return isAdminUser(user, userDoc)
+    || isInstructorUser(userDoc)
+    || normalizeBoolean(userDoc?.approved)
+    || String(user?.email || '').toLowerCase() === 'instructor@gmail.com';
+}
+
+async function getUserDocumentSafe(userId) {
+  try {
+    return await databases.getDocument(databaseId, usersCollectionId, userId);
+  } catch (err) {
+    if (err.code === 404) return null;
+    // A failed request does not mean that approval was revoked.
+    throw err;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  function normalizeBoolean(value) {
-    return value === true || value === 'true' || value === 1 || value === '1';
-  }
-
-  function isAdminUser(user, userDoc) {
-    const email = String(user?.email || '').toLowerCase();
-    return email === 'admin@gmail.com' || userDoc?.role === 'admin';
-  }
-
-  function isInstructorUser(userDoc) {
-    return userDoc?.role === 'instructor';
-  }
-
-  async function getUserDocumentSafe(userId) {
-    try {
-      return await databases.getDocument(databaseId, usersCollectionId, userId);
-    } catch (err) {
-      return null;
-    }
-  }
+  const [sessionError, setSessionError] = useState('');
+  const [sessionAttempt, setSessionAttempt] = useState(0);
 
   // Sign up function
   async function signup(email, password, name = 'User', phoneNumber = '', profileImageFile = null) {
@@ -191,13 +204,11 @@ export function AuthProvider({ children }) {
         }
       }
       
-      const admin = isAdminUser(user, userDoc);
-      const instructor = isInstructorUser(userDoc);
-      const approved = normalizeBoolean(userDoc?.approved);
+      if (!userDoc && !canAccessAccount(user, userDoc)) {
+        throw new Error('We could not load your account profile. Please try again.');
+      }
 
-      console.log('Login debug - email:', normalizedEmail, 'admin:', admin, 'instructor:', instructor, 'approved:', approved, 'isSpecialEmail:', isSpecialEmail, 'userDoc:', userDoc);
-
-      if (!admin && !instructor && !approved && !isSpecialEmail) {
+      if (!canAccessAccount(user, userDoc)) {
         await account.deleteSession('current');
         setCurrentUser(null);
         throw new Error('Your account is pending admin approval. Please wait for approval before logging in.');
@@ -224,29 +235,51 @@ export function AuthProvider({ children }) {
 
   // Check for existing session on mount
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const user = await account.get();
-        const userDoc = await getUserDocumentSafe(user.$id);
-        const admin = isAdminUser(user, userDoc);
-        const approved = normalizeBoolean(userDoc?.approved);
+    let isActive = true;
 
-        if (!admin && !approved) {
+    const checkSession = async () => {
+      setLoading(true);
+      setSessionError('');
+      try {
+        let user;
+        try {
+          user = await account.get();
+        } catch (error) {
+          // Only an authentication failure confirms that the session is gone.
+          if (error.code === 401) {
+            if (isActive) setCurrentUser(null);
+            return;
+          }
+          throw error;
+        }
+        if (!isActive) return;
+
+        const userDoc = await getUserDocumentSafe(user.$id);
+        if (!isActive) return;
+
+        if (!userDoc && !canAccessAccount(user, userDoc)) {
+          throw new Error('Account profile is unavailable');
+        }
+
+        if (!canAccessAccount(user, userDoc)) {
           await account.deleteSession('current');
-          setCurrentUser(null);
+          if (isActive) setCurrentUser(null);
         } else {
           setCurrentUser(user);
         }
       } catch (error) {
-        // No active session
-        setCurrentUser(null);
+        if (isActive) {
+          setSessionError('We could not verify your session. Please try again.');
+        }
       } finally {
-        setLoading(false);
+        if (isActive) setLoading(false);
       }
     };
 
     checkSession();
-  }, []);
+    // Strict Mode and hot reload can leave an older request in flight.
+    return () => { isActive = false; };
+  }, [sessionAttempt]);
 
   const value = {
     currentUser,
@@ -257,7 +290,17 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? (
+        <main className="auth-session-state" role="status">Restoring your session...</main>
+      ) : sessionError ? (
+        <main className="auth-session-state">
+          <div className="auth-session-card" role="alert">
+            <h1>Unable to restore your session</h1>
+            <p>{sessionError}</p>
+            <button type="button" onClick={() => setSessionAttempt((attempt) => attempt + 1)}>Try again</button>
+          </div>
+        </main>
+      ) : children}
     </AuthContext.Provider>
   );
 }

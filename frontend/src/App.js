@@ -11,6 +11,7 @@ import VehicleInventory from './components/Admin/VehicleInventory';
 import SMSMonitoring from './components/Admin/SMSMonitoring';
 import UserDashboard from './components/User/UserDashboard';
 import BookLesson from './components/User/BookLesson';
+import MySessions from './components/User/MySessions';
 import Profile from './components/User/Profile';
 import InstructorDashboard from './components/Instructor/InstructorDashboard';
 import AdminLayout from './components/Layouts/AdminLayout';
@@ -71,6 +72,17 @@ function AppContent() {
         </Route>
         
         <Route 
+          path="/my-sessions"
+          element={
+            <PrivateRoute>
+              <UserLayout />
+            </PrivateRoute>
+          }
+        >
+          <Route path="" element={<MySessions />} />
+        </Route>
+
+        <Route
           path="/profile" 
           element={
             <PrivateRoute>

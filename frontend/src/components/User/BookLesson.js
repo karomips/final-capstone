@@ -733,14 +733,15 @@ function BookLesson() {
           currentUserId
         );
 
-        if (userDoc && userDoc.phone) {
-          await fetch(`${API_URL}/api/sms/appointment-confirmation`, {
+        const phoneNumber = userDoc?.phoneNumber || userDoc?.phone;
+        if (phoneNumber) {
+          const smsResponse = await fetch(`${API_URL}/api/sms/appointment-confirmation`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              phoneNumber: userDoc.phone,
+              phoneNumber,
               appointmentData: {
                 instructor: instructor,
                 date: bookingDates[0],
@@ -749,6 +750,11 @@ function BookLesson() {
               }
             })
           });
+
+          if (!smsResponse.ok) {
+            const smsError = await smsResponse.json().catch(() => ({}));
+            throw new Error(smsError.error || 'SMS notification request failed');
+          }
         }
       } catch (smsErr) {
         console.warn('SMS notification non-critical alert:', smsErr);

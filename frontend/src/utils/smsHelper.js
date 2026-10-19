@@ -3,7 +3,10 @@
  * Frontend utility for sending SMS notifications via backend API
  */
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL ||
+  (typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? 'http://localhost:5000'
+    : 'https://final-capstone-3ugp.onrender.com');
 
 const smsHelper = {
   /**

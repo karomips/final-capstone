@@ -112,6 +112,28 @@ const normalizeTransmission = (value) => {
   return normalized.toUpperCase();
 };
 
+const getInstructorTransmission = (instructorDoc) => (
+  normalizeTransmission(instructorDoc?.transmission || instructorDoc?.motorcycleTransmission)
+);
+
+const getVehicleTransmission = (vehicleDoc) => (
+  normalizeTransmission(vehicleDoc?.transmission || vehicleDoc?.motorcycleTransmission)
+);
+
+const getVehicleTypeLabel = (vehicleDoc) => (
+  String(vehicleDoc?.vehicleType || '').toLowerCase() === 'motorcycle' ? 'Motorcycle' : 'Car'
+);
+
+const isVehicleAvailable = (vehicleDoc) => {
+  const status = String(vehicleDoc?.status || '').trim().toLowerCase();
+  return !['booked', 'unavailable', 'maintenance', 'on-leave'].includes(status);
+};
+
+const matchesVehicleTransmission = (vehicleDoc, transmission) => {
+  const vehicleTransmission = getVehicleTransmission(vehicleDoc);
+  return !vehicleTransmission || vehicleTransmission === transmission;
+};
+
 const scheduleBlocksDate = (schedule, dateValue) => {
   if (!schedule) return false;
   const date = parseIsoDate(dateValue);
@@ -445,8 +467,7 @@ function BookLesson() {
 
       if (transmissionFilter) {
         practicalList = practicalList.filter((inst) => {
-          const instTrans = inst.motorcycleTransmission || inst.transmission;
-          return normalizeTransmission(instTrans) === transmissionFilter;
+          return getInstructorTransmission(inst) === transmissionFilter;
         });
       }
 
@@ -455,15 +476,13 @@ function BookLesson() {
 
       const vehResp = await databases.listDocuments(
         databaseId,
-        vehiclesCollectionId,
-        [Query.equal('status', 'available')]
+        vehiclesCollectionId
       );
 
-      let vehDocs = vehResp.documents || [];
+      let vehDocs = (vehResp.documents || []).filter(isVehicleAvailable);
       if (transmissionFilter) {
         vehDocs = vehDocs.filter((v) => {
-          const trans = v.motorcycleTransmission || v.transmission;
-          return normalizeTransmission(trans) === transmissionFilter;
+          return matchesVehicleTransmission(v, transmissionFilter);
         });
       }
       setPackageVehicles(vehDocs);
@@ -490,9 +509,7 @@ function BookLesson() {
 
       if (selectedLesson === 'practical' && transmission) {
         filteredInstructors = filteredInstructors.filter((inst) => {
-          const instructorTransmission = inst.motorcycleTransmission || inst.transmission;
-          if (!instructorTransmission) return false;
-          return normalizeTransmission(instructorTransmission) === transmission;
+          return getInstructorTransmission(inst) === transmission;
         });
       }
 
@@ -545,15 +562,13 @@ function BookLesson() {
     try {
       const response = await databases.listDocuments(
         databaseId,
-        vehiclesCollectionId,
-        [Query.equal('status', 'available')]
+        vehiclesCollectionId
       );
 
-      let filteredVehicles = response.documents;
+      let filteredVehicles = (response.documents || []).filter(isVehicleAvailable);
       if (transmission) {
-        filteredVehicles = response.documents.filter((veh) => {
-          const vehicleTransmission = veh.motorcycleTransmission || veh.transmission;
-          return normalizeTransmission(vehicleTransmission) === transmission;
+        filteredVehicles = filteredVehicles.filter((veh) => {
+          return matchesVehicleTransmission(veh, transmission);
         });
       }
 
@@ -595,8 +610,9 @@ function BookLesson() {
     if (!currentUser) return;
     debounce(() => {
       fetchInstructors();
+      fetchVehicles();
     }, 300);
-  }, [selectedLesson, selectedDates, currentUser, transmission, debounce, fetchInstructors]);
+  }, [selectedLesson, selectedDates, currentUser, transmission, debounce, fetchInstructors, fetchVehicles]);
 
   useEffect(() => {
     if (!showPackages) return;
@@ -738,15 +754,12 @@ function BookLesson() {
         console.warn('SMS notification non-critical alert:', smsErr);
       }
 
-      // Update instructor availability
+      // Update availability on the dedicated instructor record.
       try {
         const instructorQuery = await databases.listDocuments(
           databaseId,
-          usersCollectionId,
-          [
-            Query.equal('name', instructor),
-            Query.equal('role', 'instructor')
-          ]
+          instructorsCollectionId,
+          [Query.equal('name', instructor)]
         );
 
         if (instructorQuery.documents.length > 0) {
@@ -756,7 +769,7 @@ function BookLesson() {
             if (selectedLesson === 'practical') {
               await databases.updateDocument(
                 databaseId,
-                usersCollectionId,
+                instructorsCollectionId,
                 instructorDocId,
                 { availability: 'booked' }
               );
@@ -765,7 +778,7 @@ function BookLesson() {
               if (shouldMarkUnavailable) {
                 await databases.updateDocument(
                   databaseId,
-                  usersCollectionId,
+                  instructorsCollectionId,
                   instructorDocId,
                   { availability: 'booked' }
                 );
@@ -1089,7 +1102,7 @@ function BookLesson() {
                       <option key={instId} value={inst.name}>
                         {selectedLesson === 'theory'
                           ? `${inst.name} (${inst.theoryRemainingSlots}/${inst.theoryCapacity} classroom slots open)`
-                          : `${inst.name} - ${inst.certifications || 'Driving Instructor'}`}
+                          : `${inst.name} - ${getInstructorTransmission(inst)} - ${inst.certifications || 'Driving Instructor'}`}
                       </option>
                     );
                   })}
@@ -1111,9 +1124,11 @@ function BookLesson() {
                     </option>
                     {vehicles.map((veh) => {
                       const vehId = veh[ID_KEY] || veh.plateNumber;
+                      const vehicleTransmission = getVehicleTransmission(veh) || transmission;
+                      const vehicleType = getVehicleTypeLabel(veh);
                       return (
-                        <option key={vehId} value={`${veh.model} (${veh.transmission})`}>
-                          {veh.model} ({veh.transmission}) &mdash; {veh.plateNumber}
+                        <option key={vehId} value={`${veh.model} (${vehicleTransmission})`}>
+                          {vehicleType} - {veh.model} ({vehicleTransmission}) &mdash; {veh.plateNumber}
                         </option>
                       );
                     })}

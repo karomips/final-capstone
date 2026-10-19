@@ -7,14 +7,14 @@
   --app-text: #192b43;
   --app-muted: #718096;
   --app-accent: #3468ca;
-  --app-sidebar: #111f35;
-  --app-sidebar-text: #f4f7fc;
-  --app-sidebar-muted: #9aabc2;
-  --app-sidebar-line: #29384e;
-  --app-sidebar-accent: #ffffff;
-  --app-sidebar-danger: #f0a7ad;
-  --app-sidebar-danger-bg: #362b3e;
-  --app-nav-active: #293e5f;
+  --app-sidebar: #84b3ce;
+  --app-sidebar-text: #0b2545;
+  --app-sidebar-muted: #24506e;
+  --app-sidebar-line: rgba(11, 37, 69, 0.18);
+  --app-sidebar-accent: #0d4f78;
+  --app-sidebar-danger: #8f3038;
+  --app-sidebar-danger-bg: rgba(255, 255, 255, 0.28);
+  --app-nav-active: #6fa8c8;
   --login-background: #3265c8;
   --admin-blue-soft: #edf3ff;
   --admin-blue: #3265c8;
@@ -74,10 +74,10 @@
 .admin-page-container .app-sidebar-header { margin-bottom: 44px; }
 .admin-page-container .app-sidebar-section-label { font-size: 12px; letter-spacing: 1.7px; margin-bottom: 14px; }
 .admin-page-container .app-sidebar .app-nav-btn { min-height: 47px; border-radius: 8px; font-size: 13px; gap: 12px; }
-.admin-page-container .app-sidebar .app-nav-btn.active { background: #2d4c7b; }
+.admin-page-container .app-sidebar .app-nav-btn.active { background: #6fa8c8; }
 .admin-page-container .app-sidebar .app-nav-btn.active::before { display: none; }
 .admin-page-container .app-sidebar .app-sidebar-footer { border-top-color: var(--app-sidebar-line); }
-.admin-page-container .app-account-avatar { background: #314866; color: #e1ecff; border-radius: 50%; }
+.admin-page-container .app-account-avatar { background: #6fa8c8; color: #0b2545; border-radius: 50%; }
 .admin-page-container .app-sidebar :is(.app-signout-btn, .app-theme-toggle-btn) { box-shadow: none; border-radius: 8px; }
 .admin-page-container .app-sidebar .app-signout-btn:hover { transform: none; box-shadow: none; }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, CalendarDays, Check, CheckCircle2, Clock3, Inbox, MessageSquare, Search, X } from 'lucide-react';
 import { AdminEmptyState, AdminMetricCard, AdminPageHeader } from './AdminUI';
-import { databases, databaseId, bookingsCollectionId, usersCollectionId, vehiclesCollectionId } from '../../appwrite/config';
+import { databases, databaseId, bookingsCollectionId, usersCollectionId, instructorsCollectionId, vehiclesCollectionId } from '../../appwrite/config';
 import { Query } from 'appwrite';
 import smsHelper from '../../utils/smsHelper';
 import './AdminPages.css';
@@ -218,14 +218,11 @@ function SMSMonitoring() {
       try {
         let instructorDoc = null;
 
-        // Query users collection for instructor with matching name
+        // Instructor availability is stored on the dedicated instructors record.
         const instructorQuery = await databases.listDocuments(
           databaseId,
-          usersCollectionId,
-          [
-            Query.equal('name', booking.instructor),
-            Query.equal('role', 'instructor')
-          ]
+          instructorsCollectionId,
+          [Query.equal('name', booking.instructor)]
         );
 
         if (instructorQuery.documents.length > 0) {
@@ -234,8 +231,7 @@ function SMSMonitoring() {
           // Fallback: normalize values to tolerate case/spacing differences
           const allInstructors = await databases.listDocuments(
             databaseId,
-            usersCollectionId,
-            [Query.equal('role', 'instructor')]
+            instructorsCollectionId
           );
           instructorDoc = allInstructors.documents.find(
             (doc) => normalize(doc.name) === normalize(booking.instructor)
@@ -243,16 +239,14 @@ function SMSMonitoring() {
         }
 
         if (instructorDoc) {
-          // Only update availability if the field exists in the document schema
           try {
             await databases.updateDocument(
               databaseId,
-              usersCollectionId,
+              instructorsCollectionId,
               instructorDoc.$id,
               { availability: 'available' }
             );
           } catch (updateErr) {
-            // Silently ignore if availability field doesn't exist
             console.warn('Could not update instructor availability:', updateErr);
           }
         }

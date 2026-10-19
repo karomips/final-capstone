@@ -16,7 +16,6 @@ function VehicleInventory() {
     plateNumber: '',
     model: '',
     transmission: 'MT',
-    motorcycleTransmission: 'MT',
     status: 'available',
     engineCapacity: '',
     bikeType: 'Scooter'
@@ -88,7 +87,6 @@ function VehicleInventory() {
       plateNumber: '',
       model: '',
       transmission: 'MT',
-      motorcycleTransmission: 'MT',
       status: 'available',
       engineCapacity: '',
       bikeType: 'Scooter'
@@ -154,12 +152,11 @@ function VehicleInventory() {
         {
           plateNumber: formData.plateNumber.trim(),
           model: formData.model.trim(),
-          transmission: modalType === 'vehicle' ? formData.transmission : formData.motorcycleTransmission,
-          motorcycleTransmission: modalType === 'motorcycle' ? formData.motorcycleTransmission : undefined,
+          transmission: formData.transmission,
           vehicleType: modalType === 'motorcycle' ? 'motorcycle' : 'car',
           status: formData.status,
-          engineCapacity: modalType === 'motorcycle' ? formData.engineCapacity.trim() : undefined,
-          bikeType: modalType === 'motorcycle' ? formData.bikeType : undefined,
+          ...(modalType === 'motorcycle' && { engineCapacity: formData.engineCapacity.trim() }),
+          bikeType: modalType === 'motorcycle' ? formData.bikeType : '',
           imageFileId,
           imageUrl: imageToSave,
           createdAt: new Date().toISOString()
@@ -365,8 +362,8 @@ function VehicleInventory() {
                     <div className="form-group">
                       <label>Transmission Type *</label>
                       <select
-                        name="motorcycleTransmission"
-                        value={formData.motorcycleTransmission}
+                        name="transmission"
+                        value={formData.transmission}
                         onChange={handleInputChange}
                         required
                       >

@@ -25,6 +25,12 @@ const { startAutomaticSMSScheduler } = require('./services/smsScheduler');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+if (!process.env.BREVO_EMAIL_API_KEY || !process.env.SMTP_FROM_EMAIL) {
+  console.warn(
+    'Email verification is disabled: set BREVO_EMAIL_API_KEY and SMTP_FROM_EMAIL in backend/.env.'
+  );
+}
+
 const getAuthenticatedAccount = async (req) => {
   const authorization = String(req.headers.authorization || '');
   const match = authorization.match(/^Bearer\s+(.+)$/i);

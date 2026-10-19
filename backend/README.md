@@ -11,8 +11,8 @@ npm ci
 ```
 
 2. Configure environment:
-   - `.env` file is already configured
-   - Service account key is in `config/serviceAccountKey.json`
+   - Copy `.env.example` to `.env`.
+   - Add the required Appwrite and service configuration values.
 
 3. Start the server:
 ```bash
@@ -24,20 +24,19 @@ Server will run on: http://localhost:5000
 
 ## Email Verification Setup
 
-Add these variables to `backend/.env` for email verification codes:
+The verification endpoint uses the Brevo transactional email API. Add these variables to `backend/.env`:
 
 ```env
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@example.com
-SMTP_PASS=your-email-app-password
-SMTP_FROM_EMAIL=your-email@example.com
+BREVO_EMAIL_API_KEY=your_brevo_api_key
+SMTP_FROM_EMAIL=your-verified-sender@example.com
 APP_NAME=Easy Drive Driving School
 ```
 
 Notes:
-- Use an app password if your provider requires it.
-- Verification emails will fail until all SMTP values are set.
+- Create the API key in Brevo under **SMTP & API → API Keys**.
+- Verify the sender address/domain in Brevo before using it as `SMTP_FROM_EMAIL`.
+- `SMTP_FROM_EMAIL` is the sender address, not an SMTP username.
+- Verification emails will fail until both `BREVO_EMAIL_API_KEY` and `SMTP_FROM_EMAIL` are set.
 
 ## Event-Driven Approval Emails
 

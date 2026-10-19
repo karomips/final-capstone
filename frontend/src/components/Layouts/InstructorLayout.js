@@ -3,9 +3,9 @@ import useTheme from '../../hooks/useTheme';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Sidebar from '../Shared/Sidebar';
-import { ConfirmationDialog } from '../Instructor/InstructorUI';
 import '../Instructor/InstructorPages.css';
 import EasyDriveLogo from '../../assets/EasyDriveLogo.png';
+import SignOutDialog from '../Shared/SignOutDialog';
 
 const navigation = [
   { id: 'dashboard', label: 'My Dashboard' },
@@ -53,14 +53,7 @@ function InstructorLayout() {
       />
       <div className="instructor-content-wrapper"><Outlet context={{ theme, setTheme }} /></div>
       {showSignOutModal && (
-        <ConfirmationDialog
-          title="Sign out of EasyDrive?"
-          description="You can sign in again whenever you're ready to return to your instructor workspace."
-          confirmLabel="Sign out"
-          destructive
-          onClose={() => setShowSignOutModal(false)}
-          onConfirm={confirmSignOut}
-        />
+        <SignOutDialog onClose={() => setShowSignOutModal(false)} onConfirm={confirmSignOut} />
       )}
     </div>
   );

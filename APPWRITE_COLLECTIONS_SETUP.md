@@ -40,24 +40,50 @@ Create the following attributes in order:
    - Array: No
    - Default: "MT"
 
-4. **status**
+4. **vehicleType**
+   - Type: String
+   - Size: 20
+   - Required: Yes
+   - Array: No
+   - Default: "car"
+   - Values: "car", "motorcycle"
+
+5. **status**
    - Type: String
    - Size: 20
    - Required: Yes
    - Array: No
    - Default: "available"
 
-5. **imageUrl**
+6. **engineCapacity** (motorcycles only)
+   - Type: String
+   - Size: 20
+   - Required: No
+   - Array: No
+   - Motorcycle engine capacity in CC; leave empty for cars
+
+7. **bikeType** (motorcycles only)
+   - Type: String
+   - Size: 50
+   - Required: No
+   - Array: No
+   - Motorcycle category such as "Scooter" or "Barako"; leave empty for cars
+
+8. **imageUrl**
    - Type: String
    - Size: 500
    - Required: No
    - Array: No
 
-6. **createdAt**
+9. **createdAt**
    - Type: String
    - Size: 50
    - Required: Yes
    - Array: No
+
+> **Important:** Use `transmission` for both cars and motorcycles. If `motorcycleTransmission` already exists in Appwrite, edit that attribute and turn off **Required** (or remove it after migrating any old records). The application no longer writes that separate field.
+>
+> `engineCapacity` and `bikeType` apply only to motorcycles. Both attributes should be optional in Appwrite; the application does not send `engineCapacity` for cars.
 
 ### Permissions
 - **Role: All users** → Read

@@ -12,6 +12,7 @@ import InstructorIcon from '../../assets/icons/instructor-white.png';
 import VehicleIcon from '../../assets/icons/vehicle-white.png';
 import SMSIcon from '../../assets/icons/sms-icon.png';
 import '../Admin/AdminWorkspace.css';
+import SignOutDialog from '../Shared/SignOutDialog';
 
 function AdminLayout() {
   const { currentUser, logout } = useAuth();
@@ -103,34 +104,7 @@ function AdminLayout() {
         <Outlet context={{ theme, setTheme }} />
       </div>
 
-      {/* Sign Out Confirmation Modal */}
-      {showSignOutModal && (
-        <div className="modal-overlay" onClick={() => setShowSignOutModal(false)}>
-          <div className="modal-content admin-signout-modal" role="dialog" aria-modal="true" aria-labelledby="admin-signout-heading" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 id="admin-signout-heading">Sign out</h2>
-              <button
-                className="modal-close"
-                onClick={() => setShowSignOutModal(false)}
-                aria-label="Close sign out dialog"
-              >
-                ×
-              </button>
-            </div>
-            <div className="admin-signout-body">
-              <p className="admin-signout-copy">Are you sure you want to sign out of your account?</p>
-              <div className="admin-signout-actions">
-                <button onClick={() => setShowSignOutModal(false)} className="btn-cancel">
-                  Cancel
-                </button>
-                <button onClick={confirmSignOut} className="btn-submit">
-                  Sign Out
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {showSignOutModal && <SignOutDialog onClose={() => setShowSignOutModal(false)} onConfirm={confirmSignOut} />}
     </div>
   );
 }
